@@ -1,0 +1,132 @@
+{
+    "landing": {
+        "hero": {
+            "badge": "Varylo SaaS",
+            "title": "Unifica tu atención al cliente en un solo lugar",
+            "description": "Potencia tu equipo de soporte con WhatsApp, métricas avanzadas y análisis de IA. Todo en una plataforma diseñada para escalar.",
+            "ctaPrimary": "Comenzar Gratis",
+            "ctaSecondary": "Cómo funciona"
+        },
+        "features": {
+            "title": "Todo lo que necesitas para crecer",
+            "omnichannel": {
+                "title": "Omnicanalidad Real",
+                "description": "Conecta WhatsApp hoy y escala a Instagram, Messenger y Telegram mañana. Una sola bandeja para todo."
+            },
+            "agents": {
+                "title": "Gestión de Agentes",
+                "description": "Asigna conversaciones, mide tiempos de respuesta y controla el desempeño de tu equipo en tiempo real."
+            },
+            "ai": {
+                "title": "Análisis con IA",
+                "description": "Nuestra IA analiza el tono, la claridad y el sentimiento de cada conversación para mejorar la calidad."
+            }
+        },
+        "how": {
+            "title": "Cómo funciona",
+            "subtitle": "En 3 simples pasos",
+            "step1": {
+                "title": "Regístrate",
+                "description": "Crea tu cuenta y selecciona un plan que se adapte a tu empresa."
+            },
+            "step2": {
+                "title": "Conecta Canales",
+                "description": "Configura WhatsApp API en pocos minutos desde el dashboard."
+            },
+            "step3": {
+                "title": "Empieza a Responder",
+                "description": "Invita a tus agentes y gestiona conversaciones centralizadas."
+            }
+        },
+        "pricing": {
+            "title": "Planes Simples",
+            "starter": {
+                "title": "Starter",
+                "features": [
+                    "1 Canal (WhatsApp)",
+                    "Hasta 3 Agentes",
+                    "Métricas Básicas"
+                ]
+            },
+            "pro": {
+                "title": "Pro",
+                "features": [
+                    "1 Canal (WhatsApp)",
+                    "Hasta 10 Agentes",
+                    "Métricas Avanzadas",
+                    "Análisis IA Básico"
+                ]
+            },
+            "scale": {
+                "title": "Scale",
+                "features": [
+                    "Base Omnicanal",
+                    "Hasta 30 Agentes",
+                    "IA Avanzada (Futuro)",
+                    "Soporte Prioritario"
+                ]
+            },
+            "cta": "Empezar"
+        },
+        "faq": {
+            "title": "Preguntas Frecuentes",
+            "q1": {
+                "question": "¿Necesito una API de WhatsApp Business?",
+                "answer": "Sí, VARYLO se conecta a la API Cloud de Meta. Te guiamos en el proceso de configuración."
+            },
+            "q2": {
+                "question": "¿Puedo cambiar de plan después?",
+                "answer": "Sí, puedes mejorar o cancelar tu plan en cualquier momento desde el panel de administración."
+            },
+            "q3": {
+                "question": "¿La IA lee todos mis mensajes?",
+                "answer": "La IA solo analiza mensajes cuando la funcionalidad está activa para reportes de calidad, respetando la privacidad."
+            }
+        },
+        "contact": {
+            "title": "Contáctanos",
+            "subtitle": "¿Tienes dudas o necesitas un plan personalizado?",
+            "form": {
+                "name": "Tu nombre",
+                "email": "tu@email.com",
+                "message": "¿Cómo podemos ayudarte?",
+                "submit": "Enviar Mensaje",
+                "success": "¡Mensaje enviado con éxito! Nos pondremos en contacto pronto."
+            }
+        }
+    },
+    "nav": {
+        "home": "Inicio",
+        "features": "Características",
+        "pricing": "Precios",
+        "login": "Iniciar sesión",
+        "getStarted": "Empezar"
+    },
+    "footer": {
+        "rights": "Built for VARYLO. Todos los derechos reservados."
+    },
+    "auth": {
+        "login": {
+            "title": "Inicia sesión en Varylo",
+            "subtitle": "¡Bienvenido de nuevo! Por favor ingresa tus datos.",
+            "emailLabel": "Email",
+            "passwordLabel": "Contraseña",
+            "submitButton": "Iniciar sesión",
+            "submitButtonPending": "Iniciando sesión..."
+        },
+        "register": {
+            "title": "Crea tu cuenta",
+            "subtitle": "Comienza con Varylo hoy.",
+            "companyNameLabel": "Nombre de la Empresa",
+            "companyNamePlaceholder": "Acme Inc.",
+            "nameLabel": "Nombre Completo",
+            "namePlaceholder": "Juan Pérez",
+            "emailLabel": "Email",
+            "passwordLabel": "Contraseña",
+            "planLabel": "Plan",
+            "planPlaceholder": "Selecciona un plan",
+            "submitButton": "Crear Cuenta",
+            "submitButtonPending": "Creando cuenta..."
+        }
+    }
+}

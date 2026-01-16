@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// Enums
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  AGENT
+}
+
+enum Plan {
+  STARTER
+  PRO
+  SCALE
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum ChannelType {
+  WHATSAPP
+  INSTAGRAM
+  MESSENGER
+  TELEGRAM
+}
+
+enum ChannelStatus {
+  CONNECTED
+  DISCONNECTED
+  COMING_SOON
+}
+
+enum ConversationStatus {
+  OPEN
+  RESOLVED
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+// Models
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  passwordHash  String?
+  role          Role      @default(COMPANY_ADMIN)
+  active        Boolean   @default(true)
+  companyId     String?
+  company       Company?  @relation(fields: [companyId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  assignedConversations Conversation[]
+}
+
+model Company {
+  id        String        @id @default(cuid())
+  name      String
+  status    CompanyStatus @default(ACTIVE)
+  plan      Plan          @default(STARTER)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  users         User[]
+  channels      Channel[]
+  contacts      Contact[]
+  conversations Conversation[]
+  messages      Message[]
+  insights      ConversationInsight[]
+}
+
+model Channel {
+  id          String        @id @default(cuid())
+  companyId   String
+  type        ChannelType
+  status      ChannelStatus @default(CONNECTED)
+  configJson  Json?         // WhatsApp credentials etc.
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+}
+
+model Contact {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String?
+  phone     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+}
+
+model Conversation {
+  id              String             @id @default(cuid())
+  companyId       String
+  channelId       String
+  contactId       String
+  assignedAgentId String?
+  status          ConversationStatus @default(OPEN)
+  lastMessageAt   DateTime           @default(now())
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  channel         Channel            @relation(fields: [channelId], references: [id])
+  contact         Contact            @relation(fields: [contactId], references: [id])
+  assignedAgent   User?              @relation(fields: [assignedAgentId], references: [id])
+  
+  messages        Message[]
+  insights        ConversationInsight[]
+}
+
+model Message {
+  id                String           @id @default(cuid())
+  companyId         String
+  conversationId    String
+  direction         MessageDirection
+  from              String
+  to                String
+  content           String
+  providerMessageId String?
+  timestamp         DateTime         @default(now())
+  createdAt         DateTime         @default(now())
+
+  company           Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model ContactLead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model ConversationInsight {
+  id             String   @id @default(cuid())
+  companyId      String
+  conversationId String
+  toneScore      Int?     // 1-100
+  clarityScore   Int?     // 1-100
+  flagsJson      Json?
+  summary        String?
+  createdAt      DateTime @default(now())
+
+  company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
