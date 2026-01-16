@@ -11,13 +11,30 @@ export interface NavItem {
     icon: React.ComponentType<{ className?: string }>;
 }
 
+type SidebarRole = 'super-admin' | 'company' | 'agent';
+
 interface SidebarProps {
-    items: NavItem[];
+    role: SidebarRole; // Changed from items: NavItem[] to role
     lang: string;
 }
 
-export function Sidebar({ items, lang }: SidebarProps) {
+export function Sidebar({ role, lang }: SidebarProps) {
     const pathname = usePathname();
+
+    let items: NavItem[] = [];
+    switch (role) {
+        case 'super-admin':
+            items = superAdminItems;
+            break;
+        case 'company':
+            items = companyAdminItems;
+            break;
+        case 'agent':
+            items = agentItems;
+            break;
+        default:
+            items = [];
+    }
 
     return (
         <div className="hidden border-r bg-muted/40 lg:block dark:bg-zinc-900 w-[240px] max-w-[280px]">

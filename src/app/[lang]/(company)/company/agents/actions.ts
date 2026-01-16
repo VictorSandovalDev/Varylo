@@ -112,8 +112,8 @@ export async function deleteAgent(id: string) {
 
         revalidatePath('/[lang]/company/agents', 'page');
         return 'Success: Agent deleted successfully.';
-    } catch (error) {
+    } catch (error: any) {
         console.error('Failed to delete agent:', error);
-        return 'Error: Failed to delete agent.';
+        return `Error: Failed to delete agent. ${error.message}`;
     }
 }

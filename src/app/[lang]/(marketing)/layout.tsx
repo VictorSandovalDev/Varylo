@@ -8,10 +8,10 @@ export default async function MarketingLayout({
     params,
 }: {
     children: React.ReactNode;
-    params: Promise<{ lang: Locale }>;
+    params: Promise<{ lang: string }>;
 }) {
     const { lang } = await params;
-    const dict = await getDictionary(lang);
+    const dict = await getDictionary(lang as Locale);
     const nav = dict.nav;
 
     // Helper to generate localized paths

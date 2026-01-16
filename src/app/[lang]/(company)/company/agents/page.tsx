@@ -23,6 +23,10 @@ export default async function AgentsPage() {
     const agents = await prisma.user.findMany({
         where: {
             companyId: session.user.companyId,
+            role: 'AGENT', // Only show agents as requested
+            NOT: {
+                id: session.user.id // Exclude self
+            }
         },
         orderBy: {
             createdAt: 'desc',

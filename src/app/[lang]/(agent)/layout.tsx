@@ -7,12 +7,12 @@ export default async function AgentLayout({
     params,
 }: {
     children: React.ReactNode;
-    params: Promise<{ lang: Locale }>;
+    params: Promise<{ lang: string }>;
 }) {
     const { lang } = await params;
     return (
         <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
-            <Sidebar items={agentItems} lang={lang} />
+            <Sidebar role="agent" lang={lang} />
             <div className="flex flex-col">
                 <DashboardHeader title="Agent Inbox" />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
