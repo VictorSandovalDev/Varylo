@@ -1,0 +1,233 @@
+'use client';
+
+import * as React from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { MessageSquare, Pin, Trash2, StickyNote, Mail, Phone, MapPin, Globe, User, Building } from "lucide-react";
+import { AgentSelector } from "./agent-selector";
+import { TagSelector } from "./tag-selector";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+interface ConversationRightSidebarProps {
+    conversation: any;
+    companyTags: any[];
+    companyAgents: any[];
+    className?: string;
+}
+
+import { useRouter, useParams } from "next/navigation";
+import { deleteConversation, updatePriority } from "./actions";
+
+export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className }: ConversationRightSidebarProps) {
+    const contact = conversation.contact || {};
+    const router = useRouter();
+    const params = useParams();
+    const lang = params.lang as string;
+
+    const handleDelete = async () => {
+        try {
+            const result = await deleteConversation(conversation.id);
+            if (result.success) {
+                router.push(`/${lang}/company/conversations`);
+                router.refresh();
+            } else {
+                alert("Error al eliminar la conversación");
+            }
+        } catch (e) {
+            alert("Error inesperado al eliminar");
+        }
+    };
+
+    const handlePriorityChange = async (priority: 'LOW' | 'MEDIUM' | 'HIGH') => {
+        try {
+            await updatePriority(conversation.id, priority);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    const currentPriority = conversation.priority || 'MEDIUM';
+
+    return (
+        <div className={cn("bg-gray-50/30 flex flex-col h-full border-l border-gray-200", className)}>
+            <Tabs defaultValue="contact" className="w-full flex-1 flex flex-col">
+                {/* ... TabsList ... */}
+                <TabsList className="grid w-full grid-cols-2 rounded-none border-b h-11 bg-transparent p-0">
+                    <TabsTrigger
+                        value="contact"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent h-full"
+                    >
+                        Contacto
+                    </TabsTrigger>
+                    <TabsTrigger
+                        value="copilot"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent h-full"
+                    >
+                        Copiloto
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="contact" className="flex-1 overflow-y-auto p-0 m-0">
+                    {/* Profile Header */}
+                    <div className="p-6 flex flex-col items-center border-b bg-white">
+                        <Avatar className="h-20 w-20 mb-3 border">
+                            <AvatarImage src={contact.imageUrl} />
+                            <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                                {contact.name?.[0]?.toUpperCase() || '?'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <h2 className="font-semibold text-lg text-gray-900 text-center leading-tight mb-1">{contact.name || 'Desconocido'}</h2>
+                        <p className="text-sm text-muted-foreground text-center">Cliente</p>
+
+                        {/* Info Rows */}
+                        <div className="w-full mt-6 space-y-3 text-sm">
+                            {contact.phone && (
+                                <div className="flex items-center gap-3 text-gray-600">
+                                    <Phone className="h-4 w-4 shrink-0 opacity-70" />
+                                    <span>{contact.phone}</span>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-3 text-gray-600">
+                                <Building className="h-4 w-4 shrink-0 opacity-70" />
+                                <span>{contact.companyName || 'Empresa (N/A)'}</span>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons Row */}
+                        <div className="flex gap-2 mt-6 w-full justify-center">
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><MessageSquare className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
+
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-destructive hover:border-destructive/50"><Trash2 className="h-4 w-4" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Eliminar conversación?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Esta acción no se puede deshacer. Se eliminarán permanentemente todos los mensajes y notas asociadas.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+                                            Eliminar
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </div>
+
+                    {/* Accordions */}
+                    <Accordion type="multiple" defaultValue={['actions', 'participants']} className="w-full bg-white">
+                        <AccordionItem value="actions" className="border-b px-0">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                                Acciones
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-1">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Etiquetas</label>
+                                        <TagSelector
+                                            conversationId={conversation.id}
+                                            availableTags={companyTags}
+                                            selectedTags={conversation.tags || []}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Agentes Asignados</label>
+                                        <AgentSelector
+                                            conversationId={conversation.id}
+                                            availableAgents={companyAgents}
+                                            selectedAgents={conversation.assignedAgents || []}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Prioridad</label>
+                                        <div className="flex gap-2">
+                                            <Badge
+                                                variant={currentPriority === 'LOW' ? 'default' : 'outline'}
+                                                className={cn("cursor-pointer hover:bg-gray-100 font-normal", currentPriority === 'LOW' && "bg-green-100 text-green-700 hover:bg-green-200 border-green-200")}
+                                                onClick={() => handlePriorityChange('LOW')}
+                                            >
+                                                Baja
+                                            </Badge>
+                                            <Badge
+                                                variant={currentPriority === 'MEDIUM' ? 'default' : 'outline'}
+                                                className={cn("cursor-pointer hover:bg-gray-100 font-normal", currentPriority === 'MEDIUM' && "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200")}
+                                                onClick={() => handlePriorityChange('MEDIUM')}
+                                            >
+                                                Media
+                                            </Badge>
+                                            <Badge
+                                                variant={currentPriority === 'HIGH' ? 'default' : 'outline'}
+                                                className={cn("cursor-pointer hover:bg-gray-100 font-normal", currentPriority === 'HIGH' && "bg-red-100 text-red-700 hover:bg-red-200 border-red-200")}
+                                                onClick={() => handlePriorityChange('HIGH')}
+                                            >
+                                                Alta
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <AccordionItem value="participants" className="border-b px-0">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                                Participantes
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-1">
+                                <div className="flex flex-col gap-4">
+                                    <div className="space-y-1">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</label>
+                                        <div className="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded-md border">
+                                            <Avatar className="h-6 w-6"><AvatarFallback>C</AvatarFallback></Avatar>
+                                            <span className="truncate">{contact.name || contact.phone || 'Cliente'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <AccordionItem value="info" className="border-b px-0">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                                Información
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4 pt-1">
+                                <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <span className="text-muted-foreground">ID:</span>
+                                    <span className="truncate font-mono">{conversation.id.substring(0, 8)}</span>
+                                    <span className="text-muted-foreground">Creado:</span>
+                                    <span>{new Date(conversation.createdAt).toLocaleDateString()}</span>
+                                    <span className="text-muted-foreground">Canal:</span>
+                                    <span>{conversation.channelId}</span>
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </TabsContent>
+
+                <TabsContent value="copilot" className="p-4 text-center text-muted-foreground text-sm">
+                    El asistente IA aparecerá aquí para ayudarte con respuestas sugeridas.
+                </TabsContent>
+            </Tabs>
+        </div>
+    )
+}

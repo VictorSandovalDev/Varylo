@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ChannelType, MessageDirection } from '@prisma/client';
+import { ChannelType, MessageDirection, Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -8,10 +8,45 @@ export async function GET(req: NextRequest) {
     const token = searchParams.get('hub.verify_token');
     const challenge = searchParams.get('hub.challenge');
 
-    const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'varylo_verify_token';
+    if (mode !== 'subscribe' || !token || !challenge) {
+        return new NextResponse('Forbidden', { status: 403 });
+    }
 
-    if (mode === 'subscribe' && token === verifyToken) {
+    // 1. Check strict environment variable first (optional fallback)
+    const envVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'varylo_verify_token';
+    if (token === envVerifyToken) {
         return new NextResponse(challenge, { status: 200 });
+    }
+
+    // 2. Check against database channels
+    try {
+        // We need to find if ANY channel has this verify token in its config
+        // Since configJson is a JSON field, the query strategy depends on the DB capability.
+        // For broad compatibility in MVP or if using generic JSON, we might fetch all WhatsApp channels
+        // or attempt a raw query. 
+        // Given the scale of MVP, fetching all active WhatsApp channels is acceptable but risky for scale.
+        // Ideally: strict raw query or JSON filter.
+
+        // Using Prisma's findFirst with raw JSON filtering is cleaner if supported, 
+        // but for safety in this context let's try a direct approach.
+
+        const matchingChannel = await prisma.channel.findFirst({
+            where: {
+                type: ChannelType.WHATSAPP,
+                // Prisma JSON filtering syntax:
+                configJson: {
+                    path: ['verifyToken'],
+                    equals: token
+                }
+            }
+        });
+
+        if (matchingChannel) {
+            return new NextResponse(challenge, { status: 200 });
+        }
+
+    } catch (error) {
+        console.error('Error verifying webhook token:', error);
     }
 
     return new NextResponse('Forbidden', { status: 403 });
@@ -83,12 +118,33 @@ export async function POST(req: NextRequest) {
                 });
 
                 if (!conversation) {
+                    // Logic for Auto-Assignment (Round Robin / Random)
+                    // For MVP, randomly pick an active user from the company
+                    let selectedAgentId: string | null = null;
+
+                    const agents = await prisma.user.findMany({
+                        where: {
+                            companyId,
+                            active: true,
+                            role: Role.AGENT // Only assign to specific Agents
+                        },
+                        select: { id: true }
+                    });
+
+                    if (agents.length > 0) {
+                        const randomIndex = Math.floor(Math.random() * agents.length);
+                        selectedAgentId = agents[randomIndex].id;
+                    }
+
                     conversation = await prisma.conversation.create({
                         data: {
                             companyId,
                             channelId: channel.id,
                             contactId: contact.id,
-                            status: 'OPEN'
+                            status: 'OPEN',
+                            assignedAgents: selectedAgentId ? {
+                                connect: { id: selectedAgentId }
+                            } : undefined
                         }
                     });
                 }

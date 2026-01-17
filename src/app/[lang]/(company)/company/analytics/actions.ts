@@ -1,0 +1,141 @@
+'use server';
+
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { Role } from '@prisma/client';
+
+export async function getAnalyticsData() {
+    const session = await auth();
+    if (!session?.user?.companyId) return null;
+    const companyId = session.user.companyId;
+
+    // --- 1. Conversations Summary ---
+    // Abrir: Total conversations with status OPEN
+    const openCount = await prisma.conversation.count({
+        where: { companyId, status: 'OPEN' }
+    });
+
+    // Sin asignar: OPEN and no assigned agents
+    const unassignedCount = await prisma.conversation.count({
+        where: { companyId, status: 'OPEN', assignedAgents: { none: {} } }
+    });
+
+    // Desatendido (Simple logic: OPEN and lastMessageAt > 24h ago ?? OR just 0 for MVP if undefined)
+    // Let's assume 'Desatendido' means 'Unattended' -> maybe unread?
+    // For now, I'll return 0 to match the clean slate, or maybe check for > 24h inactivity on OPEN
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+    const unattendedCount = await prisma.conversation.count({
+        where: {
+            companyId,
+            status: 'OPEN',
+            lastMessageAt: { lt: yesterday }
+        }
+    });
+
+    // Pendientes: Maybe 'RESOLVED' but not closed? Or just 0.
+    const pendingCount = 0;
+
+
+    // --- 2. Agent Status ---
+    // We don't have real-time presence. define:
+    // En línea: Active users (Role AGENT/COMPANY_ADMIN)
+    // Fuera de línea: Inactive users
+    // Ocupado: Active users with > 5 open conversations (arbitrary threshold for demo)
+
+    const allAgents = await prisma.user.findMany({
+        where: {
+            companyId,
+            role: { in: [Role.AGENT, Role.COMPANY_ADMIN] }
+        },
+        include: {
+            assignedConversations: {
+                where: { status: 'OPEN' }
+            }
+        }
+    });
+
+    let onlineCount = 0;
+    let busyCount = 0;
+    let offlineCount = 0;
+
+    for (const agent of allAgents) {
+        if (!agent.active) {
+            offlineCount++;
+        } else {
+            // Active
+            if (agent.assignedConversations.length >= 5) {
+                busyCount++;
+            } else {
+                onlineCount++;
+            }
+        }
+    }
+
+    // --- 3. Traffic Heatmap ---
+    // Count messages in the last 7 days, grouped by DayOfWeek (0-6) and Hour (0-23)
+    // Prisma doesn't do complex date grouping well without raw query.
+    // Let's verify database provider. Postgres usually supports date_part.
+
+    // Fallback: Fetch metadata of recent messages and aggregate in JS (safe for < 10k messages)
+    // Or use groupBy if possible? groupBy doesn't support date parts extracted.
+    // Let's user raw query for efficiency or JS for simplicity if volume is low.
+    // JS approach for MVP consistency/safety.
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const recentMessages = await prisma.message.findMany({
+        where: {
+            companyId,
+            createdAt: { gte: sevenDaysAgo }
+        },
+        select: { createdAt: true }
+    });
+
+    // Initialize 7x24 grid
+    // Days: 0 (Sun) - 6 (Sat). The UI mock shows dates, so we map accordingly.
+    const heatmap: Record<string, number> = {};
+
+    recentMessages.forEach(msg => {
+        const date = new Date(msg.createdAt);
+        const day = date.getDay(); // 0-6
+        const hour = date.getHours(); // 0-23
+        const key = `${day}-${hour}`;
+        heatmap[key] = (heatmap[key] || 0) + 1;
+    });
+
+
+    // --- 4. Conversaciones por agentes (Detailed) ---
+    const conversationsByAgent = allAgents.map(agent => ({
+        id: agent.id,
+        name: agent.name || agent.email,
+        email: agent.email,
+        role: agent.role,
+        avatar: agent.name?.[0] || '?',
+        status: agent.active ? 'active' : 'inactive',
+        openCount: agent.assignedConversations.length,
+        // unattendedCount -> needs complex logic, mock 0
+        unattendedCount: 0
+    })).filter(a => a.role === Role.AGENT); // Show only Agents as requested
+
+    // --- 5. Teams ---
+    const teamsData: any[] = []; // Empty for now
+
+    return {
+        summary: {
+            open: openCount,
+            unattended: unattendedCount,
+            unassigned: unassignedCount,
+            pending: pendingCount
+        },
+        agentStatus: {
+            online: onlineCount,
+            busy: busyCount,
+            offline: offlineCount
+        },
+        heatmap,
+        conversationsByAgent,
+        teamsData
+    };
+}

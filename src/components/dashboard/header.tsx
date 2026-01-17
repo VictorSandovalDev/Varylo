@@ -4,6 +4,14 @@ import { Button } from '@/components/ui/button';
 import { User } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 export function DashboardHeader({ title }: { title: string }) {
     return (
@@ -14,10 +22,27 @@ export function DashboardHeader({ title }: { title: string }) {
             <div className="w-full flex-1">
                 <h1 className="text-lg font-semibold">{title}</h1>
             </div>
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => signOut()}>
-                <User className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
-            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                        <User className="h-5 w-5" />
+                        <span className="sr-only">Toggle user menu</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                        <Link href="/company/settings" className="w-full">
+                            Perfil
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => signOut()}>
+                        Cerrar sesión
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </header>
     );
 }

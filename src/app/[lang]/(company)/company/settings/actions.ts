@@ -65,3 +65,85 @@ export async function saveWhatsAppCredentials(prevState: string | undefined, for
         return 'Error: Failed to save credentials.';
     }
 }
+
+export async function testWhatsAppConnection() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: {
+                companyId: session.user.companyId,
+                type: ChannelType.WHATSAPP,
+            },
+        });
+
+        if (!channel || !channel.configJson) {
+            return { success: false, message: 'No WhatsApp configuration found.' };
+        }
+
+        const config = channel.configJson as { phoneNumberId?: string; accessToken?: string };
+        const { phoneNumberId, accessToken } = config;
+
+        if (!phoneNumberId || !accessToken) {
+            return { success: false, message: 'Incomplete configuration.' };
+        }
+
+        // Make a lightweight request to Meta API to verify token validity
+        // Fetching the phone number details is a good test
+        // Request specific fields to show the user
+        const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}?fields=verified_name,display_phone_number,quality_rating`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            return { success: false, message: `Meta API Error: ${data.error?.message || 'Unknown error'}` };
+        }
+
+        const data = await response.json();
+        const displayInfo = data.verified_name || data.display_phone_number || 'WhatsApp Account';
+
+        return { success: true, message: `Connectado: ${displayInfo} (${data.quality_rating})` };
+
+    } catch (error) {
+        console.error('Test connection failed:', error);
+        return { success: false, message: 'Internal server error during test.' };
+    }
+}
+
+export async function disconnectWhatsApp() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: {
+                companyId: session.user.companyId,
+                type: ChannelType.WHATSAPP,
+            },
+        });
+
+        if (channel) {
+            await prisma.channel.update({
+                where: { id: channel.id },
+                data: {
+                    status: ChannelStatus.DISCONNECTED,
+                    configJson: {}, // Clear credentials
+                },
+            });
+        }
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, message: 'WhatsApp disconnected successfully.' };
+    } catch (error) {
+        console.error('Disconnect failed:', error);
+        return { success: false, message: 'Failed to disconnect.' };
+    }
+}

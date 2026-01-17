@@ -1,0 +1,121 @@
+'use client';
+
+import * as React from "react";
+import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { toggleConversationAgent } from "./actions";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+
+interface Agent {
+    id: string;
+    name: string | null;
+    email: string;
+}
+
+interface AgentSelectorProps {
+    conversationId: string;
+    availableAgents: Agent[];
+    selectedAgents: Agent[];
+}
+
+export function AgentSelector({ conversationId, availableAgents, selectedAgents }: AgentSelectorProps) {
+    const [open, setOpen] = React.useState(false);
+
+    const handleToggle = async (agentId: string) => {
+        try {
+            await toggleConversationAgent(conversationId, agentId);
+        } catch (error) {
+            toast.error("Failed to update agent");
+        }
+    };
+
+    return (
+        <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2 mb-2">
+                {selectedAgents.map(agent => (
+                    <Badge
+                        key={agent.id}
+                        variant="secondary"
+                        className="gap-1 pr-1 pl-2 py-1 items-center"
+                    >
+                        <Avatar className="h-4 w-4 mr-1">
+                            <AvatarFallback className="text-[8px]">{agent.name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
+                        </Avatar>
+                        <span className="truncate max-w-[100px]">{agent.name || agent.email}</span>
+                        <button
+                            onClick={() => handleToggle(agent.id)}
+                            className="hover:bg-black/10 rounded-full p-0.5 ml-1"
+                        >
+                            <X className="h-3 w-3" />
+                        </button>
+                    </Badge>
+                ))}
+            </div>
+
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={open}
+                        className="w-full justify-between h-9"
+                    >
+                        <span className="flex items-center gap-2 text-muted-foreground text-xs">
+                            <Plus className="h-4 w-4" /> Asignar agente
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                    <Command>
+                        <CommandInput placeholder="Buscar agente..." />
+                        <CommandList>
+                            <CommandEmpty>No se encontraron agentes.</CommandEmpty>
+                            <CommandGroup>
+                                {availableAgents.map((agent) => {
+                                    const isSelected = selectedAgents.some(a => a.id === agent.id);
+                                    return (
+                                        <CommandItem
+                                            key={agent.id}
+                                            value={agent.name || agent.email}
+                                            onSelect={() => handleToggle(agent.id)}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    isSelected ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarFallback className="text-[10px]">{agent.name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="truncate max-w-[120px] text-xs">{agent.name || agent.email}</span>
+                                            </div>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+            </Popover>
+        </div>
+    );
+}

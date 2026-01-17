@@ -47,6 +47,12 @@ enum MessageDirection {
   OUTBOUND
 }
 
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 // Models
 
 model User {
@@ -61,7 +67,8 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  assignedConversations Conversation[]
+  assignedConversations Conversation[] @relation("ConversationAgents")
+  sentMessages          Message[]
 }
 
 model Company {
@@ -78,6 +85,7 @@ model Company {
   conversations Conversation[]
   messages      Message[]
   insights      ConversationInsight[]
+  tags          Tag[]
 }
 
 model Channel {
@@ -94,15 +102,23 @@ model Channel {
 }
 
 model Contact {
-  id        String   @id @default(cuid())
-  companyId String
-  name      String?
-  phone     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String?
+  email       String?
+  phone       String
+  companyName String?
+  city        String?
+  country     String?
+  countryCode String?
+  bio         String?
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  company       Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversations Conversation[]
+  tags          Tag[]
 }
 
 model Conversation {
@@ -110,7 +126,8 @@ model Conversation {
   companyId       String
   channelId       String
   contactId       String
-  assignedAgentId String?
+
+  // assignedAgentId removed
   status          ConversationStatus @default(OPEN)
   lastMessageAt   DateTime           @default(now())
   createdAt       DateTime           @default(now())
@@ -119,10 +136,12 @@ model Conversation {
   company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   channel         Channel            @relation(fields: [channelId], references: [id])
   contact         Contact            @relation(fields: [contactId], references: [id])
-  assignedAgent   User?              @relation(fields: [assignedAgentId], references: [id])
+  assignedAgents  User[]             @relation("ConversationAgents")
+  priority        Priority           @default(MEDIUM)
   
   messages        Message[]
   insights        ConversationInsight[]
+  tags            Tag[]
 }
 
 model Message {
@@ -136,6 +155,8 @@ model Message {
   providerMessageId String?
   timestamp         DateTime         @default(now())
   createdAt         DateTime         @default(now())
+  senderId          String?
+  sender            User?            @relation(fields: [senderId], references: [id])
 
   company           Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversation      Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -161,4 +182,19 @@ model ConversationInsight {
 
   company        Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model Tag {
+  id            String   @id @default(cuid())
+  companyId     String
+  name          String
+  description   String?
+  color         String   @default("#E91E63") // default pink/magenta as in mockup
+  showInSidebar Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+  contacts      Contact[]
 }

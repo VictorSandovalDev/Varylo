@@ -13,7 +13,32 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { WhatsAppConnectionForm } from "./whatsapp-form"
 
-export default function SettingsPage() {
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+import { ChannelType } from '@prisma/client';
+
+export default async function SettingsPage() {
+    const session = await auth();
+    const companyId = session?.user?.companyId;
+
+    let whatsappConfig = null;
+
+    if (companyId) {
+        const channel = await prisma.channel.findFirst({
+            where: {
+                companyId,
+                type: ChannelType.WHATSAPP,
+            },
+        });
+        if (channel?.configJson) {
+            whatsappConfig = channel.configJson as {
+                phoneNumberId?: string;
+                verifyToken?: string;
+                accessToken?: string
+            };
+        }
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -76,7 +101,11 @@ export default function SettingsPage() {
                     </CardContent>
                 </Card>
 
-                <WhatsAppConnectionForm />
+                <WhatsAppConnectionForm
+                    initialPhoneNumberId={whatsappConfig?.phoneNumberId}
+                    initialVerifyToken={whatsappConfig?.verifyToken}
+                    hasAccessToken={!!whatsappConfig?.accessToken}
+                />
             </div>
         </div>
     );
