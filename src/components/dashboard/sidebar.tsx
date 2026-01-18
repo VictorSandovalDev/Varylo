@@ -172,7 +172,6 @@ export const superAdminItems: NavItem[] = [
     { title: 'Empresas', href: '/super-admin/companies', icon: Users },
     { title: 'Métricas', href: '/super-admin/analytics', icon: BarChart3 },
     { title: 'Planes', href: '/super-admin/billing', icon: CreditCard },
-    { title: 'Planes', href: '/super-admin/billing', icon: CreditCard },
 ];
 
 export const companyAdminItems: NavItem[] = [

@@ -10,7 +10,9 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Building2, Plus } from "lucide-react"
+import { Building2 } from "lucide-react"
+import { EditCompanyDialog } from './edit-company-dialog';
+import { CreateCompanyDialog } from './create-company-dialog';
 
 export default async function CompaniesPage() {
     const companies = await prisma.company.findMany({
@@ -29,10 +31,7 @@ export default async function CompaniesPage() {
                     <CardTitle>Empresas Registradas</CardTitle>
                     <CardDescription>Gestión de todas las empresas en la plataforma.</CardDescription>
                 </div>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nueva Empresa
-                </Button>
+                <CreateCompanyDialog />
             </CardHeader>
             <CardContent>
                 <Table>
@@ -73,7 +72,7 @@ export default async function CompaniesPage() {
                                         {new Date(company.createdAt).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm">Administrar</Button>
+                                        <EditCompanyDialog company={company} />
                                     </TableCell>
                                 </TableRow>
                             ))

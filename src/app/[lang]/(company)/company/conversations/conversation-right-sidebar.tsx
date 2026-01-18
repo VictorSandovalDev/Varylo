@@ -27,12 +27,13 @@ interface ConversationRightSidebarProps {
     companyTags: any[];
     companyAgents: any[];
     className?: string;
+    isAgent?: boolean;
 }
 
 import { useRouter, useParams } from "next/navigation";
 import { deleteConversation, updatePriority } from "./actions";
 
-export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className }: ConversationRightSidebarProps) {
+export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className, isAgent }: ConversationRightSidebarProps) {
     const contact = conversation.contact || {};
     const router = useRouter();
     const params = useParams();
@@ -63,8 +64,8 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
     const currentPriority = conversation.priority || 'MEDIUM';
 
     return (
-        <div className={cn("bg-gray-50/30 flex flex-col h-full border-l border-gray-200", className)}>
-            <Tabs defaultValue="contact" className="w-full flex-1 flex flex-col">
+        <div className={cn("bg-gray-50/30 flex flex-col h-full min-h-0 border-l border-gray-200", className)}>
+            <Tabs defaultValue="contact" className="w-full flex-1 flex flex-col min-h-0">
                 {/* ... TabsList ... */}
                 <TabsList className="grid w-full grid-cols-2 rounded-none border-b h-11 bg-transparent p-0">
                     <TabsTrigger
@@ -77,11 +78,11 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                         value="copilot"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent h-full"
                     >
-                        Copiloto
+                        ValerIA
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="contact" className="flex-1 overflow-y-auto p-0 m-0">
+                <TabsContent value="contact" className="flex-1 overflow-y-auto p-0 m-0 min-h-0">
                     {/* Profile Header */}
                     <div className="p-6 flex flex-col items-center border-b bg-white">
                         <Avatar className="h-20 w-20 mb-3 border">
@@ -113,25 +114,27 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
 
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-destructive hover:border-destructive/50"><Trash2 className="h-4 w-4" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Eliminar conversación?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Esta acción no se puede deshacer. Se eliminarán permanentemente todos los mensajes y notas asociadas.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
-                                            Eliminar
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {!isAgent && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-destructive hover:border-destructive/50"><Trash2 className="h-4 w-4" /></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Eliminar conversación?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción no se puede deshacer. Se eliminarán permanentemente todos los mensajes y notas asociadas.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-white hover:bg-destructive/90">
+                                                Eliminar
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
                         </div>
                     </div>
 
@@ -202,6 +205,24 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                             <span className="truncate">{contact.name || contact.phone || 'Cliente'}</span>
                                         </div>
                                     </div>
+
+                                    {conversation.assignedAgents && conversation.assignedAgents.length > 0 && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Agentes</label>
+                                            <div className="flex flex-col gap-2">
+                                                {conversation.assignedAgents.map((agent: any) => (
+                                                    <div key={agent.id} className="flex items-center gap-2 text-sm p-2 bg-blue-50/50 rounded-md border border-blue-100">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
+                                                                {agent.name?.[0]?.toUpperCase() || 'A'}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="truncate text-gray-700">{agent.name || agent.email}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
@@ -225,7 +246,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                 </TabsContent>
 
                 <TabsContent value="copilot" className="p-4 text-center text-muted-foreground text-sm">
-                    El asistente IA aparecerá aquí para ayudarte con respuestas sugeridas.
+                    Próximamente el asistente de IA que te ayudará a responder
                 </TabsContent>
             </Tabs>
         </div>

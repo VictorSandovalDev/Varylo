@@ -23,11 +23,18 @@ export default async function ConversationsPage({
     const session = await auth();
     if (!session?.user?.companyId) return null;
     const userId = session.user.id;
+    const userRole = session.user.role;
+    const isAgent = userRole === Role.AGENT;
 
     const params = await searchParams;
     const selectedId = params?.conversationId;
-    const filter = params?.filter || 'mine';
+    // Force 'mine' filter for agents if they try to access others, or default to 'mine'
+    let filter = params?.filter || 'mine';
     const tag = params?.tag;
+
+    if (isAgent && filter !== 'mine') {
+        filter = 'mine';
+    }
 
     // Fetch Tags for Selector
     const companyTags = await prisma.tag.findMany({
@@ -41,12 +48,12 @@ export default async function ConversationsPage({
         prisma.conversation.count({
             where: { companyId: session.user.companyId, assignedAgents: { some: { id: userId } }, status: 'OPEN' }
         }),
-        prisma.conversation.count({
+        !isAgent ? prisma.conversation.count({
             where: { companyId: session.user.companyId, assignedAgents: { none: {} }, status: 'OPEN' }
-        }),
-        prisma.conversation.count({
+        }) : Promise.resolve(0),
+        !isAgent ? prisma.conversation.count({
             where: { companyId: session.user.companyId, status: 'OPEN' }
-        })
+        }) : Promise.resolve(0)
     ]);
 
     // --- 2. Fetch Filtered Conversations ---
@@ -57,8 +64,11 @@ export default async function ConversationsPage({
 
     if (filter === 'mine') {
         where.assignedAgents = { some: { id: userId } };
-    } else if (filter === 'unassigned') {
+    } else if (filter === 'unassigned' && !isAgent) {
         where.assignedAgents = { none: {} };
+    } else if (isAgent) {
+        // Fallback safety: always filter by mine for agents
+        where.assignedAgents = { some: { id: userId } };
     }
 
     if (tag) {
@@ -99,19 +109,30 @@ export default async function ConversationsPage({
 
 
     if (selectedId) {
-        selectedConversation = await prisma.conversation.findUnique({
+        // Enforce ownership check for agents
+        const conversationCheck = await prisma.conversation.findUnique({
             where: { id: selectedId },
-            include: {
-                contact: true,
-                messages: {
-                    orderBy: { createdAt: 'asc' }
-                },
-                assignedAgents: true,
-                tags: true
-            }
+            include: { assignedAgents: true }
         });
-        if (selectedConversation) {
-            messages = selectedConversation.messages;
+
+        if (conversationCheck) {
+            const isAssigned = conversationCheck.assignedAgents.some(a => a.id === userId);
+            if (!isAgent || isAssigned) {
+                selectedConversation = await prisma.conversation.findUnique({
+                    where: { id: selectedId },
+                    include: {
+                        contact: true,
+                        messages: {
+                            orderBy: { createdAt: 'asc' }
+                        },
+                        assignedAgents: true,
+                        tags: true
+                    }
+                });
+                if (selectedConversation) {
+                    messages = selectedConversation.messages;
+                }
+            }
         }
     }
 
@@ -139,24 +160,28 @@ export default async function ConversationsPage({
                         >
                             Mías <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{mineCount}</Badge>
                         </Link>
-                        <Link
-                            href="?filter=unassigned"
-                            className={cn(
-                                "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
-                                filter === 'unassigned' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
-                            )}
-                        >
-                            Sin asignar <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{unassignedCount}</Badge>
-                        </Link>
-                        <Link
-                            href="?filter=all"
-                            className={cn(
-                                "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
-                                filter === 'all' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
-                            )}
-                        >
-                            Todos <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{allCount}</Badge>
-                        </Link>
+                        {!isAgent && (
+                            <>
+                                <Link
+                                    href="?filter=unassigned"
+                                    className={cn(
+                                        "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
+                                        filter === 'unassigned' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
+                                    )}
+                                >
+                                    Sin asignar <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{unassignedCount}</Badge>
+                                </Link>
+                                <Link
+                                    href="?filter=all"
+                                    className={cn(
+                                        "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
+                                        filter === 'all' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
+                                    )}
+                                >
+                                    Todos <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{allCount}</Badge>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -217,14 +242,18 @@ export default async function ConversationsPage({
                                             <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-gray-200 text-gray-500 font-normal">{conv.channelId}</Badge>
                                             {/* Only show agent badge if looking at 'all' or 'mine' to clarify assignment? Or just always. */}
                                             {conv.assignedAgents && conv.assignedAgents.length > 0 && (
-                                                <div className="flex -space-x-1">
+                                                <div className="flex -space-x-2">
                                                     {conv.assignedAgents.slice(0, 3).map(agent => (
-                                                        <Avatar key={agent.id} className="h-4 w-4 border border-white">
-                                                            <AvatarFallback className="text-[8px] bg-gray-100 text-gray-600">{agent.name?.[0]}</AvatarFallback>
+                                                        <Avatar key={agent.id} className="h-5 w-5 border-2 border-white ring-1 ring-gray-100">
+                                                            <AvatarFallback className="text-[9px] font-medium bg-blue-100 text-blue-700">
+                                                                {agent.name?.[0]?.toUpperCase() || 'A'}
+                                                            </AvatarFallback>
                                                         </Avatar>
                                                     ))}
                                                     {conv.assignedAgents.length > 3 && (
-                                                        <span className="text-[9px] text-muted-foreground pl-1.5 self-center">+{conv.assignedAgents.length - 3}</span>
+                                                        <div className="h-5 w-5 rounded-full bg-gray-100 border-2 border-white flex items-center justify-center ring-1 ring-gray-100">
+                                                            <span className="text-[8px] font-medium text-gray-500">+{conv.assignedAgents.length - 3}</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             )}
@@ -300,102 +329,121 @@ export default async function ConversationsPage({
                 ) : (
                     // --- WELCOME DASHBOARD (Empty State) ---
                     <div className="flex-1 overflow-auto bg-gray-50/30 p-8 md:p-12 flex flex-col items-center justify-center">
-                        <div className="max-w-4xl w-full space-y-8">
-                            <div className="space-y-4">
-                                <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
-                                    👋 Buenas tardes, {session.user.name || 'Usuario'}. Bienvenido a Varylo.
-                                </h1>
-                                <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-                                    Gracias por registrarse. Queremos que saque el máximo provecho de Varylo.
-                                    Aquí hay algunas cosas que puede hacer para hacer que la experiencia sea agradable.
-                                </p>
+                        {isAgent ? (
+                            <div className="max-w-2xl w-full space-y-8 text-center">
+                                <div className="space-y-4">
+                                    <div className="flex justify-center">
+                                        <div className="bg-white p-4 rounded-full shadow-sm">
+                                            <Inbox className="h-12 w-12 text-blue-500" />
+                                        </div>
+                                    </div>
+                                    <h1 className="text-2xl font-semibold text-gray-900">
+                                        👋 ¡Hola, {session.user.name || 'Agente'}!
+                                    </h1>
+                                    <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
+                                        Bienvenido al panel. Selecciona una conversación de la izquierda para comenzar a responder a tus clientes.
+                                        Las conversaciones asignadas a ti aparecerán aquí automáticamente.
+                                    </p>
+                                </div>
                             </div>
+                        ) : (
+                            <div className="max-w-4xl w-full space-y-8">
+                                <div className="space-y-4">
+                                    <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                                        👋 Buenas tardes, {session.user.name || 'Usuario'}. Bienvenido a Varylo.
+                                    </h1>
+                                    <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
+                                        Gracias por registrarse. Queremos que saque el máximo provecho de Varylo.
+                                        Aquí hay algunas cosas que puede hacer para hacer que la experiencia sea agradable.
+                                    </p>
+                                </div>
 
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {/* Card 1: Inbox */}
-                                <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
-                                    <div className="flex flex-col gap-4 h-full justify-between">
-                                        <div className="flex justify-center py-4">
-                                            {/* Placeholder for the 'apps' icon in mockup */}
-                                            <div className="relative">
-                                                <Inbox className="h-12 w-12 text-blue-500" />
-                                                <Badge className="absolute -top-2 -right-2 bg-red-500 h-5 w-5 rounded-full p-0 flex items-center justify-center border-2 border-white">3</Badge>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Card 1: Inbox */}
+                                    <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
+                                        <div className="flex flex-col gap-4 h-full justify-between">
+                                            <div className="flex justify-center py-4">
+                                                {/* Placeholder for the 'apps' icon in mockup */}
+                                                <div className="relative">
+                                                    <Inbox className="h-12 w-12 text-blue-500" />
+                                                    <Badge className="absolute -top-2 -right-2 bg-red-500 h-5 w-5 rounded-full p-0 flex items-center justify-center border-2 border-white">3</Badge>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="space-y-2 text-center">
-                                            <h3 className="font-semibold text-gray-900">Todas sus conversaciones en un solo lugar</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Ver todas las conversaciones de sus clientes en un solo panel de control. Filtre por canal, etiqueta o estado.
-                                            </p>
-                                        </div>
-                                        <Link href="?filter=all" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
-                                            Haga clic aquí para ir a la bandeja de entrada <Search className="h-3 w-3" />
-                                        </Link>
-                                    </div>
-                                </Card>
-
-                                {/* Card 2: Team */}
-                                <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
-                                    <div className="flex flex-col gap-4 h-full justify-between">
-                                        <div className="flex justify-center py-4">
-                                            <div className="flex -space-x-3">
-                                                <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-blue-100 text-blue-600">A</AvatarFallback></Avatar>
-                                                <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-green-100 text-green-600">B</AvatarFallback></Avatar>
-                                                <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-purple-100 text-purple-600">C</AvatarFallback></Avatar>
+                                            <div className="space-y-2 text-center">
+                                                <h3 className="font-semibold text-gray-900">Todas sus conversaciones en un solo lugar</h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ver todas las conversaciones de sus clientes en un solo panel de control. Filtre por canal, etiqueta o estado.
+                                                </p>
                                             </div>
+                                            <Link href="?filter=all" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                                Haga clic aquí para ir a la bandeja de entrada <Search className="h-3 w-3" />
+                                            </Link>
                                         </div>
-                                        <div className="space-y-2 text-center">
-                                            <h3 className="font-semibold text-gray-900">Invite a los miembros de su equipo</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Ya que se está preparando para hablar con su cliente, invite a sus compañeros.
-                                            </p>
-                                        </div>
-                                        <Link href="/company/agents" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
-                                            Haga clic aquí para invitar a un miembro <Users className="h-3 w-3" />
-                                        </Link>
-                                    </div>
-                                </Card>
+                                    </Card>
 
-                                {/* Card 3: Canned Responses (Stub) */}
-                                <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
-                                    <div className="flex flex-col gap-4 h-full justify-between">
-                                        <div className="flex justify-center py-4">
-                                            <div className="bg-gray-100 p-3 rounded-lg">
-                                                <code className="text-xs text-gray-500">/saludo Hola, ¿cómo estás?</code>
+                                    {/* Card 2: Team */}
+                                    <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
+                                        <div className="flex flex-col gap-4 h-full justify-between">
+                                            <div className="flex justify-center py-4">
+                                                <div className="flex -space-x-3">
+                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-blue-100 text-blue-600">A</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-green-100 text-green-600">B</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-purple-100 text-purple-600">C</AvatarFallback></Avatar>
+                                                </div>
                                             </div>
+                                            <div className="space-y-2 text-center">
+                                                <h3 className="font-semibold text-gray-900">Invite a los miembros de su equipo</h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ya que se está preparando para hablar con su cliente, invite a sus compañeros.
+                                                </p>
+                                            </div>
+                                            <Link href="/company/agents" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                                Haga clic aquí para invitar a un miembro <Users className="h-3 w-3" />
+                                            </Link>
                                         </div>
-                                        <div className="space-y-2 text-center">
-                                            <h3 className="font-semibold text-gray-900">Crea respuestas predefinidas</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Las respuestas predefinidas son plantillas que le ayudan a responder rápidamente.
-                                            </p>
-                                        </div>
-                                        <Link href="/company/settings" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
-                                            Haga clic aquí para crear una respuesta <Settings className="h-3 w-3" />
-                                        </Link>
-                                    </div>
-                                </Card>
+                                    </Card>
 
-                                {/* Card 4: Tags (Stub) */}
-                                <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
-                                    <div className="flex flex-col gap-4 h-full justify-between">
-                                        <div className="flex justify-center py-4 gap-2">
-                                            <Badge className="bg-green-100 text-green-700 hover:bg-green-200">#ventas</Badge>
-                                            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">#soporte</Badge>
+                                    {/* Card 3: Canned Responses (Stub) */}
+                                    <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
+                                        <div className="flex flex-col gap-4 h-full justify-between">
+                                            <div className="flex justify-center py-4">
+                                                <div className="bg-gray-100 p-3 rounded-lg">
+                                                    <code className="text-xs text-gray-500">/saludo Hola, ¿cómo estás?</code>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2 text-center">
+                                                <h3 className="font-semibold text-gray-900">Crea respuestas predefinidas</h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Las respuestas predefinidas son plantillas que le ayudan a responder rápidamente.
+                                                </p>
+                                            </div>
+                                            <Link href="/company/settings" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                                Haga clic aquí para crear una respuesta <Settings className="h-3 w-3" />
+                                            </Link>
                                         </div>
-                                        <div className="space-y-2 text-center">
-                                            <h3 className="font-semibold text-gray-900">Organice las conversaciones con etiquetas</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                Las etiquetas proporcionan una forma fácil de clasificar su conversación.
-                                            </p>
+                                    </Card>
+
+                                    {/* Card 4: Tags (Stub) */}
+                                    <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
+                                        <div className="flex flex-col gap-4 h-full justify-between">
+                                            <div className="flex justify-center py-4 gap-2">
+                                                <Badge className="bg-green-100 text-green-700 hover:bg-green-200">#ventas</Badge>
+                                                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">#soporte</Badge>
+                                            </div>
+                                            <div className="space-y-2 text-center">
+                                                <h3 className="font-semibold text-gray-900">Organice las conversaciones con etiquetas</h3>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Las etiquetas proporcionan una forma fácil de clasificar su conversación.
+                                                </p>
+                                            </div>
+                                            <Link href="/company/settings/tags" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                                Haga clic aquí para crear etiquetas <Tag className="h-3 w-3" />
+                                            </Link>
                                         </div>
-                                        <Link href="/company/settings/tags" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
-                                            Haga clic aquí para crear etiquetas <Tag className="h-3 w-3" />
-                                        </Link>
-                                    </div>
-                                </Card>
+                                    </Card>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -408,6 +456,7 @@ export default async function ConversationsPage({
                         companyTags={companyTags}
                         companyAgents={companyAgents}
                         className="hidden xl:flex w-[350px] shrink-0 border-l"
+                        isAgent={isAgent}
                     />
                 )
             }

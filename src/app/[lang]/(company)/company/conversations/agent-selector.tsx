@@ -49,22 +49,23 @@ export function AgentSelector({ conversationId, availableAgents, selectedAgents 
         <div className="flex flex-col gap-2">
             <div className="flex flex-wrap gap-2 mb-2">
                 {selectedAgents.map(agent => (
-                    <Badge
+                    <div
                         key={agent.id}
-                        variant="secondary"
-                        className="gap-1 pr-1 pl-2 py-1 items-center"
+                        className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 bg-white border rounded-full shadow-sm"
                     >
-                        <Avatar className="h-4 w-4 mr-1">
-                            <AvatarFallback className="text-[8px]">{agent.name?.[0]?.toUpperCase() || 'A'}</AvatarFallback>
+                        <Avatar className="h-5 w-5">
+                            <AvatarFallback className="text-[10px] font-medium bg-blue-100 text-blue-700">
+                                {agent.name?.[0]?.toUpperCase() || 'A'}
+                            </AvatarFallback>
                         </Avatar>
-                        <span className="truncate max-w-[100px]">{agent.name || agent.email}</span>
+                        <span className="truncate max-w-[100px] text-xs font-medium text-gray-700">{agent.name || agent.email}</span>
                         <button
                             onClick={() => handleToggle(agent.id)}
-                            className="hover:bg-black/10 rounded-full p-0.5 ml-1"
+                            className="ml-0.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-0.5 transition-colors"
                         >
                             <X className="h-3 w-3" />
                         </button>
-                    </Badge>
+                    </div>
                 ))}
             </div>
 

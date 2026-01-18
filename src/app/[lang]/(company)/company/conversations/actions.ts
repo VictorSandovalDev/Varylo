@@ -3,6 +3,7 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { Role } from '@prisma/client';
 
 export async function toggleConversationTag(conversationId: string, tagId: string) {
     const session = await auth();
@@ -40,6 +41,7 @@ export async function toggleConversationTag(conversationId: string, tagId: strin
     });
 
     revalidatePath('/[lang]/company/conversations', 'page');
+    revalidatePath('/[lang]/agent', 'page');
 }
 
 export async function toggleConversationAgent(conversationId: string, agentId: string) {
@@ -70,6 +72,7 @@ export async function toggleConversationAgent(conversationId: string, agentId: s
     });
 
     revalidatePath('/[lang]/company/conversations', 'page');
+    revalidatePath('/[lang]/agent', 'page');
 }
 
 export async function updatePriority(conversationId: string, priority: 'LOW' | 'MEDIUM' | 'HIGH') {
@@ -84,6 +87,7 @@ export async function updatePriority(conversationId: string, priority: 'LOW' | '
     });
 
     revalidatePath('/[lang]/company/conversations', 'page');
+    revalidatePath('/[lang]/agent', 'page');
 }
 
 export async function sendMessage(conversationId: string, content: string) {
@@ -120,6 +124,7 @@ export async function sendMessage(conversationId: string, content: string) {
         });
 
         revalidatePath('/[lang]/company/conversations', 'page');
+        revalidatePath('/[lang]/agent', 'page');
         return { success: true };
     } catch (error) {
         console.error("Error sending message:", error);
@@ -133,12 +138,17 @@ export async function deleteConversation(conversationId: string) {
         return { success: false, message: "Unauthorized" };
     }
 
+    if (session.user.role === Role.AGENT) {
+        return { success: false, message: "Agents cannot delete conversations" };
+    }
+
     try {
         await prisma.conversation.delete({
             where: { id: conversationId, companyId: session.user.companyId }
         });
 
         revalidatePath('/[lang]/company/conversations', 'page');
+        revalidatePath('/[lang]/agent', 'page');
         return { success: true };
     } catch (error) {
         console.error("Error deleting conversation:", error);
