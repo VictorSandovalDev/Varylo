@@ -28,9 +28,11 @@ interface SidebarProps {
     role: SidebarRole;
     lang: string;
     tags?: TagData[];
+    className?: string; // Add className prop
+    onLinkClick?: () => void; // Add callback for mobile close
 }
 
-export function Sidebar({ role, lang, tags }: SidebarProps) {
+export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarProps) {
     const pathname = usePathname();
 
     let items: NavItem[] = [];
@@ -87,26 +89,24 @@ export function Sidebar({ role, lang, tags }: SidebarProps) {
     }
 
     return (
-        <div className="hidden border-r bg-muted/40 lg:block dark:bg-zinc-900 w-[240px] max-w-[280px]">
-            <div className="flex h-full max-h-screen flex-col gap-2">
-                <div className="flex h-14 items-center border-b px-6 lg:h-[60px]">
-                    <Link href={`/${lang}`} className="flex items-center gap-2 font-semibold">
-                        <span className="">VARYLO</span>
-                    </Link>
-                </div>
-                <div className="flex-1 overflow-auto py-2">
-                    <nav className="grid items-start px-4 text-sm font-medium lg:px-6">
-                        {items.map((item, index) => (
-                            <SidebarItem key={index} item={item} lang={lang} pathname={pathname} />
-                        ))}
-                    </nav>
-                </div>
+        <div className={clsx("border-r bg-muted/40 dark:bg-zinc-900 w-[240px] max-w-[280px] flex flex-col gap-2 h-full max-h-screen", className)}>
+            <div className="flex h-14 items-center border-b px-6 lg:h-[60px] shrink-0">
+                <Link href={`/${lang}`} className="flex items-center gap-2 font-semibold" onClick={onLinkClick}>
+                    <span className="">VARYLO</span>
+                </Link>
+            </div>
+            <div className="flex-1 overflow-auto py-2">
+                <nav className="grid items-start px-4 text-sm font-medium lg:px-6">
+                    {items.map((item, index) => (
+                        <SidebarItem key={index} item={item} lang={lang} pathname={pathname} onLinkClick={onLinkClick} />
+                    ))}
+                </nav>
             </div>
         </div>
     );
 }
 
-function SidebarItem({ item, lang, pathname }: { item: NavItem, lang: string, pathname: string }) {
+function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lang: string, pathname: string, onLinkClick?: () => void }) {
     const localizedHref = `/${lang}${item.href}`;
     const isActive = pathname === localizedHref || (item.children && item.children.some(child => pathname === `/${lang}${child.href}`));
     const [isOpen, setIsOpen] = useState(isActive);
@@ -136,6 +136,7 @@ function SidebarItem({ item, lang, pathname }: { item: NavItem, lang: string, pa
                             <Link
                                 key={index}
                                 href={childHref}
+                                onClick={onLinkClick} // Close sidebar on mobile
                                 className={clsx(
                                     "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary",
                                     isChildActive ? "text-primary font-semibold" : "text-muted-foreground"
@@ -154,6 +155,7 @@ function SidebarItem({ item, lang, pathname }: { item: NavItem, lang: string, pa
     return (
         <Link
             href={localizedHref}
+            onClick={onLinkClick} // Close sidebar on mobile
             className={clsx(
                 "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
                 isActive ? "bg-muted text-primary" : "text-muted-foreground"

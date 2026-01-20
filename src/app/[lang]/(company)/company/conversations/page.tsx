@@ -5,12 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquareOff, Settings, Users, Tag, Inbox } from "lucide-react";
+import { Search, MessageSquareOff, Settings, Users, Tag, Inbox, Instagram, Phone } from "lucide-react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import ChatInput from './chat-input';
 import { AgentSelector } from './agent-selector';
-import { Role } from '@prisma/client';
+import { Role, ChannelType } from '@prisma/client';
 
 import { ConversationRightSidebar } from './conversation-right-sidebar';
 
@@ -87,7 +87,8 @@ export default async function ConversationsPage({
                 take: 1
             },
             contact: true,
-            assignedAgents: true
+            assignedAgents: true,
+            channel: true
         },
         orderBy: {
             updatedAt: 'desc'
@@ -126,7 +127,8 @@ export default async function ConversationsPage({
                             orderBy: { createdAt: 'asc' }
                         },
                         assignedAgents: true,
-                        tags: true
+                        tags: true,
+                        channel: true
                     }
                 });
                 if (selectedConversation) {
@@ -239,8 +241,19 @@ export default async function ConversationsPage({
                                             {lastMsg?.content || 'Nueva conversación'}
                                         </p>
                                         <div className="flex gap-2 flex-wrap">
-                                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-gray-200 text-gray-500 font-normal">{conv.channelId}</Badge>
-                                            {/* Only show agent badge if looking at 'all' or 'mine' to clarify assignment? Or just always. */}
+                                            {conv.channel?.type === ChannelType.INSTAGRAM ? (
+                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-pink-200 text-pink-600 bg-pink-50 font-normal flex items-center gap-1">
+                                                    <Instagram className="h-3 w-3" /> Instagram
+                                                </Badge>
+                                            ) : conv.channel?.type === ChannelType.WHATSAPP ? (
+                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-green-200 text-green-600 bg-green-50 font-normal flex items-center gap-1">
+                                                    <Phone className="h-3 w-3" /> WhatsApp
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-gray-200 text-gray-500 font-normal">
+                                                    {conv.channelId}
+                                                </Badge>
+                                            )}
                                             {conv.assignedAgents && conv.assignedAgents.length > 0 && (
                                                 <div className="flex -space-x-2">
                                                     {conv.assignedAgents.slice(0, 3).map(agent => (
@@ -279,7 +292,17 @@ export default async function ConversationsPage({
                                 <div>
                                     <h3 className="font-medium text-sm text-gray-900">{selectedConversation.contact?.name}</h3>
                                     <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-[10px] h-4 px-1">{selectedConversation.channelId}</Badge>
+                                        {selectedConversation.channel?.type === ChannelType.INSTAGRAM ? (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1 border-pink-200 text-pink-600 bg-pink-50 flex items-center gap-1">
+                                                <Instagram className="h-3 w-3" /> Instagram
+                                            </Badge>
+                                        ) : selectedConversation.channel?.type === ChannelType.WHATSAPP ? (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1 border-green-200 text-green-600 bg-green-50 flex items-center gap-1">
+                                                <Phone className="h-3 w-3" /> WhatsApp
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1">{selectedConversation.channelId}</Badge>
+                                        )}
                                         <p className="text-xs text-muted-foreground">{selectedConversation.contact?.phone}</p>
                                     </div>
                                 </div>

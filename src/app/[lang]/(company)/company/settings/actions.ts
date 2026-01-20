@@ -147,3 +147,143 @@ export async function disconnectWhatsApp() {
         return { success: false, message: 'Failed to disconnect.' };
     }
 }
+
+// INSTAGRAM ACTIONS
+
+export async function saveInstagramCredentials(prevState: string | undefined, formData: FormData) {
+    const session = await auth();
+
+    if (!session?.user?.companyId) {
+        return 'Error: No authorized session found.';
+    }
+
+    const companyId = session.user.companyId;
+    const pageId = formData.get('pageId') as string;
+    const accessToken = formData.get('accessToken') as string;
+    // verifyToken coming from form might be empty in OAuth flow, as we use global token.
+
+    if (!pageId || !accessToken) {
+        return 'Error: Page ID and Access Token are required.';
+    }
+
+    const GLOBAL_VERIFY_TOKEN = process.env.INSTAGRAM_VERIFY_TOKEN || 'varylo_default_verify_token';
+
+    try {
+        const existingChannel = await prisma.channel.findFirst({
+            where: {
+                companyId,
+                type: ChannelType.INSTAGRAM,
+            },
+        });
+
+        const configJson = {
+            pageId,
+            accessToken,
+            verifyToken: GLOBAL_VERIFY_TOKEN, // Store the global one or just rely on env
+        };
+
+        if (existingChannel) {
+            await prisma.channel.update({
+                where: { id: existingChannel.id },
+                data: {
+                    configJson,
+                    status: ChannelStatus.CONNECTED,
+                },
+            });
+        } else {
+            await prisma.channel.create({
+                data: {
+                    companyId,
+                    type: ChannelType.INSTAGRAM,
+                    status: ChannelStatus.CONNECTED,
+                    configJson,
+                },
+            });
+        }
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return 'Success: Instagram connected successfully.';
+    } catch (error) {
+        console.error('Failed to save Instagram credentials:', error);
+        return 'Error: Failed to save credentials.';
+    }
+}
+
+export async function testInstagramConnection() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: {
+                companyId: session.user.companyId,
+                type: ChannelType.INSTAGRAM,
+            },
+        });
+
+        if (!channel || !channel.configJson) {
+            return { success: false, message: 'No Instagram configuration found.' };
+        }
+
+        const config = channel.configJson as { pageId?: string; accessToken?: string };
+        const { pageId, accessToken } = config;
+
+        if (!pageId || !accessToken) {
+            return { success: false, message: 'Incomplete configuration.' };
+        }
+
+        const response = await fetch(`https://graph.facebook.com/v18.0/${pageId}?fields=name,username`, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            return { success: false, message: `Meta API Error: ${data.error?.message || 'Unknown error'}` };
+        }
+
+        const data = await response.json();
+        const displayInfo = data.name || data.username || 'Instagram Account';
+
+        return { success: true, message: `Connected: ${displayInfo}` };
+
+    } catch (error) {
+        console.error('Test connection failed:', error);
+        return { success: false, message: 'Internal server error during test.' };
+    }
+}
+
+export async function disconnectInstagram() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: {
+                companyId: session.user.companyId,
+                type: ChannelType.INSTAGRAM,
+            },
+        });
+
+        if (channel) {
+            await prisma.channel.update({
+                where: { id: channel.id },
+                data: {
+                    status: ChannelStatus.DISCONNECTED,
+                    configJson: {},
+                },
+            });
+        }
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, message: 'Instagram disconnected successfully.' };
+    } catch (error) {
+        console.error('Disconnect failed:', error);
+        return { success: false, message: 'Failed to disconnect.' };
+    }
+}

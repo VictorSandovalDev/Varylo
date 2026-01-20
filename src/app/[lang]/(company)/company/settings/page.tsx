@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { WhatsAppConnectionForm } from "./whatsapp-form"
+import { InstagramConnectionForm } from "./instagram-form"
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -22,17 +23,29 @@ export default async function SettingsPage() {
     const companyId = session?.user?.companyId;
 
     let whatsappConfig = null;
+    let instagramConfig = null;
 
     if (companyId) {
-        const channel = await prisma.channel.findFirst({
+        const channels = await prisma.channel.findMany({
             where: {
                 companyId,
-                type: ChannelType.WHATSAPP,
+                type: { in: [ChannelType.WHATSAPP, ChannelType.INSTAGRAM] },
             },
         });
-        if (channel?.configJson) {
-            whatsappConfig = channel.configJson as {
+
+        const whatsappChannel = channels.find(c => c.type === ChannelType.WHATSAPP);
+        if (whatsappChannel?.configJson) {
+            whatsappConfig = whatsappChannel.configJson as {
                 phoneNumberId?: string;
+                verifyToken?: string;
+                accessToken?: string
+            };
+        }
+
+        const instagramChannel = channels.find(c => c.type === ChannelType.INSTAGRAM);
+        if (instagramChannel?.configJson) {
+            instagramConfig = instagramChannel.configJson as {
+                pageId?: string;
                 verifyToken?: string;
                 accessToken?: string
             };
@@ -105,6 +118,12 @@ export default async function SettingsPage() {
                     initialPhoneNumberId={whatsappConfig?.phoneNumberId}
                     initialVerifyToken={whatsappConfig?.verifyToken}
                     hasAccessToken={!!whatsappConfig?.accessToken}
+                />
+
+                <InstagramConnectionForm
+                    initialPageId={instagramConfig?.pageId}
+                    initialVerifyToken={instagramConfig?.verifyToken}
+                    hasAccessToken={!!instagramConfig?.accessToken}
                 />
             </div>
         </div>

@@ -6,7 +6,7 @@ import { ContactForm } from './contact-form';
 import { getDictionary, Locale } from '@/lib/dictionary';
 
 const PricingCard = ({ title, price, features, recommended = false, cta }: { title: string, price: string, features: string[], recommended?: boolean, cta: string }) => (
-    <Card className={`relative ${recommended ? 'border-primary shadow-lg scale-105' : ''}`}>
+    <Card className={`relative ${recommended ? 'border-primary shadow-lg lg:scale-105' : ''}`}>
         {recommended && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold">Popular</span>}
         <CardHeader>
             <CardTitle>{title}</CardTitle>
@@ -49,7 +49,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
     const d = dict.landing;
 
     return (
-        <div className="flex flex-col gap-24 py-10">
+        <div className="flex flex-col gap-24 py-10 px-4 md:px-0">
 
             {/* Hero Section */}
             <section id="hero" className="container mx-auto text-center pt-20 pb-20">
