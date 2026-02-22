@@ -3,6 +3,7 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import type { Prisma } from '@prisma/client';
 import type { ChatbotFlow } from '@/types/chatbot';
 
 const DEFAULT_FLOW: ChatbotFlow = {
@@ -50,7 +51,7 @@ export async function createChatbot(prevState: string | undefined, formData: For
             data: {
                 companyId: session.user.companyId,
                 name,
-                flowJson: DEFAULT_FLOW as unknown as Record<string, unknown>,
+                flowJson: DEFAULT_FLOW as unknown as Prisma.InputJsonValue,
                 channels: channelIds.length > 0 ? {
                     connect: channelIds.map(id => ({ id })),
                 } : undefined,

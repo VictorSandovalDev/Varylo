@@ -3,6 +3,7 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import type { Prisma } from '@prisma/client';
 import type { ChatbotFlow } from '@/types/chatbot';
 
 export async function updateChatbotFlow(chatbotId: string, flowJson: ChatbotFlow) {
@@ -34,7 +35,7 @@ export async function updateChatbotFlow(chatbotId: string, flowJson: ChatbotFlow
         await prisma.chatbot.update({
             where: { id: chatbotId, companyId: session.user.companyId },
             data: {
-                flowJson: flowJson as unknown as Record<string, unknown>,
+                flowJson: flowJson as unknown as Prisma.InputJsonValue,
             },
         });
 
