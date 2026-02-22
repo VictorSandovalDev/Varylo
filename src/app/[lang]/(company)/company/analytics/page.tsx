@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from 'react';
 import { getAnalyticsData } from './actions';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,63 @@ export default function AnalyticsPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Análisis IA */}
+            {data.aiMetrics && data.aiMetrics.totalInsights > 0 && (
+                <Card className="shadow-sm rounded-xl">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-purple-500" />
+                            <CardTitle className="text-lg font-medium">Análisis IA</CardTitle>
+                            <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[10px] h-5">
+                                {data.aiMetrics.totalInsights} análisis
+                            </Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-5 gap-4 pt-4">
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1">Tono prom.</div>
+                                <div className="text-3xl font-normal">{data.aiMetrics.avgTone}</div>
+                                <div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                                    <div
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            data.aiMetrics.avgTone >= 70 ? "bg-green-500" : data.aiMetrics.avgTone >= 40 ? "bg-yellow-500" : "bg-red-500"
+                                        )}
+                                        style={{ width: `${data.aiMetrics.avgTone}%` }}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1">Claridad prom.</div>
+                                <div className="text-3xl font-normal">{data.aiMetrics.avgClarity}</div>
+                                <div className="h-1.5 bg-gray-100 rounded-full mt-2 overflow-hidden">
+                                    <div
+                                        className={cn(
+                                            "h-full rounded-full",
+                                            data.aiMetrics.avgClarity >= 70 ? "bg-green-500" : data.aiMetrics.avgClarity >= 40 ? "bg-yellow-500" : "bg-red-500"
+                                        )}
+                                        style={{ width: `${data.aiMetrics.avgClarity}%` }}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1">Positivo</div>
+                                <div className="text-3xl font-normal text-green-600">{data.aiMetrics.positive}</div>
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1">Neutral</div>
+                                <div className="text-3xl font-normal text-gray-600">{data.aiMetrics.neutral}</div>
+                            </div>
+                            <div>
+                                <div className="text-sm font-medium text-muted-foreground mb-1">Negativo</div>
+                                <div className="text-3xl font-normal text-red-600">{data.aiMetrics.negative}</div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Tráfico de Conversación */}
             <Card className="shadow-sm rounded-xl">

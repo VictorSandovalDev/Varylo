@@ -79,6 +79,9 @@ model Company {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 
+  openaiApiKey          String?
+  openaiApiKeyUpdatedAt DateTime?
+
   users         User[]
   channels      Channel[]
   contacts      Contact[]
@@ -86,6 +89,8 @@ model Company {
   messages      Message[]
   insights      ConversationInsight[]
   tags          Tag[]
+  aiAgents      AiAgent[]
+  chatbots      Chatbot[]
 }
 
 model Channel {
@@ -99,6 +104,8 @@ model Channel {
 
   company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversations Conversation[]
+  aiAgents    AiAgent[]     @relation("AiAgentChannels")
+  chatbots    Chatbot[]     @relation("ChatbotChannels")
 }
 
 model Contact {
@@ -136,12 +143,16 @@ model Conversation {
   company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   channel         Channel            @relation(fields: [channelId], references: [id])
   contact         Contact            @relation(fields: [contactId], references: [id])
+  handledByAiAgentId String?
+  handledByAiAgent   AiAgent?           @relation(fields: [handledByAiAgentId], references: [id])
+
   assignedAgents  User[]             @relation("ConversationAgents")
   priority        Priority           @default(MEDIUM)
-  
+
   messages        Message[]
   insights        ConversationInsight[]
   tags            Tag[]
+  chatbotSessions ChatbotSession[]
 }
 
 model Message {
@@ -197,4 +208,48 @@ model Tag {
   company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversations Conversation[]
   contacts      Contact[]
+}
+
+model AiAgent {
+  id                 String    @id @default(cuid())
+  companyId          String
+  name               String
+  systemPrompt       String    @db.Text
+  contextInfo        String?   @db.Text
+  active             Boolean   @default(true)
+  model              String    @default("gpt-4o-mini")
+  temperature        Float     @default(0.7)
+  transferKeywords   String[]  @default(["humano", "agente", "persona"])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  channels           Channel[] @relation("AiAgentChannels")
+  conversations      Conversation[]
+}
+
+model Chatbot {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  active    Boolean  @default(true)
+  flowJson  Json
+  priority  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  channels  Channel[] @relation("ChatbotChannels")
+  sessions  ChatbotSession[]
+}
+
+model ChatbotSession {
+  id             String       @id @default(cuid())
+  chatbotId      String
+  conversationId String
+  currentNodeId  String
+  completed      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  chatbot        Chatbot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@unique([chatbotId, conversationId])
 }

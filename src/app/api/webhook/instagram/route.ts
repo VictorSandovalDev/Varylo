@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection, Role } from '@prisma/client';
+import { analyzeConversation } from '@/jobs/ai';
+import { handleAiAgentResponse } from '@/jobs/ai-agent';
+import { handleChatbotResponse } from '@/jobs/chatbot';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -119,34 +122,54 @@ export async function POST(req: NextRequest) {
                 });
 
                 if (!conversation) {
-                    // Logic for Auto-Assignment (Round Robin / Random)
-                    let selectedAgentId: string | null = null;
-
-                    const agents = await prisma.user.findMany({
+                    // Check if there's an active AI agent for this channel
+                    const activeAiAgent = await prisma.aiAgent.findFirst({
                         where: {
                             companyId,
                             active: true,
-                            role: Role.AGENT
+                            channels: { some: { id: channel.id } },
                         },
-                        select: { id: true }
                     });
 
-                    if (agents.length > 0) {
-                        const randomIndex = Math.floor(Math.random() * agents.length);
-                        selectedAgentId = agents[randomIndex].id;
-                    }
+                    if (activeAiAgent) {
+                        conversation = await prisma.conversation.create({
+                            data: {
+                                companyId,
+                                channelId: channel.id,
+                                contactId: contact.id,
+                                status: 'OPEN',
+                                handledByAiAgentId: activeAiAgent.id,
+                            },
+                        });
+                    } else {
+                        let selectedAgentId: string | null = null;
 
-                    conversation = await prisma.conversation.create({
-                        data: {
-                            companyId,
-                            channelId: channel.id,
-                            contactId: contact.id,
-                            status: 'OPEN',
-                            assignedAgents: selectedAgentId ? {
-                                connect: { id: selectedAgentId }
-                            } : undefined
+                        const agents = await prisma.user.findMany({
+                            where: {
+                                companyId,
+                                active: true,
+                                role: Role.AGENT,
+                            },
+                            select: { id: true },
+                        });
+
+                        if (agents.length > 0) {
+                            const randomIndex = Math.floor(Math.random() * agents.length);
+                            selectedAgentId = agents[randomIndex].id;
                         }
-                    });
+
+                        conversation = await prisma.conversation.create({
+                            data: {
+                                companyId,
+                                channelId: channel.id,
+                                contactId: contact.id,
+                                status: 'OPEN',
+                                assignedAgents: selectedAgentId ? {
+                                    connect: { id: selectedAgentId },
+                                } : undefined,
+                            },
+                        });
+                    }
                 }
 
                 // Save Message
@@ -161,6 +184,27 @@ export async function POST(req: NextRequest) {
                         providerMessageId: messageId,
                     }
                 });
+
+                // Pipeline: Chatbot → AI Agent → Analysis
+                (async () => {
+                    try {
+                        const chatbotResult = await handleChatbotResponse(conversation.id, text);
+                        if (chatbotResult.handled) {
+                            if (chatbotResult.transferToAi) {
+                                // Fall through to AI agent
+                            } else {
+                                return;
+                            }
+                        }
+
+                        const aiResult = await handleAiAgentResponse(conversation.id, text);
+                        if (aiResult.handled) return;
+
+                        await analyzeConversation(conversation.id);
+                    } catch (err) {
+                        console.error('[Pipeline] Instagram processing error:', err);
+                    }
+                })();
             }
         }
 

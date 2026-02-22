@@ -20,10 +20,10 @@ interface DashboardHeaderProps {
     title: string;
     lang: string;
     role: 'super-admin' | 'company' | 'agent';
-    tags: TagData[];
+    tags?: TagData[];
 }
 
-export function DashboardHeader({ title, lang, role, tags }: DashboardHeaderProps) {
+export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeaderProps) {
     const [open, setOpen] = useState(false);
 
     return (

@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { Role, ChannelType } from '@prisma/client';
+import { analyzeConversation } from '@/jobs/ai';
 
 export async function toggleConversationTag(conversationId: string, tagId: string) {
     const session = await auth();
@@ -139,6 +140,11 @@ export async function sendMessage(conversationId: string, content: string) {
             data: { lastMessageAt: new Date(), updatedAt: new Date() }
         });
 
+        // Fire-and-forget AI analysis
+        analyzeConversation(conversationId).catch((err) =>
+            console.error('[AI] sendMessage analysis error:', err)
+        );
+
         revalidatePath('/[lang]/company/conversations', 'page');
         revalidatePath('/[lang]/agent', 'page');
         return { success: true };
@@ -146,6 +152,27 @@ export async function sendMessage(conversationId: string, content: string) {
         console.error("Error sending message:", error);
         return { success: false, message: "Failed to send message" };
     }
+}
+
+export async function reanalyzeConversation(conversationId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    // Verify ownership
+    const conversation = await prisma.conversation.findUnique({
+        where: { id: conversationId, companyId: session.user.companyId },
+    });
+
+    if (!conversation) {
+        return { success: false, message: "Conversation not found" };
+    }
+
+    const result = await analyzeConversation(conversationId);
+
+    revalidatePath('/[lang]/company/conversations', 'page');
+    return { success: !!result };
 }
 
 export async function deleteConversation(conversationId: string) {

@@ -122,6 +122,36 @@ export async function getAnalyticsData() {
     // --- 5. Teams ---
     const teamsData: any[] = []; // Empty for now
 
+    // --- 6. AI Insights Metrics ---
+    const insights = await prisma.conversationInsight.findMany({
+        where: { companyId },
+    });
+
+    let avgTone = 0;
+    let avgClarity = 0;
+    let positiveCount = 0;
+    let neutralCount = 0;
+    let negativeCount = 0;
+
+    if (insights.length > 0) {
+        let toneSum = 0;
+        let claritySum = 0;
+        let toneCount = 0;
+        let clarityCount = 0;
+
+        for (const ins of insights) {
+            if (ins.toneScore != null) { toneSum += ins.toneScore; toneCount++; }
+            if (ins.clarityScore != null) { claritySum += ins.clarityScore; clarityCount++; }
+            const flags = ins.flagsJson as { sentiment?: string } | null;
+            if (flags?.sentiment === 'positive') positiveCount++;
+            else if (flags?.sentiment === 'negative') negativeCount++;
+            else neutralCount++;
+        }
+
+        avgTone = toneCount > 0 ? Math.round(toneSum / toneCount) : 0;
+        avgClarity = clarityCount > 0 ? Math.round(claritySum / clarityCount) : 0;
+    }
+
     return {
         summary: {
             open: openCount,
@@ -136,6 +166,14 @@ export async function getAnalyticsData() {
         },
         heatmap,
         conversationsByAgent,
-        teamsData
+        teamsData,
+        aiMetrics: {
+            totalInsights: insights.length,
+            avgTone,
+            avgClarity,
+            positive: positiveCount,
+            neutral: neutralCount,
+            negative: negativeCount,
+        }
     };
 }

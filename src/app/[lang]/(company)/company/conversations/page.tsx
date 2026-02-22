@@ -128,7 +128,11 @@ export default async function ConversationsPage({
                         },
                         assignedAgents: true,
                         tags: true,
-                        channel: true
+                        channel: true,
+                        insights: {
+                            orderBy: { createdAt: 'desc' },
+                            take: 1,
+                        },
                     }
                 });
                 if (selectedConversation) {
@@ -249,11 +253,11 @@ export default async function ConversationsPage({
                                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-green-200 text-green-600 bg-green-50 font-normal flex items-center gap-1">
                                                     <Phone className="h-3 w-3" /> WhatsApp
                                                 </Badge>
-                                            ) : (
+                                            ) : conv.channel?.type ? (
                                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-gray-200 text-gray-500 font-normal">
-                                                    {conv.channelId}
+                                                    {conv.channel.type}
                                                 </Badge>
-                                            )}
+                                            ) : null}
                                             {conv.assignedAgents && conv.assignedAgents.length > 0 && (
                                                 <div className="flex -space-x-2">
                                                     {conv.assignedAgents.slice(0, 3).map(agent => (
@@ -300,9 +304,9 @@ export default async function ConversationsPage({
                                             <Badge variant="outline" className="text-[10px] h-4 px-1 border-green-200 text-green-600 bg-green-50 flex items-center gap-1">
                                                 <Phone className="h-3 w-3" /> WhatsApp
                                             </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-[10px] h-4 px-1">{selectedConversation.channelId}</Badge>
-                                        )}
+                                        ) : selectedConversation.channel?.type ? (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1">{selectedConversation.channel.type}</Badge>
+                                        ) : null}
                                         <p className="text-xs text-muted-foreground">{selectedConversation.contact?.phone}</p>
                                     </div>
                                 </div>
@@ -478,8 +482,9 @@ export default async function ConversationsPage({
                         conversation={selectedConversation}
                         companyTags={companyTags}
                         companyAgents={companyAgents}
-                        className="hidden xl:flex w-[350px] shrink-0 border-l"
+                        className="hidden lg:flex w-[320px] xl:w-[350px] shrink-0 border-l"
                         isAgent={isAgent}
+                        insight={(selectedConversation as any).insights?.[0] || null}
                     />
                 )
             }

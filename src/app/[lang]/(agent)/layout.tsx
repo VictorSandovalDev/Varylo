@@ -14,7 +14,7 @@ export default async function AgentLayout({
         <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
             <Sidebar role="agent" lang={lang} />
             <div className="flex flex-col">
-                <DashboardHeader title="Agent Inbox" />
+                <DashboardHeader title="Agent Inbox" lang={lang} role="agent" />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
                     {children}
                 </main>

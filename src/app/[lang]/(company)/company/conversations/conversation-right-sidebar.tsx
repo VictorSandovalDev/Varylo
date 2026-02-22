@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Pin, Trash2, StickyNote, Mail, Phone, MapPin, Globe, User, Building } from "lucide-react";
+import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert } from "lucide-react";
 import { AgentSelector } from "./agent-selector";
 import { TagSelector } from "./tag-selector";
 import { cn } from "@/lib/utils";
@@ -28,16 +28,30 @@ interface ConversationRightSidebarProps {
     companyAgents: any[];
     className?: string;
     isAgent?: boolean;
+    insight?: any;
 }
 
 import { useRouter, useParams } from "next/navigation";
-import { deleteConversation, updatePriority } from "./actions";
+import { deleteConversation, updatePriority, reanalyzeConversation } from "./actions";
 
-export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className, isAgent }: ConversationRightSidebarProps) {
+export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className, isAgent, insight }: ConversationRightSidebarProps) {
     const contact = conversation.contact || {};
     const router = useRouter();
     const params = useParams();
     const lang = params.lang as string;
+    const [analyzing, setAnalyzing] = React.useState(false);
+
+    const handleReanalyze = async () => {
+        setAnalyzing(true);
+        try {
+            await reanalyzeConversation(conversation.id);
+            router.refresh();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAnalyzing(false);
+        }
+    };
 
     const handleDelete = async () => {
         try {
@@ -238,15 +252,155 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                     <span className="text-muted-foreground">Creado:</span>
                                     <span>{new Date(conversation.createdAt).toLocaleDateString()}</span>
                                     <span className="text-muted-foreground">Canal:</span>
-                                    <span>{conversation.channelId}</span>
+                                    <span>{conversation.channel?.type || 'Desconocido'}</span>
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
                 </TabsContent>
 
-                <TabsContent value="copilot" className="p-4 text-center text-muted-foreground text-sm">
-                    Próximamente el asistente de IA que te ayudará a responder
+                <TabsContent value="copilot" className="flex-1 overflow-y-auto p-0 m-0 min-h-0">
+                    <div className="p-4 space-y-4">
+                        {/* Header */}
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-purple-500" />
+                                <h3 className="font-semibold text-sm text-gray-900">Análisis IA</h3>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleReanalyze}
+                                disabled={analyzing}
+                                className="h-7 text-xs gap-1.5"
+                            >
+                                {analyzing ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    <RefreshCw className="h-3 w-3" />
+                                )}
+                                {analyzing ? 'Analizando...' : 'Re-analizar'}
+                            </Button>
+                        </div>
+
+                        {insight ? (() => {
+                            const flags = insight.flagsJson as { sentiment?: string; topics?: string[]; urgency?: string } | null;
+                            const sentiment = flags?.sentiment || 'neutral';
+                            const topics = flags?.topics || [];
+                            const urgency = flags?.urgency || 'medium';
+
+                            const sentimentConfig: Record<string, { label: string; color: string }> = {
+                                positive: { label: 'Positivo', color: 'bg-green-100 text-green-700 border-green-200' },
+                                neutral: { label: 'Neutral', color: 'bg-gray-100 text-gray-700 border-gray-200' },
+                                negative: { label: 'Negativo', color: 'bg-red-100 text-red-700 border-red-200' },
+                            };
+
+                            const urgencyConfig: Record<string, { label: string; color: string }> = {
+                                low: { label: 'Baja', color: 'bg-green-100 text-green-700 border-green-200' },
+                                medium: { label: 'Media', color: 'bg-yellow-100 text-yellow-700 border-yellow-200' },
+                                high: { label: 'Alta', color: 'bg-red-100 text-red-700 border-red-200' },
+                            };
+
+                            const getScoreColor = (score: number) => {
+                                if (score >= 70) return 'bg-green-500';
+                                if (score >= 40) return 'bg-yellow-500';
+                                return 'bg-red-500';
+                            };
+
+                            return (
+                                <div className="space-y-4">
+                                    {/* Summary */}
+                                    <div className="bg-white rounded-lg border p-3 space-y-1">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumen</label>
+                                        <p className="text-sm text-gray-700 leading-relaxed">{insight.summary}</p>
+                                    </div>
+
+                                    {/* Scores */}
+                                    <div className="bg-white rounded-lg border p-3 space-y-3">
+                                        <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Puntuaciones</label>
+                                        <div className="space-y-2">
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-gray-600">Tono</span>
+                                                    <span className="font-medium">{insight.toneScore}/100</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={cn("h-full rounded-full transition-all", getScoreColor(insight.toneScore))}
+                                                        style={{ width: `${insight.toneScore}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between text-xs mb-1">
+                                                    <span className="text-gray-600">Claridad</span>
+                                                    <span className="font-medium">{insight.clarityScore}/100</span>
+                                                </div>
+                                                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div
+                                                        className={cn("h-full rounded-full transition-all", getScoreColor(insight.clarityScore))}
+                                                        style={{ width: `${insight.clarityScore}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Sentiment & Urgency */}
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 bg-white rounded-lg border p-3 space-y-1.5">
+                                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sentimiento</label>
+                                            <div>
+                                                <Badge variant="outline" className={cn("text-xs font-normal", sentimentConfig[sentiment]?.color)}>
+                                                    {sentimentConfig[sentiment]?.label || sentiment}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <div className="flex-1 bg-white rounded-lg border p-3 space-y-1.5">
+                                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Urgencia</label>
+                                            <div>
+                                                <Badge variant="outline" className={cn("text-xs font-normal", urgencyConfig[urgency]?.color)}>
+                                                    {urgency === 'high' && <TriangleAlert className="h-3 w-3 mr-1" />}
+                                                    {urgencyConfig[urgency]?.label || urgency}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Topics */}
+                                    {topics.length > 0 && (
+                                        <div className="bg-white rounded-lg border p-3 space-y-2">
+                                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Temas</label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {topics.map((topic: string, i: number) => (
+                                                    <Badge key={i} variant="secondary" className="text-xs font-normal bg-purple-50 text-purple-700 border border-purple-200">
+                                                        {topic}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Timestamp */}
+                                    <p className="text-[10px] text-muted-foreground text-center">
+                                        Analizado: {new Date(insight.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
+                            );
+                        })() : (
+                            <div className="flex flex-col items-center justify-center py-8 space-y-3 text-center">
+                                <div className="bg-purple-50 p-3 rounded-full">
+                                    <Sparkles className="h-6 w-6 text-purple-400" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-700">Sin análisis disponible</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Haz clic en &quot;Re-analizar&quot; para generar un análisis con IA
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>

@@ -4,6 +4,8 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, ChannelStatus } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { encrypt } from '@/lib/encryption';
+import OpenAI from 'openai';
 
 export async function saveWhatsAppCredentials(prevState: string | undefined, formData: FormData) {
     const session = await auth();
@@ -285,5 +287,70 @@ export async function disconnectInstagram() {
     } catch (error) {
         console.error('Disconnect failed:', error);
         return { success: false, message: 'Failed to disconnect.' };
+    }
+}
+
+// OPENAI API KEY ACTIONS
+
+export async function saveOpenAIKey(prevState: string | undefined, formData: FormData) {
+    const session = await auth();
+
+    if (!session?.user?.companyId) {
+        return 'Error: No authorized session found.';
+    }
+
+    const apiKey = formData.get('openaiApiKey') as string;
+
+    if (!apiKey || !apiKey.startsWith('sk-')) {
+        return 'Error: La API Key debe comenzar con "sk-".';
+    }
+
+    try {
+        // Validate the key by calling models.list()
+        const testClient = new OpenAI({ apiKey });
+        await testClient.models.list();
+    } catch {
+        return 'Error: La API Key no es válida. Verifica que sea correcta.';
+    }
+
+    try {
+        const encryptedKey = encrypt(apiKey);
+
+        await prisma.company.update({
+            where: { id: session.user.companyId },
+            data: {
+                openaiApiKey: encryptedKey,
+                openaiApiKeyUpdatedAt: new Date(),
+            },
+        });
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return 'Success: API Key guardada correctamente.';
+    } catch (error) {
+        console.error('Failed to save OpenAI key:', error);
+        return 'Error: No se pudo guardar la API Key.';
+    }
+}
+
+export async function removeOpenAIKey() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        await prisma.company.update({
+            where: { id: session.user.companyId },
+            data: {
+                openaiApiKey: null,
+                openaiApiKeyUpdatedAt: null,
+            },
+        });
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, message: 'API Key eliminada.' };
+    } catch (error) {
+        console.error('Failed to remove OpenAI key:', error);
+        return { success: false, message: 'Failed to remove key.' };
     }
 }

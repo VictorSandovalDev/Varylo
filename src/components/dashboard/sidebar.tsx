@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Tag } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Tag, Bot, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
@@ -89,7 +89,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
     }
 
     return (
-        <div className={clsx("border-r bg-muted/40 dark:bg-zinc-900 w-[240px] max-w-[280px] flex flex-col gap-2 h-full max-h-screen", className)}>
+        <div className={clsx("border-r bg-muted/40 dark:bg-zinc-900 w-[240px] flex flex-col gap-2 h-full max-h-screen", className)}>
             <div className="flex h-14 items-center border-b px-6 lg:h-[60px] shrink-0">
                 <Link href={`/${lang}`} className="flex items-center gap-2 font-semibold" onClick={onLinkClick}>
                     <span className="">VARYLO</span>
@@ -204,6 +204,8 @@ export const companyAdminItems: NavItem[] = [
         ]
     },
     { title: 'Agentes', href: '/company/agents', icon: Users },
+    { title: 'Agentes IA', href: '/company/ai-agents', icon: Bot },
+    { title: 'Chatbots', href: '/company/chatbots', icon: Workflow },
     {
         title: 'Configuración',
         href: '/company/settings',
