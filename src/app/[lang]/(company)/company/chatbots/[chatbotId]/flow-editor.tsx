@@ -7,14 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckCircle2, MessageCircle, ArrowRight, GripVertical, User, Bot, XCircle, Pencil } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckCircle2, MessageCircle, User, Bot, XCircle, Pencil } from "lucide-react";
 import { updateChatbotFlow } from './actions';
 import Link from 'next/link';
 import type { ChatbotFlow, ChatbotFlowNode, ChatbotFlowOption } from '@/types/chatbot';
@@ -271,9 +264,10 @@ export function FlowEditor({
                                     {/* Action selector */}
                                     <div className="space-y-1.5">
                                         <Label className="text-xs text-muted-foreground">Qué hace este paso?</Label>
-                                        <Select
+                                        <select
                                             value={node.action?.type || 'show_options'}
-                                            onValueChange={(value) => {
+                                            onChange={(e) => {
+                                                const value = e.target.value;
                                                 if (value === 'show_options') {
                                                     updateNode(nodeId, { action: undefined });
                                                 } else {
@@ -283,25 +277,13 @@ export function FlowEditor({
                                                     });
                                                 }
                                             }}
+                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                         >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="show_options">
-                                                    <span className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" /> Mostrar opciones al cliente</span>
-                                                </SelectItem>
-                                                <SelectItem value="transfer_to_human">
-                                                    <span className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Transferir a agente humano</span>
-                                                </SelectItem>
-                                                <SelectItem value="transfer_to_ai_agent">
-                                                    <span className="flex items-center gap-2"><Bot className="h-3.5 w-3.5" /> Transferir a agente IA</span>
-                                                </SelectItem>
-                                                <SelectItem value="end_conversation">
-                                                    <span className="flex items-center gap-2"><XCircle className="h-3.5 w-3.5" /> Finalizar conversación</span>
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            <option value="show_options">Mostrar opciones al cliente</option>
+                                            <option value="transfer_to_human">Transferir a agente humano</option>
+                                            <option value="transfer_to_ai_agent">Transferir a agente IA</option>
+                                            <option value="end_conversation">Finalizar conversación</option>
+                                        </select>
                                     </div>
 
                                     {/* Options (only if no terminal action) */}
@@ -328,27 +310,17 @@ export function FlowEditor({
                                                             placeholder="Texto de la opción"
                                                             className="h-8 text-sm"
                                                         />
-                                                        <Select
+                                                        <select
                                                             value={option.nextNodeId}
-                                                            onValueChange={(value) => updateOption(nodeId, optIndex, { nextNodeId: value })}
+                                                            onChange={(e) => updateOption(nodeId, optIndex, { nextNodeId: e.target.value })}
+                                                            className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                                         >
-                                                            <SelectTrigger className="h-8 text-sm">
-                                                                <div className="flex items-center gap-1.5 truncate">
-                                                                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
-                                                                    <span className="truncate">{getNodeLabel(option.nextNodeId)}</span>
-                                                                </div>
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {nodeIds.filter(id => id !== nodeId).map(id => (
-                                                                    <SelectItem key={id} value={id}>
-                                                                        <span className="flex items-center gap-2">
-                                                                            {getActionIcon(flow.nodes[id]?.action?.type)}
-                                                                            {getNodeLabel(id)}
-                                                                        </span>
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
+                                                            {nodeIds.filter(id => id !== nodeId).map(id => (
+                                                                <option key={id} value={id}>
+                                                                    &#8594; {getNodeLabel(id)}
+                                                                </option>
+                                                            ))}
+                                                        </select>
                                                     </div>
                                                     <Button
                                                         variant="ghost"
