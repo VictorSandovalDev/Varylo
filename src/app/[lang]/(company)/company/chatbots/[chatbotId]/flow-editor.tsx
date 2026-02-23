@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     Select,
     SelectContent,
@@ -13,10 +14,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Save, ArrowLeft, AlertCircle, CheckCircle2, MessageCircle, ArrowRight, GripVertical, User, Bot, XCircle, Pencil } from "lucide-react";
 import { updateChatbotFlow } from './actions';
 import Link from 'next/link';
 import type { ChatbotFlow, ChatbotFlowNode, ChatbotFlowOption } from '@/types/chatbot';
+
+function generateId() {
+    return `paso_${Math.random().toString(36).substring(2, 8)}`;
+}
 
 export function FlowEditor({
     chatbotId,
@@ -30,11 +35,31 @@ export function FlowEditor({
     const [flow, setFlow] = useState<ChatbotFlow>(initialFlow);
     const [isPending, startTransition] = useTransition();
     const [saveResult, setSaveResult] = useState<string | null>(null);
+    const [editingName, setEditingName] = useState<string | null>(null);
+    const [nodeNames, setNodeNames] = useState<Record<string, string>>(() => {
+        const names: Record<string, string> = {};
+        Object.keys(initialFlow.nodes).forEach((id, i) => {
+            if (id === initialFlow.startNodeId) {
+                names[id] = 'Bienvenida';
+            } else {
+                const node = initialFlow.nodes[id];
+                if (node.action?.type === 'transfer_to_human') names[id] = 'Transferir a agente';
+                else if (node.action?.type === 'transfer_to_ai_agent') names[id] = 'Transferir a IA';
+                else if (node.action?.type === 'end_conversation') names[id] = 'Fin conversación';
+                else names[id] = node.message?.substring(0, 30) || `Paso ${i + 1}`;
+            }
+        });
+        return names;
+    });
 
     const nodeIds = Object.keys(flow.nodes);
 
+    const getNodeLabel = (nodeId: string) => {
+        return nodeNames[nodeId] || nodeId;
+    };
+
     const addNode = () => {
-        const id = `node_${Date.now()}`;
+        const id = generateId();
         const newNode: ChatbotFlowNode = {
             id,
             message: '',
@@ -44,17 +69,28 @@ export function FlowEditor({
             ...prev,
             nodes: { ...prev.nodes, [id]: newNode },
         }));
+        setNodeNames(prev => ({ ...prev, [id]: `Paso ${nodeIds.length + 1}` }));
     };
 
     const removeNode = (nodeId: string) => {
-        if (nodeId === flow.startNodeId) {
-            alert('No puedes eliminar el nodo inicial.');
-            return;
-        }
+        if (nodeId === flow.startNodeId) return;
         setFlow(prev => {
             const newNodes = { ...prev.nodes };
             delete newNodes[nodeId];
+            // Clean up references to deleted node
+            Object.values(newNodes).forEach(node => {
+                if (node.options) {
+                    node.options = node.options.map(opt =>
+                        opt.nextNodeId === nodeId ? { ...opt, nextNodeId: prev.startNodeId } : opt
+                    );
+                }
+            });
             return { ...prev, nodes: newNodes };
+        });
+        setNodeNames(prev => {
+            const newNames = { ...prev };
+            delete newNames[nodeId];
+            return newNames;
         });
     };
 
@@ -70,9 +106,10 @@ export function FlowEditor({
 
     const addOption = (nodeId: string) => {
         const node = flow.nodes[nodeId];
+        const optionNumber = (node.options?.length || 0) + 1;
         const newOption: ChatbotFlowOption = {
-            label: '',
-            match: [],
+            label: `Opción ${optionNumber}`,
+            match: [String(optionNumber)],
             nextNodeId: flow.startNodeId,
         };
         updateNode(nodeId, {
@@ -101,12 +138,30 @@ export function FlowEditor({
         });
     };
 
+    const getActionIcon = (type?: string) => {
+        switch (type) {
+            case 'transfer_to_human': return <User className="h-4 w-4" />;
+            case 'transfer_to_ai_agent': return <Bot className="h-4 w-4" />;
+            case 'end_conversation': return <XCircle className="h-4 w-4" />;
+            default: return <MessageCircle className="h-4 w-4" />;
+        }
+    };
+
+    const getActionLabel = (type?: string) => {
+        switch (type) {
+            case 'transfer_to_human': return 'Transfiere a un agente humano';
+            case 'transfer_to_ai_agent': return 'Transfiere al agente IA';
+            case 'end_conversation': return 'Finaliza la conversación';
+            default: return null;
+        }
+    };
+
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            {/* Sticky top bar */}
-            <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 -mt-3 border-b mb-2">
+        <div className="max-w-3xl mx-auto space-y-6">
+            {/* Top bar */}
+            <div className="flex items-center justify-between sticky top-0 z-10 bg-background py-3 border-b">
                 <Link href={backHref}>
-                    <Button variant="outline" size="sm">
+                    <Button variant="ghost" size="sm">
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Volver
                     </Button>
@@ -115,162 +170,241 @@ export function FlowEditor({
                     {saveResult && (
                         <div className={`flex items-center gap-1.5 text-sm ${saveResult.startsWith('Error') ? 'text-destructive' : 'text-green-600'}`}>
                             {saveResult.startsWith('Error') ? <AlertCircle className="h-4 w-4 shrink-0" /> : <CheckCircle2 className="h-4 w-4 shrink-0" />}
-                            <span className="hidden sm:inline">{saveResult}</span>
+                            <span className="hidden sm:inline">{saveResult.replace('Success: ', '').replace('Error: ', '')}</span>
                         </div>
                     )}
-                    <Button onClick={handleSave} disabled={isPending}>
+                    <Button onClick={handleSave} disabled={isPending} size="sm">
                         <Save className="mr-2 h-4 w-4" />
-                        {isPending ? 'Guardando...' : 'Guardar Flujo'}
+                        {isPending ? 'Guardando...' : 'Guardar'}
                     </Button>
                 </div>
             </div>
 
-            {/* Start node selector */}
-            <div className="space-y-2">
-                <Label>Nodo Inicial</Label>
-                <Select
-                    value={flow.startNodeId}
-                    onValueChange={(value) => setFlow(prev => ({ ...prev, startNodeId: value }))}
-                >
-                    <SelectTrigger className="w-full sm:w-64">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {nodeIds.map(id => (
-                            <SelectItem key={id} value={id}>{id}</SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+            {/* Help text */}
+            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-200">
+                <p className="font-medium mb-1">Cómo funciona el editor de flujos</p>
+                <p className="text-blue-600 dark:text-blue-300">
+                    Cada <strong>paso</strong> es un mensaje que el chatbot envía. Puedes agregar <strong>opciones</strong> para que el cliente elija qué hacer.
+                    Cada opción lleva a otro paso. También puedes hacer que un paso <strong>transfiera</strong> a un agente humano o a la IA.
+                </p>
             </div>
 
-            {/* Node cards */}
-            <div className="grid gap-4">
-                {nodeIds.map(nodeId => {
+            {/* Visual flow */}
+            <div className="space-y-3">
+                {nodeIds.map((nodeId, nodeIndex) => {
                     const node = flow.nodes[nodeId];
                     const isStart = nodeId === flow.startNodeId;
+                    const hasAction = !!node.action;
+
                     return (
-                        <Card key={nodeId} className={isStart ? 'border-primary shadow-sm' : ''}>
-                            <CardHeader className="flex flex-row items-center justify-between pb-3">
-                                <CardTitle className="text-base flex items-center gap-2 min-w-0">
-                                    {isStart && (
-                                        <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded shrink-0">INICIO</span>
-                                    )}
-                                    <span className="font-mono text-sm text-muted-foreground truncate">{nodeId}</span>
-                                </CardTitle>
-                                {!isStart && (
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => removeNode(nodeId)}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                )}
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Mensaje</Label>
-                                    <Textarea
-                                        value={node.message}
-                                        onChange={(e) => updateNode(nodeId, { message: e.target.value })}
-                                        rows={3}
-                                        placeholder="Mensaje que se enviará al usuario..."
-                                    />
+                        <div key={nodeId}>
+                            {/* Connector arrow */}
+                            {nodeIndex > 0 && (
+                                <div className="flex justify-center py-1">
+                                    <div className="w-px h-6 bg-border" />
                                 </div>
+                            )}
 
-                                <div className="space-y-2">
-                                    <Label>Acción</Label>
-                                    <Select
-                                        value={node.action?.type || 'none'}
-                                        onValueChange={(value) => {
-                                            if (value === 'none') {
-                                                updateNode(nodeId, { action: undefined });
-                                            } else {
-                                                updateNode(nodeId, {
-                                                    action: { type: value as 'transfer_to_human' | 'transfer_to_ai_agent' | 'end_conversation' },
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger className="w-full sm:w-72">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">Sin acción (continúa flujo)</SelectItem>
-                                            <SelectItem value="transfer_to_human">Transferir a humano</SelectItem>
-                                            <SelectItem value="transfer_to_ai_agent">Transferir a Agente IA</SelectItem>
-                                            <SelectItem value="end_conversation">Finalizar conversación</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {!node.action && (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <Label>Opciones</Label>
-                                            <Button variant="outline" size="sm" onClick={() => addOption(nodeId)}>
-                                                <Plus className="mr-1 h-3 w-3" />
-                                                Agregar
-                                            </Button>
+                            <Card className={`relative ${isStart ? 'border-primary ring-1 ring-primary/20' : ''} ${hasAction ? 'border-orange-300 dark:border-orange-700' : ''}`}>
+                                {/* Node header */}
+                                <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${isStart ? 'bg-primary text-primary-foreground' : hasAction ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-300' : 'bg-muted text-muted-foreground'}`}>
+                                            {getActionIcon(node.action?.type)}
                                         </div>
-                                        {(node.options || []).map((option, optIndex) => (
-                                            <div key={optIndex} className="space-y-3 bg-muted/50 p-3 rounded-md border">
-                                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                                    <div className="space-y-1">
-                                                        <Label className="text-xs">Etiqueta</Label>
-                                                        <Input
-                                                            value={option.label}
-                                                            onChange={(e) => updateOption(nodeId, optIndex, { label: e.target.value })}
-                                                            placeholder="Ej. Información"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-xs">Keywords (coma)</Label>
-                                                        <Input
-                                                            value={option.match.join(', ')}
-                                                            onChange={(e) => updateOption(nodeId, optIndex, {
-                                                                match: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-                                                            })}
-                                                            placeholder="1, info"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <Label className="text-xs">Nodo destino</Label>
-                                                        <div className="flex gap-1">
-                                                            <Select
-                                                                value={option.nextNodeId}
-                                                                onValueChange={(value) => updateOption(nodeId, optIndex, { nextNodeId: value })}
-                                                            >
-                                                                <SelectTrigger className="flex-1">
-                                                                    <SelectValue />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {nodeIds.map(id => (
-                                                                        <SelectItem key={id} value={id}>{id}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive shrink-0" onClick={() => removeOption(nodeId, optIndex)}>
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                        <div className="min-w-0">
+                                            {editingName === nodeId ? (
+                                                <Input
+                                                    autoFocus
+                                                    className="h-7 text-sm font-semibold w-48"
+                                                    value={nodeNames[nodeId] || ''}
+                                                    onChange={(e) => setNodeNames(prev => ({ ...prev, [nodeId]: e.target.value }))}
+                                                    onBlur={() => setEditingName(null)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && setEditingName(null)}
+                                                />
+                                            ) : (
+                                                <button
+                                                    onClick={() => setEditingName(nodeId)}
+                                                    className="flex items-center gap-1.5 group text-left"
+                                                >
+                                                    <span className="font-semibold text-sm truncate">{getNodeLabel(nodeId)}</span>
+                                                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                </button>
+                                            )}
+                                            <div className="flex items-center gap-1.5">
+                                                {isStart && <Badge variant="default" className="text-[10px] h-4 px-1.5">INICIO</Badge>}
+                                                {hasAction && <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-orange-300 text-orange-600">{getActionLabel(node.action?.type)}</Badge>}
                                             </div>
-                                        ))}
-                                        {(node.options || []).length === 0 && (
-                                            <p className="text-sm text-muted-foreground text-center py-2">
-                                                Sin opciones. Agrega una para que el usuario pueda responder.
-                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {!isStart && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                                onClick={() => removeNode(nodeId)}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
                                         )}
                                     </div>
-                                )}
-                            </CardContent>
-                        </Card>
+                                </div>
+
+                                <CardContent className="space-y-4 pt-2">
+                                    {/* Message */}
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">Mensaje del chatbot</Label>
+                                        <Textarea
+                                            value={node.message}
+                                            onChange={(e) => updateNode(nodeId, { message: e.target.value })}
+                                            rows={2}
+                                            placeholder="Escribe el mensaje que verá el cliente..."
+                                            className="resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Action selector */}
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground">Qué hace este paso?</Label>
+                                        <Select
+                                            value={node.action?.type || 'show_options'}
+                                            onValueChange={(value) => {
+                                                if (value === 'show_options') {
+                                                    updateNode(nodeId, { action: undefined });
+                                                } else {
+                                                    updateNode(nodeId, {
+                                                        action: { type: value as 'transfer_to_human' | 'transfer_to_ai_agent' | 'end_conversation' },
+                                                        options: [],
+                                                    });
+                                                }
+                                            }}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="show_options">
+                                                    <span className="flex items-center gap-2"><MessageCircle className="h-3.5 w-3.5" /> Mostrar opciones al cliente</span>
+                                                </SelectItem>
+                                                <SelectItem value="transfer_to_human">
+                                                    <span className="flex items-center gap-2"><User className="h-3.5 w-3.5" /> Transferir a agente humano</span>
+                                                </SelectItem>
+                                                <SelectItem value="transfer_to_ai_agent">
+                                                    <span className="flex items-center gap-2"><Bot className="h-3.5 w-3.5" /> Transferir a agente IA</span>
+                                                </SelectItem>
+                                                <SelectItem value="end_conversation">
+                                                    <span className="flex items-center gap-2"><XCircle className="h-3.5 w-3.5" /> Finalizar conversación</span>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    {/* Options (only if no terminal action) */}
+                                    {!node.action && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs text-muted-foreground">Opciones para el cliente</Label>
+                                            </div>
+
+                                            {(node.options || []).map((option, optIndex) => (
+                                                <div key={optIndex} className="flex items-center gap-2 bg-muted/40 rounded-lg p-2.5 group">
+                                                    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                                                        {optIndex + 1}
+                                                    </div>
+                                                    <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-[1fr_1fr] gap-2">
+                                                        <Input
+                                                            value={option.label}
+                                                            onChange={(e) => {
+                                                                updateOption(nodeId, optIndex, {
+                                                                    label: e.target.value,
+                                                                    match: [String(optIndex + 1), ...e.target.value.toLowerCase().split(' ').filter(w => w.length > 2)],
+                                                                });
+                                                            }}
+                                                            placeholder="Texto de la opción"
+                                                            className="h-8 text-sm"
+                                                        />
+                                                        <Select
+                                                            value={option.nextNodeId}
+                                                            onValueChange={(value) => updateOption(nodeId, optIndex, { nextNodeId: value })}
+                                                        >
+                                                            <SelectTrigger className="h-8 text-sm">
+                                                                <div className="flex items-center gap-1.5 truncate">
+                                                                    <ArrowRight className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                                                    <span className="truncate">{getNodeLabel(option.nextNodeId)}</span>
+                                                                </div>
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {nodeIds.filter(id => id !== nodeId).map(id => (
+                                                                    <SelectItem key={id} value={id}>
+                                                                        <span className="flex items-center gap-2">
+                                                                            {getActionIcon(flow.nodes[id]?.action?.type)}
+                                                                            {getNodeLabel(id)}
+                                                                        </span>
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                                        onClick={() => removeOption(nodeId, optIndex)}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            ))}
+
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => addOption(nodeId)}
+                                                className="w-full text-muted-foreground hover:text-foreground border border-dashed h-9"
+                                            >
+                                                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                                                Agregar opción
+                                            </Button>
+                                        </div>
+                                    )}
+
+                                    {/* Preview of what user sees */}
+                                    {node.message && !node.action && (node.options?.length || 0) > 0 && (
+                                        <div className="border rounded-lg p-3 bg-muted/20">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-2">Vista previa del cliente</p>
+                                            <div className="bg-background rounded-lg p-3 shadow-sm border text-sm space-y-2">
+                                                <p>{node.message}</p>
+                                                <div className="border-t pt-2 space-y-1">
+                                                    {(node.options || []).map((opt, i) => (
+                                                        <p key={i} className="text-muted-foreground">
+                                                            <span className="font-medium text-foreground">{i + 1}.</span> {opt.label}
+                                                        </p>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     );
                 })}
             </div>
 
-            <Button variant="outline" onClick={addNode} className="w-full border-dashed">
+            {/* Add step button */}
+            <Button variant="outline" onClick={addNode} className="w-full border-dashed h-12 text-muted-foreground hover:text-foreground">
                 <Plus className="mr-2 h-4 w-4" />
-                Agregar Nodo
+                Agregar nuevo paso
             </Button>
+
+            {/* Bottom save */}
+            <div className="flex justify-end pb-6">
+                <Button onClick={handleSave} disabled={isPending}>
+                    <Save className="mr-2 h-4 w-4" />
+                    {isPending ? 'Guardando...' : 'Guardar flujo'}
+                </Button>
+            </div>
         </div>
     );
 }
