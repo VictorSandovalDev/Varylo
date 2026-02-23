@@ -52,7 +52,11 @@ export function FlowEditor({
         return names;
     });
 
-    const nodeIds = Object.keys(flow.nodes);
+    // Always show start node first, then the rest in original order
+    const nodeIds = [
+        flow.startNodeId,
+        ...Object.keys(flow.nodes).filter(id => id !== flow.startNodeId),
+    ];
 
     const getNodeLabel = (nodeId: string) => {
         return nodeNames[nodeId] || nodeId;
