@@ -222,10 +222,10 @@ export function FlowEditor({
                                             ) : (
                                                 <button
                                                     onClick={() => setEditingName(nodeId)}
-                                                    className="flex items-center gap-1.5 group text-left"
+                                                    className="flex items-center gap-1.5 text-left hover:bg-muted rounded px-1.5 py-0.5 -ml-1.5 transition-colors"
                                                 >
                                                     <span className="font-semibold text-sm truncate">{getNodeLabel(nodeId)}</span>
-                                                    <Pencil className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                                                    <Pencil className="h-3 w-3 text-muted-foreground shrink-0" />
                                                 </button>
                                             )}
                                             <div className="flex items-center gap-1.5">
