@@ -1,114 +1,202 @@
 {
     "landing": {
         "hero": {
-            "badge": "Varylo SaaS",
-            "title": "Unifica tu atención al cliente en un solo lugar",
-            "description": "Potencia tu equipo de soporte con WhatsApp, métricas avanzadas y análisis de IA. Todo en una plataforma diseñada para escalar.",
-            "ctaPrimary": "Comenzar Gratis",
-            "ctaSecondary": "Cómo funciona"
+            "badge": "La plataforma #1 de atención al cliente",
+            "title": "Deja de perder clientes por responder tarde",
+            "description": "El 79% de los clientes abandonan si no reciben respuesta en menos de 5 minutos. Varylo centraliza WhatsApp, Instagram y más en una sola bandeja con IA que responde por ti 24/7.",
+            "ctaPrimary": "Empieza gratis",
+            "ctaSecondary": "Ver demo",
+            "socialProof": "Empresas que ya confían en Varylo"
+        },
+        "problems": {
+            "title": "Esto te suena familiar?",
+            "subtitle": "Problemas que enfrentan las empresas todos los días",
+            "p1": {
+                "title": "Mensajes sin responder",
+                "description": "Tus clientes escriben por WhatsApp, Instagram y otros canales. Tu equipo no da abasto y los mensajes se pierden entre plataformas."
+            },
+            "p2": {
+                "title": "Cero visibilidad del equipo",
+                "description": "No sabes qué agente respondió qué, cuánto tardaron, ni si la respuesta fue buena. Gestionas a ciegas."
+            },
+            "p3": {
+                "title": "Horarios limitados",
+                "description": "Tu equipo duerme, pero tus clientes no. Cada hora sin respuesta es una venta perdida y un cliente que se va a la competencia."
+            }
+        },
+        "solution": {
+            "title": "La solución: todo en un solo lugar",
+            "subtitle": "Varylo conecta todos tus canales, organiza tu equipo y pone IA a trabajar por ti",
+            "metrics": {
+                "m1": { "value": "3x", "label": "más rápido en respuestas" },
+                "m2": { "value": "24/7", "label": "atención con IA" },
+                "m3": { "value": "100%", "label": "mensajes gestionados" },
+                "m4": { "value": "-40%", "label": "carga de trabajo" }
+            }
         },
         "features": {
-            "title": "Todo lo que necesitas para crecer",
+            "title": "Todo lo que necesitas, nada que te sobre",
+            "subtitle": "Cada función está diseñada para resolver un problema real de tu operación",
             "omnichannel": {
-                "title": "Omnicanalidad Real",
-                "description": "Conecta WhatsApp hoy y escala a Instagram, Messenger y Telegram mañana. Una sola bandeja para todo."
+                "title": "Bandeja unificada",
+                "description": "WhatsApp, Instagram y más canales en una sola pantalla. Sin cambiar de app, sin perder mensajes, sin caos."
+            },
+            "aiAgents": {
+                "title": "Agentes IA que responden por ti",
+                "description": "Configura agentes inteligentes que entienden a tus clientes y responden automáticamente. Cuando se complica, transfieren a tu equipo humano."
+            },
+            "chatbots": {
+                "title": "Chatbots con flujos inteligentes",
+                "description": "Crea menús interactivos que guían al cliente paso a paso. Sin código, sin complicaciones. El cliente elige, el chatbot resuelve."
             },
             "agents": {
-                "title": "Gestión de Agentes",
-                "description": "Asigna conversaciones, mide tiempos de respuesta y controla el desempeño de tu equipo en tiempo real."
+                "title": "Gestión de equipos",
+                "description": "Asigna conversaciones automáticamente, mide tiempos de respuesta y controla el rendimiento de cada agente en tiempo real."
+            },
+            "analytics": {
+                "title": "Analíticas que importan",
+                "description": "Dashboards con métricas de conversaciones, rendimiento de agentes, etiquetas y SLA. Datos para tomar decisiones, no solo números."
             },
             "ai": {
-                "title": "Análisis con IA",
-                "description": "Nuestra IA analiza el tono, la claridad y el sentimiento de cada conversación para mejorar la calidad."
+                "title": "ValerIA: tu asistente de calidad",
+                "description": "Nuestra IA analiza tono, claridad y sentimiento de cada conversación. Detecta problemas antes de que escalen."
             }
         },
         "how": {
-            "title": "Cómo funciona",
-            "subtitle": "En 3 simples pasos",
+            "title": "Funciona en 3 pasos",
+            "subtitle": "De cero a atendiendo clientes en menos de 10 minutos",
             "step1": {
-                "title": "Regístrate",
-                "description": "Crea tu cuenta y selecciona un plan que se adapte a tu empresa."
+                "title": "Crea tu cuenta",
+                "description": "Regístrate, elige un plan y configura tu empresa. Sin tarjeta de crédito."
             },
             "step2": {
-                "title": "Conecta Canales",
-                "description": "Configura WhatsApp API en pocos minutos desde el dashboard."
+                "title": "Conecta tus canales",
+                "description": "Vincula WhatsApp e Instagram en minutos. Activa tus agentes IA y chatbots."
             },
             "step3": {
-                "title": "Empieza a Responder",
-                "description": "Invita a tus agentes y gestiona conversaciones centralizadas."
+                "title": "Empieza a vender más",
+                "description": "Tu equipo responde desde una bandeja unificada mientras la IA se encarga del resto."
+            }
+        },
+        "testimonials": {
+            "title": "Lo que dicen nuestros usuarios",
+            "t1": {
+                "text": "Antes tardábamos horas en responder. Con Varylo respondemos en minutos y nuestros clientes lo notan.",
+                "author": "María González",
+                "role": "CEO, TechStore Colombia"
+            },
+            "t2": {
+                "text": "El agente IA resuelve el 60% de las consultas sin intervención humana. Es como tener un empleado que nunca descansa.",
+                "author": "Carlos Ramírez",
+                "role": "Director de Operaciones, FastDelivery"
+            },
+            "t3": {
+                "text": "Los chatbots nos ahorraron contratar 2 personas más. El ROI fue inmediato.",
+                "author": "Laura Martínez",
+                "role": "Fundadora, BeautyBox"
             }
         },
         "pricing": {
-            "title": "Planes Simples",
+            "title": "Planes que crecen contigo",
+            "subtitle": "Sin contratos largos. Cancela cuando quieras.",
             "starter": {
                 "title": "Starter",
+                "description": "Para emprendedores que quieren profesionalizar su atención",
                 "features": [
                     "1 Canal (WhatsApp)",
                     "Hasta 3 Agentes",
-                    "Métricas Básicas"
+                    "Métricas básicas",
+                    "Chatbots ilimitados",
+                    "Soporte por email"
                 ]
             },
             "pro": {
                 "title": "Pro",
+                "description": "Para equipos que necesitan IA y más control",
                 "features": [
-                    "1 Canal (WhatsApp)",
+                    "2 Canales (WhatsApp + Instagram)",
                     "Hasta 10 Agentes",
-                    "Métricas Avanzadas",
-                    "Análisis IA Básico"
+                    "Agentes IA ilimitados",
+                    "Métricas avanzadas + SLA",
+                    "ValerIA: análisis de calidad",
+                    "Soporte prioritario"
                 ]
             },
             "scale": {
                 "title": "Scale",
+                "description": "Para operaciones grandes que necesitan todo",
                 "features": [
-                    "Base Omnicanal",
-                    "Hasta 30 Agentes",
-                    "IA Avanzada (Futuro)",
-                    "Soporte Prioritario"
+                    "Todos los canales",
+                    "Agentes ilimitados",
+                    "IA avanzada + personalización",
+                    "API y webhooks custom",
+                    "Account manager dedicado",
+                    "SLA garantizado"
                 ]
             },
-            "cta": "Empezar"
+            "cta": "Empezar ahora",
+            "ctaCustom": "Contactar ventas"
         },
         "faq": {
-            "title": "Preguntas Frecuentes",
+            "title": "Preguntas frecuentes",
             "q1": {
-                "question": "¿Necesito una API de WhatsApp Business?",
-                "answer": "Sí, VARYLO se conecta a la API Cloud de Meta. Te guiamos en el proceso de configuración."
+                "question": "Necesito una API de WhatsApp Business?",
+                "answer": "Sí, Varylo se conecta a la API Cloud de Meta. Te guiamos paso a paso en la configuración, toma menos de 10 minutos."
             },
             "q2": {
-                "question": "¿Puedo cambiar de plan después?",
-                "answer": "Sí, puedes mejorar o cancelar tu plan en cualquier momento desde el panel de administración."
+                "question": "Puedo cambiar de plan después?",
+                "answer": "Sí, puedes subir o bajar de plan en cualquier momento desde tu panel. Sin penalizaciones."
             },
             "q3": {
-                "question": "¿La IA lee todos mis mensajes?",
-                "answer": "La IA solo analiza mensajes cuando la funcionalidad está activa para reportes de calidad, respetando la privacidad."
+                "question": "La IA lee todos mis mensajes?",
+                "answer": "Solo cuando activas las funciones de análisis. Tus datos están encriptados y nunca se comparten con terceros."
+            },
+            "q4": {
+                "question": "Qué pasa si el agente IA no sabe responder?",
+                "answer": "Se transfiere automáticamente a un agente humano de tu equipo. El cliente nunca queda sin atención."
+            },
+            "q5": {
+                "question": "Cuánto tarda la integración?",
+                "answer": "Menos de 10 minutos para conectar WhatsApp. Puedes tener tu primer chatbot funcionando en menos de una hora."
             }
         },
+        "cta": {
+            "title": "Deja de perder clientes hoy",
+            "subtitle": "Únete a las empresas que ya multiplicaron sus ventas con Varylo. Empieza gratis, sin tarjeta de crédito.",
+            "button": "Crear cuenta gratis"
+        },
         "contact": {
-            "title": "Contáctanos",
-            "subtitle": "¿Tienes dudas o necesitas un plan personalizado?",
+            "title": "Tienes un caso especial?",
+            "subtitle": "Escríbenos y te ayudamos a encontrar la mejor solución para tu empresa.",
             "form": {
                 "name": "Tu nombre",
                 "email": "tu@email.com",
-                "message": "¿Cómo podemos ayudarte?",
-                "submit": "Enviar Mensaje",
-                "success": "¡Mensaje enviado con éxito! Nos pondremos en contacto pronto."
+                "message": "Cuéntanos sobre tu empresa y qué necesitas",
+                "submit": "Enviar mensaje",
+                "success": "Mensaje enviado! Te responderemos en menos de 24 horas."
             }
         }
     },
     "nav": {
         "home": "Inicio",
-        "features": "Características",
+        "features": "Funciones",
         "pricing": "Precios",
         "login": "Iniciar sesión",
-        "getStarted": "Empezar"
+        "getStarted": "Empezar gratis"
     },
     "footer": {
-        "rights": "Built for VARYLO. Todos los derechos reservados."
+        "rights": "Varylo. Todos los derechos reservados.",
+        "product": "Producto",
+        "company": "Empresa",
+        "legal": "Legal",
+        "privacy": "Privacidad",
+        "terms": "Términos",
+        "about": "Nosotros"
     },
     "auth": {
         "login": {
             "title": "Inicia sesión en Varylo",
-            "subtitle": "¡Bienvenido de nuevo! Por favor ingresa tus datos.",
+            "subtitle": "Bienvenido de nuevo! Por favor ingresa tus datos.",
             "emailLabel": "Email",
             "passwordLabel": "Contraseña",
             "submitButton": "Iniciar sesión",

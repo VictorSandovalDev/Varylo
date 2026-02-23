@@ -1,97 +1,179 @@
 {
     "landing": {
         "hero": {
-            "badge": "Varylo SaaS",
-            "title": "Unify your customer support in one place",
-            "description": "Empower your support team with WhatsApp, advanced metrics, and AI analysis. All in a platform designed to scale.",
-            "ctaPrimary": "Get Started Free",
-            "ctaSecondary": "How it works"
+            "badge": "The #1 customer support platform",
+            "title": "Stop losing customers to slow responses",
+            "description": "79% of customers leave if they don't get a response within 5 minutes. Varylo centralizes WhatsApp, Instagram and more in one inbox with AI that responds for you 24/7.",
+            "ctaPrimary": "Start for free",
+            "ctaSecondary": "See demo",
+            "socialProof": "Companies already trusting Varylo"
+        },
+        "problems": {
+            "title": "Does this sound familiar?",
+            "subtitle": "Problems businesses face every day",
+            "p1": {
+                "title": "Unanswered messages",
+                "description": "Your customers write on WhatsApp, Instagram and other channels. Your team can't keep up and messages get lost between platforms."
+            },
+            "p2": {
+                "title": "Zero team visibility",
+                "description": "You don't know which agent responded what, how long they took, or if the response was good. You're managing blind."
+            },
+            "p3": {
+                "title": "Limited hours",
+                "description": "Your team sleeps, but your customers don't. Every hour without a response is a lost sale and a customer going to the competition."
+            }
+        },
+        "solution": {
+            "title": "The solution: everything in one place",
+            "subtitle": "Varylo connects all your channels, organizes your team and puts AI to work for you",
+            "metrics": {
+                "m1": { "value": "3x", "label": "faster responses" },
+                "m2": { "value": "24/7", "label": "AI-powered support" },
+                "m3": { "value": "100%", "label": "messages managed" },
+                "m4": { "value": "-40%", "label": "workload reduction" }
+            }
         },
         "features": {
-            "title": "Everything you need to grow",
+            "title": "Everything you need, nothing you don't",
+            "subtitle": "Every feature is designed to solve a real problem in your operation",
             "omnichannel": {
-                "title": "Real Omnichannel",
-                "description": "Connect WhatsApp today and scale to Instagram, Messenger, and Telegram tomorrow. One inbox for everything."
+                "title": "Unified inbox",
+                "description": "WhatsApp, Instagram and more channels in one screen. No app switching, no lost messages, no chaos."
+            },
+            "aiAgents": {
+                "title": "AI Agents that reply for you",
+                "description": "Set up intelligent agents that understand your customers and respond automatically. When it gets complex, they transfer to your human team."
+            },
+            "chatbots": {
+                "title": "Chatbots with smart flows",
+                "description": "Create interactive menus that guide customers step by step. No code, no hassle. The customer chooses, the chatbot resolves."
             },
             "agents": {
-                "title": "Agent Management",
-                "description": "Assign conversations, measure response times, and control your team's performance in real time."
+                "title": "Team management",
+                "description": "Auto-assign conversations, measure response times and monitor each agent's performance in real time."
+            },
+            "analytics": {
+                "title": "Analytics that matter",
+                "description": "Dashboards with conversation metrics, agent performance, tags and SLA. Data to make decisions, not just numbers."
             },
             "ai": {
-                "title": "AI Analysis",
-                "description": "Our AI analyzes the tone, clarity, and sentiment of every conversation to improve quality."
+                "title": "ValerIA: your quality assistant",
+                "description": "Our AI analyzes tone, clarity and sentiment in every conversation. Detects problems before they escalate."
             }
         },
         "how": {
-            "title": "How it works",
-            "subtitle": "In 3 simple steps",
+            "title": "Works in 3 steps",
+            "subtitle": "From zero to serving customers in under 10 minutes",
             "step1": {
-                "title": "Register",
-                "description": "Create your account and select a plan that fits your company."
+                "title": "Create your account",
+                "description": "Sign up, choose a plan and set up your company. No credit card required."
             },
             "step2": {
-                "title": "Connect Channels",
-                "description": "Configure WhatsApp API in a few minutes from the dashboard."
+                "title": "Connect your channels",
+                "description": "Link WhatsApp and Instagram in minutes. Activate your AI agents and chatbots."
             },
             "step3": {
-                "title": "Start Responding",
-                "description": "Invite your agents and manage centralized conversations."
+                "title": "Start selling more",
+                "description": "Your team responds from a unified inbox while AI handles the rest."
+            }
+        },
+        "testimonials": {
+            "title": "What our users say",
+            "t1": {
+                "text": "We used to take hours to respond. With Varylo we reply in minutes and our customers notice.",
+                "author": "Maria Gonzalez",
+                "role": "CEO, TechStore Colombia"
+            },
+            "t2": {
+                "text": "The AI agent resolves 60% of inquiries without human intervention. It's like having an employee that never rests.",
+                "author": "Carlos Ramirez",
+                "role": "Operations Director, FastDelivery"
+            },
+            "t3": {
+                "text": "Chatbots saved us from hiring 2 more people. The ROI was immediate.",
+                "author": "Laura Martinez",
+                "role": "Founder, BeautyBox"
             }
         },
         "pricing": {
-            "title": "Simple Plans",
+            "title": "Plans that grow with you",
+            "subtitle": "No long contracts. Cancel anytime.",
             "starter": {
                 "title": "Starter",
+                "description": "For entrepreneurs looking to professionalize their support",
                 "features": [
                     "1 Channel (WhatsApp)",
                     "Up to 3 Agents",
-                    "Basic Metrics"
+                    "Basic metrics",
+                    "Unlimited chatbots",
+                    "Email support"
                 ]
             },
             "pro": {
                 "title": "Pro",
+                "description": "For teams that need AI and more control",
                 "features": [
-                    "1 Channel (WhatsApp)",
+                    "2 Channels (WhatsApp + Instagram)",
                     "Up to 10 Agents",
-                    "Advanced Metrics",
-                    "Basic AI Analysis"
+                    "Unlimited AI agents",
+                    "Advanced metrics + SLA",
+                    "ValerIA: quality analysis",
+                    "Priority support"
                 ]
             },
             "scale": {
                 "title": "Scale",
+                "description": "For large operations that need everything",
                 "features": [
-                    "Omnichannel Base",
-                    "Up to 30 Agents",
-                    "Advanced AI (Future)",
-                    "Priority Support"
+                    "All channels",
+                    "Unlimited agents",
+                    "Advanced AI + customization",
+                    "Custom API and webhooks",
+                    "Dedicated account manager",
+                    "Guaranteed SLA"
                 ]
             },
-            "cta": "Get Started"
+            "cta": "Start now",
+            "ctaCustom": "Contact sales"
         },
         "faq": {
-            "title": "Frequently Asked Questions",
+            "title": "Frequently asked questions",
             "q1": {
                 "question": "Do I need a WhatsApp Business API?",
-                "answer": "Yes, VARYLO connects to Meta's Cloud API. We guide you through the setup process."
+                "answer": "Yes, Varylo connects to Meta's Cloud API. We guide you step by step through setup, it takes less than 10 minutes."
             },
             "q2": {
                 "question": "Can I change my plan later?",
-                "answer": "Yes, you can upgrade or cancel your plan at any time from the administration panel."
+                "answer": "Yes, you can upgrade or downgrade at any time from your dashboard. No penalties."
             },
             "q3": {
                 "question": "Does AI read all my messages?",
-                "answer": "AI only analyzes messages when the functionality is active for quality reports, respecting privacy."
+                "answer": "Only when you activate analysis features. Your data is encrypted and never shared with third parties."
+            },
+            "q4": {
+                "question": "What happens if the AI agent can't answer?",
+                "answer": "It automatically transfers to a human agent on your team. The customer never goes unattended."
+            },
+            "q5": {
+                "question": "How long does integration take?",
+                "answer": "Less than 10 minutes to connect WhatsApp. You can have your first chatbot running in under an hour."
             }
         },
+        "cta": {
+            "title": "Stop losing customers today",
+            "subtitle": "Join the companies already multiplying their sales with Varylo. Start free, no credit card required.",
+            "button": "Create free account"
+        },
         "contact": {
-            "title": "Contact Us",
-            "subtitle": "Have questions or need a custom plan?",
+            "title": "Have a special case?",
+            "subtitle": "Write to us and we'll help you find the best solution for your company.",
             "form": {
                 "name": "Your name",
                 "email": "you@email.com",
-                "message": "How can we help you?",
-                "submit": "Send Message",
-                "success": "Message sent successfully! We will get back to you soon."
+                "message": "Tell us about your company and what you need",
+                "submit": "Send message",
+                "success": "Message sent! We'll get back to you within 24 hours."
             }
         }
     },
@@ -100,10 +182,16 @@
         "features": "Features",
         "pricing": "Pricing",
         "login": "Login",
-        "getStarted": "Get Started"
+        "getStarted": "Start free"
     },
     "footer": {
-        "rights": "Built for VARYLO. All rights reserved."
+        "rights": "Varylo. All rights reserved.",
+        "product": "Product",
+        "company": "Company",
+        "legal": "Legal",
+        "privacy": "Privacy",
+        "terms": "Terms",
+        "about": "About"
     },
     "auth": {
         "login": {
