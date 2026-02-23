@@ -84,8 +84,7 @@ export function InstagramConnectionForm({
                 console.log('User cancelled login or did not fully authorize.');
             }
         }, {
-            // Reduced scope for debugging. If this works, we'll add others back one by one.
-            scope: 'pages_show_list,instagram_basic'
+            scope: 'pages_show_list,pages_manage_metadata,instagram_basic,instagram_manage_messages'
         });
     };
 
@@ -96,12 +95,17 @@ export function InstagramConnectionForm({
         // Pass access_token explicitly as parameter
         window.FB.api('/me/accounts', 'get', {
             access_token: token,
-            fields: 'name,access_token,instagram_business_account,id'
+            fields: 'name,access_token,instagram_business_account{id,username},id'
         }, (response: any) => {
             setIsLoadingPages(false);
             if (response && response.data) {
                 console.log('Pages fetched:', response.data.length);
-                setPages(response.data);
+                // Only keep pages that have an Instagram Business account connected
+                const pagesWithInstagram = response.data.filter(
+                    (p: any) => p.instagram_business_account?.id
+                );
+                console.log('Pages with Instagram:', pagesWithInstagram.length);
+                setPages(pagesWithInstagram);
             } else {
                 console.error('Error fetching pages:', response);
             }
@@ -113,21 +117,6 @@ export function InstagramConnectionForm({
         // Find the page in our list to get its specific token
         const page = pages.find(p => p.id === pageId);
         if (page) {
-            // Note: We prefer the Instagram Business Account ID if available, 
-            // but the "Page ID" is technically the Facebook Page ID (page.id).
-            // However, our backend logic for sending messages (actions.ts) now expects
-            // `pageId` to be the Instagram Business ID (1784...) because that's what the API needs for the endpoint.
-
-            // So let's store the IG Business ID as 'pageId' if it exists, otherwise fallback to Page ID (and hope user connected it)
-            const igId = page.instagram_business_account?.id;
-
-            // IMPORTANT: If igId is missing, this page isn't connected to IG properly for API usage.
-            if (!igId) {
-                alert("Esta página de Facebook no parece tener una cuenta de Instagram Business conectada. Por favor verifica en Facebook.");
-            }
-
-            // We'll submit the IG Business ID as the 'pageId' to our backend
-            // But we keep track of which FB page was selected for UI
             setSelectedPageToken(page.access_token);
         }
     };
@@ -262,9 +251,20 @@ export function InstagramConnectionForm({
                             <div className="text-center text-sm text-muted-foreground py-4">Cargando tus páginas...</div>
                         ) : (
                             <div className="space-y-4">
+                                {pages.length === 0 ? (
+                                    <div className="text-center py-4 space-y-3">
+                                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-md border border-amber-200 text-sm">
+                                            <AlertCircle className="h-4 w-4 shrink-0" />
+                                            <span>No se encontraron páginas con una cuenta de Instagram Business conectada.</span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                                            Asegúrate de que tu página de Facebook tenga una cuenta de Instagram Professional o Business vinculada desde la configuración de Facebook.
+                                        </p>
+                                    </div>
+                                ) : (
                                 <form action={saveAction} className="space-y-4">
                                     <div className="space-y-2">
-                                        <Label>Selecciona tu Página de Facebook</Label>
+                                        <Label>Selecciona tu Página con Instagram</Label>
                                         <Select value={selectedPageId} onValueChange={handlePageSelection} required>
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Selecciona una página..." />
@@ -272,13 +272,13 @@ export function InstagramConnectionForm({
                                             <SelectContent>
                                                 {pages.map((page) => (
                                                     <SelectItem key={page.id} value={page.id}>
-                                                        {page.name} {page.instagram_business_account ? '(Instagram conectado)' : '(Sin Instagram)'}
+                                                        {page.name} — @{page.instagram_business_account?.username || page.instagram_business_account?.id}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
                                         <p className="text-[0.8rem] text-muted-foreground">
-                                            Selecciona la página vinculada a tu cuenta de Instagram Business.
+                                            Solo se muestran páginas con Instagram Business conectado.
                                         </p>
                                     </div>
 
@@ -302,6 +302,7 @@ export function InstagramConnectionForm({
                                         {isSaving ? 'Guardando configuración...' : 'Confirmar y Guardar'}
                                     </Button>
                                 </form>
+                                )}
                                 <div className="text-center">
                                     <Button variant="ghost" size="sm" onClick={() => { setUserAccessToken(null); setPages([]); }} className="text-muted-foreground">
                                         Cancelar y cambiar cuenta
