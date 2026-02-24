@@ -116,7 +116,8 @@ export async function sendMessage(conversationId: string, content: string) {
         return { success: true };
     } catch (error) {
         console.error("Error sending message:", error);
-        return { success: false, message: "Failed to send message" };
+        const msg = error instanceof Error ? error.message : "Failed to send message";
+        return { success: false, message: msg };
     }
 }
 
