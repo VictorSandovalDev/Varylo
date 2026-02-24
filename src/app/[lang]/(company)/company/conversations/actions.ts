@@ -3,8 +3,9 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { Role, ChannelType } from '@prisma/client';
+import { Role } from '@prisma/client';
 import { analyzeConversation } from '@/jobs/ai';
+import { sendChannelMessage } from '@/lib/channel-sender';
 
 export async function toggleConversationTag(conversationId: string, tagId: string) {
     const session = await auth();
@@ -98,46 +99,11 @@ export async function sendMessage(conversationId: string, content: string) {
     }
 
     try {
-        const conversation = await prisma.conversation.findUnique({
-            where: { id: conversationId },
-            include: {
-                contact: true,
-                channel: true,
-            }
-        });
-
-        if (!conversation) {
-            return { success: false, message: "Conversation not found" };
-        }
-
-        // Send to external provider
-        if (conversation.channel.type === ChannelType.INSTAGRAM) {
-            const config = conversation.channel.configJson as { accessToken?: string; pageId?: string } | null;
-            if (config?.accessToken) {
-                const { sendInstagramMessageWithToken } = await import('@/lib/instagram');
-                // Pass the stored "Page ID" (which we instructed user to be the IG Business ID 1784...)
-                await sendInstagramMessageWithToken(conversation.contact.phone, content, config.accessToken, config.pageId);
-            }
-        } else if (conversation.channel.type === ChannelType.WHATSAPP) {
-            const { sendWhatsAppMessage } = await import('@/lib/whatsapp');
-            await sendWhatsAppMessage(conversation.contact.phone, content);
-        }
-
-        await prisma.message.create({
-            data: {
-                content,
-                conversationId,
-                companyId: session.user.companyId,
-                senderId: session.user.id,
-                direction: 'OUTBOUND',
-                from: session.user.name || 'Agent',
-                to: conversation.contact?.phone || 'Unknown',
-            }
-        });
-
-        await prisma.conversation.update({
-            where: { id: conversationId },
-            data: { lastMessageAt: new Date(), updatedAt: new Date() }
+        await sendChannelMessage({
+            conversationId,
+            companyId: session.user.companyId,
+            content,
+            fromName: session.user.name || 'Agent',
         });
 
         // Fire-and-forget AI analysis
