@@ -48,7 +48,7 @@ export default async function SettingsPage() {
         if (whatsappChannel?.configJson) {
             whatsappConfig = whatsappChannel.configJson as {
                 phoneNumberId?: string;
-                verifyToken?: string;
+                wabaId?: string;
                 accessToken?: string
             };
         }
@@ -141,7 +141,7 @@ export default async function SettingsPage() {
 
                 <WhatsAppConnectionForm
                     initialPhoneNumberId={whatsappConfig?.phoneNumberId}
-                    initialVerifyToken={whatsappConfig?.verifyToken}
+                    initialWabaId={whatsappConfig?.wabaId}
                     hasAccessToken={!!whatsappConfig?.accessToken}
                 />
 
