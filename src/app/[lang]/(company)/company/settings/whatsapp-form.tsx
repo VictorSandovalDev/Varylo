@@ -36,28 +36,41 @@ export function WhatsAppConnectionForm({
 
     const isConnected = hasAccessToken || justConnected;
 
-    // Load FB SDK (same pattern as instagram-form.tsx)
+    // Load FB SDK — poll for window.FB since Instagram may also load it
     useEffect(() => {
         if (window.FB) {
             setSdkLoaded(true);
             return;
         }
 
-        window.fbAsyncInit = function () {
-            window.FB.init({
-                appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
-                cookie: true,
-                xfbml: true,
-                version: 'v21.0',
-            });
-            setSdkLoaded(true);
-        };
+        // Another component (Instagram) may already be loading the SDK.
+        // Poll for window.FB instead of relying on fbAsyncInit which can be overwritten.
+        const interval = setInterval(() => {
+            if (window.FB) {
+                setSdkLoaded(true);
+                clearInterval(interval);
+            }
+        }, 200);
 
-        const script = document.createElement('script');
-        script.src = "https://connect.facebook.net/en_US/sdk.js";
-        script.async = true;
-        script.defer = true;
-        document.body.appendChild(script);
+        // Only load the SDK if no script is already loading it
+        if (!document.querySelector('script[src*="connect.facebook.net"]')) {
+            window.fbAsyncInit = function () {
+                window.FB.init({
+                    appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v21.0',
+                });
+            };
+
+            const script = document.createElement('script');
+            script.src = "https://connect.facebook.net/en_US/sdk.js";
+            script.async = true;
+            script.defer = true;
+            document.body.appendChild(script);
+        }
+
+        return () => clearInterval(interval);
     }, []);
 
     // Listen for Embedded Signup session info via postMessage
