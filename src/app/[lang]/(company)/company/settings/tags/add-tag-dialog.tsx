@@ -132,7 +132,7 @@ export function AddTagDialog({ children }: { children?: React.ReactNode }) {
 
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                        <Button type="submit" disabled={loading} className="bg-blue-500 hover:bg-blue-600 text-white">
+                        <Button type="submit" disabled={loading}>
                             {loading ? 'Creando...' : 'Crear'}
                         </Button>
                     </DialogFooter>

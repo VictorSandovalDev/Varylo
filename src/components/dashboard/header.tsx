@@ -27,7 +27,7 @@ export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeade
     const [open, setOpen] = useState(false);
 
     return (
-        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-6 lg:h-[60px] dark:bg-zinc-900 justify-between lg:justify-end">
+        <header className="flex h-14 items-center gap-4 border-b bg-background px-6 lg:h-[60px] justify-between lg:justify-end">
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                     <Button
@@ -61,7 +61,7 @@ export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeade
 
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full bg-primary/10 text-primary hover:bg-primary/20">
                         <User className="h-5 w-5" />
                         <span className="sr-only">Toggle user menu</span>
                     </Button>

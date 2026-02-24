@@ -89,10 +89,11 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
     }
 
     return (
-        <div className={clsx("border-r bg-muted/40 dark:bg-zinc-900 w-[240px] flex flex-col gap-2 h-full max-h-screen", className)}>
-            <div className="flex h-14 items-center border-b px-6 lg:h-[60px] shrink-0">
-                <Link href={`/${lang}`} className="flex items-center gap-2 font-semibold" onClick={onLinkClick}>
-                    <span className="">VARYLO</span>
+        <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col gap-2 h-full max-h-screen", className)}>
+            <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
+                <Link href={`/${lang}`} className="flex items-center gap-2.5 font-semibold" onClick={onLinkClick}>
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">V</div>
+                    <span className="text-sidebar-foreground">VARYLO</span>
                 </Link>
             </div>
             <div className="flex-1 overflow-auto py-2">
@@ -117,8 +118,8 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                 <CollapsibleTrigger asChild>
                     <button
                         className={clsx(
-                            "flex w-full items-center justify-between rounded-lg px-3 py-2 transition-all hover:text-primary",
-                            isActive ? "bg-muted text-primary" : "text-muted-foreground"
+                            "flex w-full items-center justify-between rounded-lg px-3 py-2 transition-all",
+                            isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                         )}
                     >
                         <div className="flex items-center gap-3">
@@ -138,8 +139,8 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                                 href={childHref}
                                 onClick={onLinkClick} // Close sidebar on mobile
                                 className={clsx(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:text-primary",
-                                    isChildActive ? "text-primary font-semibold" : "text-muted-foreground"
+                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
+                                    isChildActive ? "text-sidebar-accent-foreground font-medium bg-sidebar-accent/60" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                                 )}
                             >
                                 {child.icon && <child.icon className="h-4 w-4" />}
@@ -157,8 +158,8 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
             href={localizedHref}
             onClick={onLinkClick} // Close sidebar on mobile
             className={clsx(
-                "flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary",
-                isActive ? "bg-muted text-primary" : "text-muted-foreground"
+                "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
+                isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
             )}
         >
             <item.icon className="h-4 w-4" />

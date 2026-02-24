@@ -37,7 +37,7 @@ export default async function ContactsPage(props: {
         <div className="flex-1 flex flex-col h-full bg-white">
             {/* Header */}
             <header className="h-16 border-b flex items-center justify-between px-6 shrink-0 bg-white sticky top-0 z-10">
-                <h1 className="text-xl font-bold text-gray-900">Contactos</h1>
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">Contactos</h1>
                 <div className="flex items-center gap-3">
                     <div className="relative w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -50,7 +50,7 @@ export default async function ContactsPage(props: {
                     <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><Filter className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><ArrowUpDown className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><MoreVertical className="h-4 w-4" /></Button>
-                    <Button className="bg-[#1a73e8] hover:bg-[#1557b0] text-white h-9 px-4 hidden sm:flex gap-2">
+                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 hidden sm:flex gap-2">
                         <Plus className="h-4 w-4" />
                         Mensaje
                     </Button>
@@ -66,7 +66,7 @@ export default async function ContactsPage(props: {
                         </div>
                         <h2 className="text-2xl font-bold text-gray-900">No se encontraron contactos en esta cuenta</h2>
                         <p className="text-muted-foreground">Empieza a añadir nuevos contactos haciendo clic en el botón de abajo o sincroniza tus canales.</p>
-                        <Button className="bg-[#1a73e8] hover:bg-[#1557b0] text-white gap-2">
+                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                             <Plus className="h-4 w-4" />
                             Añadir contacto
                         </Button>
@@ -144,7 +144,7 @@ function ContactCard({ contact, lang }: { contact: any, lang: string }) {
                 </div>
 
                 <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity ml-4">
-                    <Link href={`/${lang}/company/contacts/${contact.id}`} className="text-xs text-[#1a73e8] hover:underline font-medium px-2 py-1">
+                    <Link href={`/${lang}/company/contacts/${contact.id}`} className="text-xs text-primary hover:underline font-medium px-2 py-1">
                         Ver detalles
                     </Link>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400"><MoreVertical className="h-4 w-4" /></Button>

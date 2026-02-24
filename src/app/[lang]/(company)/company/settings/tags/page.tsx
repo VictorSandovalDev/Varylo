@@ -11,17 +11,17 @@ export default async function TagsPage() {
         <div className="max-w-5xl mx-auto py-8 px-6">
             <div className="flex items-start justify-between mb-8">
                 <div>
-                    <h1 className="text-2xl font-semibold mb-2">Etiquetas</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-foreground mb-2">Etiquetas</h1>
                     <p className="text-muted-foreground text-sm max-w-2xl">
                         Las etiquetas le ayudan a clasificar y priorizar conversaciones y clientes potenciales.
                         Puede asignar una etiqueta a una conversación o contacto usando el panel lateral.
                     </p>
-                    <a href="#" className="text-blue-500 text-sm hover:underline mt-2 inline-block">
+                    <a href="#" className="text-primary text-sm hover:underline mt-2 inline-block">
                         Aprende más sobre etiquetas &gt;
                     </a>
                 </div>
                 <AddTagDialog>
-                    <Button className="bg-blue-500 hover:bg-blue-600 text-white gap-2">
+                    <Button className="gap-2">
                         <Plus className="h-4 w-4" /> Añadir etiqueta
                     </Button>
                 </AddTagDialog>

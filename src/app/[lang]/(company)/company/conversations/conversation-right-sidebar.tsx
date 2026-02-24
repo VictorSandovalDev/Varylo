@@ -78,7 +78,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
     const currentPriority = conversation.priority || 'MEDIUM';
 
     return (
-        <div className={cn("bg-gray-50/30 flex flex-col h-full min-h-0 border-l border-gray-200", className)}>
+        <div className={cn("bg-muted/20 flex flex-col h-full min-h-0 border-l", className)}>
             <Tabs defaultValue="contact" className="w-full flex-1 flex flex-col min-h-0">
                 {/* ... TabsList ... */}
                 <TabsList className="grid w-full grid-cols-2 rounded-none border-b h-11 bg-transparent p-0">
@@ -98,14 +98,14 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
 
                 <TabsContent value="contact" className="flex-1 overflow-y-auto p-0 m-0 min-h-0">
                     {/* Profile Header */}
-                    <div className="p-6 flex flex-col items-center border-b bg-white">
+                    <div className="p-6 flex flex-col items-center border-b bg-card">
                         <Avatar className="h-20 w-20 mb-3 border">
                             <AvatarImage src={contact.imageUrl} />
                             <AvatarFallback className="bg-primary/10 text-primary text-xl">
                                 {contact.name?.[0]?.toUpperCase() || '?'}
                             </AvatarFallback>
                         </Avatar>
-                        <h2 className="font-semibold text-lg text-gray-900 text-center leading-tight mb-1">{contact.name || 'Desconocido'}</h2>
+                        <h2 className="font-semibold text-lg text-foreground text-center leading-tight mb-1">{contact.name || 'Desconocido'}</h2>
                         <p className="text-sm text-muted-foreground text-center">Cliente</p>
 
                         {/* Info Rows */}
@@ -124,14 +124,14 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
 
                         {/* Action Buttons Row */}
                         <div className="flex gap-2 mt-6 w-full justify-center">
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><MessageSquare className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
-                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><MessageSquare className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
 
                             {!isAgent && (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-gray-50 border-gray-200 text-gray-600 hover:text-destructive hover:border-destructive/50"><Trash2 className="h-4 w-4" /></Button>
+                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-destructive hover:border-destructive/50"><Trash2 className="h-4 w-4" /></Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
@@ -153,9 +153,9 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                     </div>
 
                     {/* Accordions */}
-                    <Accordion type="multiple" defaultValue={['actions', 'participants']} className="w-full bg-white">
+                    <Accordion type="multiple" defaultValue={['actions', 'participants']} className="w-full bg-card">
                         <AccordionItem value="actions" className="border-b px-0">
-                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted text-sm font-semibold text-gray-800">
                                 Acciones
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 pt-1">
@@ -207,14 +207,14 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                         </AccordionItem>
 
                         <AccordionItem value="participants" className="border-b px-0">
-                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted text-sm font-semibold text-gray-800">
                                 Participantes
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 pt-1">
                                 <div className="flex flex-col gap-4">
                                     <div className="space-y-1">
                                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Cliente</label>
-                                        <div className="flex items-center gap-2 text-sm p-2 bg-gray-50 rounded-md border">
+                                        <div className="flex items-center gap-2 text-sm p-2 bg-muted rounded-md border">
                                             <Avatar className="h-6 w-6"><AvatarFallback>C</AvatarFallback></Avatar>
                                             <span className="truncate">{contact.name || contact.phone || 'Cliente'}</span>
                                         </div>
@@ -225,7 +225,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Agentes</label>
                                             <div className="flex flex-col gap-2">
                                                 {conversation.assignedAgents.map((agent: any) => (
-                                                    <div key={agent.id} className="flex items-center gap-2 text-sm p-2 bg-blue-50/50 rounded-md border border-blue-100">
+                                                    <div key={agent.id} className="flex items-center gap-2 text-sm p-2 bg-primary/5 rounded-md border border-blue-100">
                                                         <Avatar className="h-6 w-6">
                                                             <AvatarFallback className="bg-blue-100 text-blue-700 text-xs">
                                                                 {agent.name?.[0]?.toUpperCase() || 'A'}
@@ -242,7 +242,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                         </AccordionItem>
 
                         <AccordionItem value="info" className="border-b px-0">
-                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-gray-50 text-sm font-semibold text-gray-800">
+                            <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted text-sm font-semibold text-gray-800">
                                 Información
                             </AccordionTrigger>
                             <AccordionContent className="px-4 pb-4 pt-1">
@@ -265,7 +265,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Sparkles className="h-4 w-4 text-purple-500" />
-                                <h3 className="font-semibold text-sm text-gray-900">Análisis IA</h3>
+                                <h3 className="font-semibold text-sm text-foreground">Análisis IA</h3>
                             </div>
                             <Button
                                 variant="outline"
@@ -310,13 +310,13 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                             return (
                                 <div className="space-y-4">
                                     {/* Summary */}
-                                    <div className="bg-white rounded-lg border p-3 space-y-1">
+                                    <div className="bg-card rounded-lg border p-3 space-y-1">
                                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Resumen</label>
                                         <p className="text-sm text-gray-700 leading-relaxed">{insight.summary}</p>
                                     </div>
 
                                     {/* Scores */}
-                                    <div className="bg-white rounded-lg border p-3 space-y-3">
+                                    <div className="bg-card rounded-lg border p-3 space-y-3">
                                         <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Puntuaciones</label>
                                         <div className="space-y-2">
                                             <div>
@@ -348,7 +348,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
 
                                     {/* Sentiment & Urgency */}
                                     <div className="flex gap-2">
-                                        <div className="flex-1 bg-white rounded-lg border p-3 space-y-1.5">
+                                        <div className="flex-1 bg-card rounded-lg border p-3 space-y-1.5">
                                             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sentimiento</label>
                                             <div>
                                                 <Badge variant="outline" className={cn("text-xs font-normal", sentimentConfig[sentiment]?.color)}>
@@ -356,7 +356,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                                 </Badge>
                                             </div>
                                         </div>
-                                        <div className="flex-1 bg-white rounded-lg border p-3 space-y-1.5">
+                                        <div className="flex-1 bg-card rounded-lg border p-3 space-y-1.5">
                                             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Urgencia</label>
                                             <div>
                                                 <Badge variant="outline" className={cn("text-xs font-normal", urgencyConfig[urgency]?.color)}>
@@ -369,7 +369,7 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
 
                                     {/* Topics */}
                                     {topics.length > 0 && (
-                                        <div className="bg-white rounded-lg border p-3 space-y-2">
+                                        <div className="bg-card rounded-lg border p-3 space-y-2">
                                             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Temas</label>
                                             <div className="flex flex-wrap gap-1.5">
                                                 {topics.map((topic: string, i: number) => (

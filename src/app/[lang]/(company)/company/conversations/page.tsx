@@ -145,7 +145,7 @@ export default async function ConversationsPage({
     return (
         <div className="flex h-[calc(100vh-10rem)] flex-col md:flex-row border rounded-lg overflow-hidden bg-background">
             {/* Sidebar List */}
-            <div className="w-full md:w-[320px] lg:w-[380px] border-r flex flex-col bg-white">
+            <div className="w-full md:w-[320px] lg:w-[380px] border-r flex flex-col bg-card">
                 {/* Header & Tabs */}
                 <div className="border-b">
                     <div className="px-4 py-3 flex items-center justify-between">
@@ -192,7 +192,7 @@ export default async function ConversationsPage({
                 </div>
 
                 {/* Search */}
-                <div className="p-3 border-b bg-gray-50/50">
+                <div className="p-3 border-b bg-muted/50">
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -228,7 +228,7 @@ export default async function ConversationsPage({
                                     href={`?filter=${filter}&conversationId=${conv.id}`} // Preserve filter
                                     className={cn(
                                         "flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors border-b last:border-0",
-                                        isActive && "bg-blue-50/60 border-l-4 border-l-primary pl-[13px]" // Active styling tweak
+                                        isActive && "bg-primary/5 border-l-4 border-l-primary pl-[13px]"
                                     )}
                                 >
                                     <Avatar className="h-10 w-10">
@@ -236,7 +236,7 @@ export default async function ConversationsPage({
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
                                         <div className="flex items-center justify-between mb-1">
-                                            <span className="font-semibold text-sm truncate text-gray-900">{conv.contact?.name || 'Usuario Desconocido'}</span>
+                                            <span className="font-semibold text-sm truncate text-foreground">{conv.contact?.name || 'Usuario Desconocido'}</span>
                                             <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
                                                 {lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                             </span>
@@ -284,17 +284,17 @@ export default async function ConversationsPage({
             </div>
 
             {/* Main Area (Chat or Welcome) */}
-            <div className="flex-1 flex flex-col bg-white min-w-0">
+            <div className="flex-1 flex flex-col bg-card min-w-0">
                 {selectedConversation ? (
                     <>
                         {/* Chat Header */}
-                        <div className="h-16 border-b flex items-center px-6 bg-white justify-between sticky top-0 z-10">
+                        <div className="h-16 border-b flex items-center px-6 bg-card justify-between sticky top-0 z-10">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-9 w-9">
                                     <AvatarFallback>{selectedConversation.contact?.name?.[0] || '?'}</AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <h3 className="font-medium text-sm text-gray-900">{selectedConversation.contact?.name}</h3>
+                                    <h3 className="font-medium text-sm text-foreground">{selectedConversation.contact?.name}</h3>
                                     <div className="flex items-center gap-2">
                                         {selectedConversation.channel?.type === ChannelType.INSTAGRAM ? (
                                             <Badge variant="outline" className="text-[10px] h-4 px-1 border-pink-200 text-pink-600 bg-pink-50 flex items-center gap-1">
@@ -316,7 +316,7 @@ export default async function ConversationsPage({
 
 
                         {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-muted/30">
                             {messages.map((msg) => {
                                 const isOutbound = msg.direction === 'OUTBOUND';
                                 return (
@@ -331,14 +331,14 @@ export default async function ConversationsPage({
                                             className={cn(
                                                 "max-w-[70%] rounded-2xl px-4 py-2.5 text-sm shadow-sm",
                                                 isOutbound
-                                                    ? "bg-blue-600 text-white rounded-br-none"
-                                                    : "bg-white border rounded-bl-none text-gray-800"
+                                                    ? "bg-primary text-primary-foreground rounded-br-none"
+                                                    : "bg-card border rounded-bl-none text-foreground"
                                             )}
                                         >
                                             <p>{msg.content}</p>
                                             <p className={cn(
                                                 "text-[10px] mt-1 text-right opacity-80",
-                                                isOutbound ? "text-blue-100" : "text-gray-400"
+                                                isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
                                             )}>
                                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </p>
@@ -349,22 +349,22 @@ export default async function ConversationsPage({
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 bg-white border-t">
+                        <div className="p-4 bg-card border-t">
                             <ChatInput conversationId={selectedConversation.id} />
                         </div>
                     </>
                 ) : (
                     // --- WELCOME DASHBOARD (Empty State) ---
-                    <div className="flex-1 overflow-auto bg-gray-50/30 p-8 md:p-12 flex flex-col items-center justify-center">
+                    <div className="flex-1 overflow-auto bg-muted/20 p-8 md:p-12 flex flex-col items-center justify-center">
                         {isAgent ? (
                             <div className="max-w-2xl w-full space-y-8 text-center">
                                 <div className="space-y-4">
                                     <div className="flex justify-center">
                                         <div className="bg-white p-4 rounded-full shadow-sm">
-                                            <Inbox className="h-12 w-12 text-blue-500" />
+                                            <Inbox className="h-12 w-12 text-primary" />
                                         </div>
                                     </div>
-                                    <h1 className="text-2xl font-semibold text-gray-900">
+                                    <h1 className="text-2xl font-semibold text-foreground">
                                         👋 ¡Hola, {session.user.name || 'Agente'}!
                                     </h1>
                                     <p className="text-muted-foreground text-sm max-w-lg mx-auto leading-relaxed">
@@ -376,7 +376,7 @@ export default async function ConversationsPage({
                         ) : (
                             <div className="max-w-4xl w-full space-y-8">
                                 <div className="space-y-4">
-                                    <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                                    <h1 className="text-2xl font-semibold text-foreground flex items-center gap-2">
                                         👋 Buenas tardes, {session.user.name || 'Usuario'}. Bienvenido a Varylo.
                                     </h1>
                                     <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
@@ -392,17 +392,17 @@ export default async function ConversationsPage({
                                             <div className="flex justify-center py-4">
                                                 {/* Placeholder for the 'apps' icon in mockup */}
                                                 <div className="relative">
-                                                    <Inbox className="h-12 w-12 text-blue-500" />
+                                                    <Inbox className="h-12 w-12 text-primary" />
                                                     <Badge className="absolute -top-2 -right-2 bg-red-500 h-5 w-5 rounded-full p-0 flex items-center justify-center border-2 border-white">3</Badge>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-center">
-                                                <h3 className="font-semibold text-gray-900">Todas sus conversaciones en un solo lugar</h3>
+                                                <h3 className="font-semibold text-foreground">Todas sus conversaciones en un solo lugar</h3>
                                                 <p className="text-xs text-muted-foreground">
                                                     Ver todas las conversaciones de sus clientes en un solo panel de control. Filtre por canal, etiqueta o estado.
                                                 </p>
                                             </div>
-                                            <Link href="?filter=all" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                            <Link href="?filter=all" className="text-primary text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
                                                 Haga clic aquí para ir a la bandeja de entrada <Search className="h-3 w-3" />
                                             </Link>
                                         </div>
@@ -413,18 +413,18 @@ export default async function ConversationsPage({
                                         <div className="flex flex-col gap-4 h-full justify-between">
                                             <div className="flex justify-center py-4">
                                                 <div className="flex -space-x-3">
-                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-blue-100 text-blue-600">A</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-blue-100 text-primary">A</AvatarFallback></Avatar>
                                                     <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-green-100 text-green-600">B</AvatarFallback></Avatar>
                                                     <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-purple-100 text-purple-600">C</AvatarFallback></Avatar>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-center">
-                                                <h3 className="font-semibold text-gray-900">Invite a los miembros de su equipo</h3>
+                                                <h3 className="font-semibold text-foreground">Invite a los miembros de su equipo</h3>
                                                 <p className="text-xs text-muted-foreground">
                                                     Ya que se está preparando para hablar con su cliente, invite a sus compañeros.
                                                 </p>
                                             </div>
-                                            <Link href="/company/agents" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                            <Link href="/company/agents" className="text-primary text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
                                                 Haga clic aquí para invitar a un miembro <Users className="h-3 w-3" />
                                             </Link>
                                         </div>
@@ -439,12 +439,12 @@ export default async function ConversationsPage({
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-center">
-                                                <h3 className="font-semibold text-gray-900">Crea respuestas predefinidas</h3>
+                                                <h3 className="font-semibold text-foreground">Crea respuestas predefinidas</h3>
                                                 <p className="text-xs text-muted-foreground">
                                                     Las respuestas predefinidas son plantillas que le ayudan a responder rápidamente.
                                                 </p>
                                             </div>
-                                            <Link href="/company/settings" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                            <Link href="/company/settings" className="text-primary text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
                                                 Haga clic aquí para crear una respuesta <Settings className="h-3 w-3" />
                                             </Link>
                                         </div>
@@ -458,12 +458,12 @@ export default async function ConversationsPage({
                                                 <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">#soporte</Badge>
                                             </div>
                                             <div className="space-y-2 text-center">
-                                                <h3 className="font-semibold text-gray-900">Organice las conversaciones con etiquetas</h3>
+                                                <h3 className="font-semibold text-foreground">Organice las conversaciones con etiquetas</h3>
                                                 <p className="text-xs text-muted-foreground">
                                                     Las etiquetas proporcionan una forma fácil de clasificar su conversación.
                                                 </p>
                                             </div>
-                                            <Link href="/company/settings/tags" className="text-blue-600 text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
+                                            <Link href="/company/settings/tags" className="text-primary text-xs font-medium hover:underline text-center flex items-center justify-center gap-1 group-hover:gap-2 transition-all">
                                                 Haga clic aquí para crear etiquetas <Tag className="h-3 w-3" />
                                             </Link>
                                         </div>

@@ -11,8 +11,8 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { WhatsAppConnectionForm } from "./whatsapp-form"
-import { InstagramConnectionForm } from "./instagram-form"
 import { OpenAIKeyForm } from "./openai-form"
+import { Instagram } from "lucide-react"
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -23,7 +23,6 @@ export default async function SettingsPage() {
     const companyId = session?.user?.companyId;
 
     let whatsappConfig = null;
-    let instagramConfig = null;
     let hasOpenAIKey = false;
     let openaiKeyUpdatedAt: string | null = null;
     let companyName = '';
@@ -37,26 +36,16 @@ export default async function SettingsPage() {
         hasOpenAIKey = !!company?.openaiApiKey;
         openaiKeyUpdatedAt = company?.openaiApiKeyUpdatedAt?.toISOString() || null;
 
-        const channels = await prisma.channel.findMany({
+        const whatsappChannel = await prisma.channel.findFirst({
             where: {
                 companyId,
-                type: { in: [ChannelType.WHATSAPP, ChannelType.INSTAGRAM] },
+                type: ChannelType.WHATSAPP,
             },
         });
 
-        const whatsappChannel = channels.find(c => c.type === ChannelType.WHATSAPP);
         if (whatsappChannel?.configJson) {
             whatsappConfig = whatsappChannel.configJson as {
                 phoneNumberId?: string;
-                verifyToken?: string;
-                accessToken?: string
-            };
-        }
-
-        const instagramChannel = channels.find(c => c.type === ChannelType.INSTAGRAM);
-        if (instagramChannel?.configJson) {
-            instagramConfig = instagramChannel.configJson as {
-                pageId?: string;
                 verifyToken?: string;
                 accessToken?: string
             };
@@ -66,7 +55,7 @@ export default async function SettingsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-medium">Configuración</h3>
+                <h3 className="text-2xl font-semibold tracking-tight text-foreground">Configuración</h3>
                 <p className="text-sm text-muted-foreground">
                     Administra la configuración general de tu cuenta y empresa.
                 </p>
@@ -145,11 +134,25 @@ export default async function SettingsPage() {
                     hasAccessToken={!!whatsappConfig?.accessToken}
                 />
 
-                <InstagramConnectionForm
-                    initialPageId={instagramConfig?.pageId}
-                    initialVerifyToken={instagramConfig?.verifyToken}
-                    hasAccessToken={!!instagramConfig?.accessToken}
-                />
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Instagram className="h-5 w-5 text-pink-600" />
+                                <CardTitle>Instagram DM</CardTitle>
+                            </div>
+                            <Badge variant="secondary">Próximamente</Badge>
+                        </div>
+                        <CardDescription>
+                            Conecta tu cuenta de Instagram para recibir DMs.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="opacity-50 pointer-events-none">
+                        <p className="text-center py-6 text-sm text-muted-foreground">
+                            Esta integración estará disponible próximamente.
+                        </p>
+                    </CardContent>
+                </Card>
 
                 <OpenAIKeyForm
                     hasApiKey={hasOpenAIKey}

@@ -36,7 +36,7 @@ export default function AnalyticsPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-2xl font-semibold">Resumen</h3>
+                <h3 className="text-2xl font-semibold tracking-tight text-foreground">Resumen</h3>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
