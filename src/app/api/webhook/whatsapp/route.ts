@@ -185,6 +185,12 @@ export async function POST(req: NextRequest) {
                     }
                 });
 
+                // Update conversation timestamps
+                await prisma.conversation.update({
+                    where: { id: conversation.id },
+                    data: { lastMessageAt: new Date(), lastInboundAt: new Date() }
+                });
+
                 // Pipeline: Chatbot → AI Agent → Analysis
                 (async () => {
                     try {

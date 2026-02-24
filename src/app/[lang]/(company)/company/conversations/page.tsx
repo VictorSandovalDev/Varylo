@@ -13,6 +13,10 @@ import { AgentSelector } from './agent-selector';
 import { Role, ChannelType } from '@prisma/client';
 
 import { ConversationRightSidebar } from './conversation-right-sidebar';
+import { ConversationsRealtimeWrapper } from './conversations-realtime-wrapper';
+import { UnreadDot } from './unread-dot';
+import { WindowTimer } from './window-timer';
+import { ConversationListActions } from './conversation-list-actions';
 
 // Server Component receiving searchParams
 export default async function ConversationsPage({
@@ -143,6 +147,7 @@ export default async function ConversationsPage({
     }
 
     return (
+        <ConversationsRealtimeWrapper>
         <div className="flex h-[calc(100vh-10rem)] flex-col md:flex-row border rounded-lg overflow-hidden bg-background">
             {/* Sidebar List */}
             <div className="w-full md:w-[320px] lg:w-[380px] border-r flex flex-col bg-card">
@@ -227,19 +232,23 @@ export default async function ConversationsPage({
                                     key={conv.id}
                                     href={`?filter=${filter}&conversationId=${conv.id}`} // Preserve filter
                                     className={cn(
-                                        "flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors border-b last:border-0",
+                                        "relative group flex items-start gap-3 p-4 hover:bg-muted/50 transition-colors border-b last:border-0",
                                         isActive && "bg-primary/5 border-l-4 border-l-primary pl-[13px]"
                                     )}
                                 >
+                                    <UnreadDot conversationId={conv.id} />
                                     <Avatar className="h-10 w-10">
                                         <AvatarFallback className="bg-emerald-100 text-emerald-700">{conv.contact?.name?.[0] || '?'}</AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1 overflow-hidden">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="font-semibold text-sm truncate text-foreground">{conv.contact?.name || 'Usuario Desconocido'}</span>
-                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                                                {lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                                            </span>
+                                            <div className="flex items-center gap-1 ml-2">
+                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                    {lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                                </span>
+                                                {!isAgent && <ConversationListActions conversationId={conv.id} />}
+                                            </div>
                                         </div>
                                         <p className="text-sm text-muted-foreground truncate mb-2">
                                             {lastMsg?.content || 'Nueva conversación'}
@@ -311,7 +320,7 @@ export default async function ConversationsPage({
                                     </div>
                                 </div>
                             </div>
-
+                            <WindowTimer conversationId={selectedConversation.id} />
                         </div>
 
 
@@ -489,5 +498,6 @@ export default async function ConversationsPage({
                 )
             }
         </div >
+        </ConversationsRealtimeWrapper>
     );
 }

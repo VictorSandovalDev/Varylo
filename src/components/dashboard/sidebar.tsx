@@ -6,6 +6,7 @@ import { clsx } from 'clsx';
 import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Tag, Bot, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { SidebarUnreadBadge } from './unread-badge';
 
 
 export interface NavItem {
@@ -112,6 +113,8 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
     const isActive = pathname === localizedHref || (item.children && item.children.some(child => pathname === `/${lang}${child.href}`));
     const [isOpen, setIsOpen] = useState(isActive);
 
+    const showUnreadBadge = item.title === 'Conversaciones' || (item.title === 'Inbox' && item.href === '/agent');
+
     if (item.children) {
         return (
             <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
@@ -125,6 +128,7 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                         <div className="flex items-center gap-3">
                             <item.icon className="h-4 w-4" />
                             {item.title}
+                            {showUnreadBadge && <SidebarUnreadBadge />}
                         </div>
                         {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </button>
@@ -164,6 +168,7 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
         >
             <item.icon className="h-4 w-4" />
             {item.title}
+            {showUnreadBadge && <SidebarUnreadBadge />}
         </Link>
     );
 }
