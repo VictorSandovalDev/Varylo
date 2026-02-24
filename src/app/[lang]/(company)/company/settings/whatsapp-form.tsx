@@ -116,7 +116,7 @@ export function WhatsAppConnectionForm({
                     Ingresa tus credenciales de Meta for Developers para conectar tu número.
                 </CardDescription>
             </CardHeader>
-            <form action={action}>
+            <form action={action} className="flex flex-col gap-6">
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="phoneNumberId">Phone Number ID</Label>

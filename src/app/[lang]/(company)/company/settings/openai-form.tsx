@@ -80,7 +80,7 @@ export function OpenAIKeyForm({
                     Configura tu propia API Key de OpenAI para ValerIA y los Agentes IA. Si no se configura, se usará la key global del sistema.
                 </CardDescription>
             </CardHeader>
-            <form action={action}>
+            <form action={action} className="flex flex-col gap-6">
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="openaiApiKey">API Key</Label>
