@@ -108,30 +108,28 @@ export function WhatsAppConnectionForm({
         const configId = process.env.NEXT_PUBLIC_WA_CONFIG_ID;
 
         window.FB.login(
-            async (response: any) => {
+            (response: any) => {
                 if (response.authResponse?.code) {
-                    try {
-                        // Grab session info captured via postMessage
-                        const sessionInfo = (window as any).__waEmbeddedSignupData || {};
+                    // Grab session info captured via postMessage
+                    const sessionInfo = (window as any).__waEmbeddedSignupData || {};
 
-                        const { exchangeWhatsAppCode } = await import('./actions');
-                        const result = await exchangeWhatsAppCode(
-                            response.authResponse.code,
-                            sessionInfo
-                        );
-
+                    import('./actions').then(({ exchangeWhatsAppCode }) =>
+                        exchangeWhatsAppCode(response.authResponse.code, sessionInfo)
+                    ).then((result) => {
                         if (result.success) {
                             setJustConnected(true);
                         } else {
                             setError(result.message);
                         }
-                    } catch (err) {
+                        setIsConnecting(false);
+                    }).catch(() => {
                         setError('Error al procesar la conexión.');
-                    }
+                        setIsConnecting(false);
+                    });
                 } else {
                     setError('Inicio de sesión cancelado o no autorizado.');
+                    setIsConnecting(false);
                 }
-                setIsConnecting(false);
             },
             {
                 config_id: configId,
