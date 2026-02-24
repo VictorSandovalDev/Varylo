@@ -23,6 +23,8 @@ export default async function SettingsPage() {
     const companyId = session?.user?.companyId;
 
     let whatsappConfig = null;
+    let whatsappChannelId: string | null = null;
+    let whatsappAutomationPriority: string = 'CHATBOT_FIRST';
     let hasOpenAIKey = false;
     let openaiKeyUpdatedAt: string | null = null;
     let companyName = '';
@@ -43,12 +45,16 @@ export default async function SettingsPage() {
             },
         });
 
-        if (whatsappChannel?.configJson) {
-            whatsappConfig = whatsappChannel.configJson as {
-                phoneNumberId?: string;
-                verifyToken?: string;
-                accessToken?: string
-            };
+        if (whatsappChannel) {
+            whatsappChannelId = whatsappChannel.id;
+            whatsappAutomationPriority = whatsappChannel.automationPriority;
+            if (whatsappChannel.configJson) {
+                whatsappConfig = whatsappChannel.configJson as {
+                    phoneNumberId?: string;
+                    verifyToken?: string;
+                    accessToken?: string
+                };
+            }
         }
     }
 
@@ -132,6 +138,8 @@ export default async function SettingsPage() {
                     initialPhoneNumberId={whatsappConfig?.phoneNumberId}
                     initialVerifyToken={whatsappConfig?.verifyToken}
                     hasAccessToken={!!whatsappConfig?.accessToken}
+                    channelId={whatsappChannelId}
+                    automationPriority={whatsappAutomationPriority}
                 />
 
                 <Card>

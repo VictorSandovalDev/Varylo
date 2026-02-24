@@ -53,6 +53,16 @@ export async function handleChatbotResponse(conversationId: string, inboundMessa
             return { handled: false };
         }
 
+        // Mark any previous sessions for this chatbot+conversation as completed
+        await prisma.chatbotSession.updateMany({
+            where: {
+                chatbotId: chatbot.id,
+                conversationId,
+                completed: false,
+            },
+            data: { completed: true },
+        });
+
         // Create a new session
         session = await prisma.chatbotSession.create({
             data: {
@@ -113,7 +123,15 @@ async function processNode(
     // Try to match user's response
     const lowerMessage = userMessage.toLowerCase().trim();
     const matchedOption = currentNode.options.find(opt =>
-        opt.match.some(m => lowerMessage.includes(m.toLowerCase()))
+        opt.match.some(m => {
+            const lowerMatch = m.toLowerCase();
+            // Exact comparison for pure numbers (e.g. "1", "2")
+            if (/^\d+$/.test(lowerMatch)) {
+                return lowerMessage === lowerMatch;
+            }
+            // For text keywords, exact match first, then includes as fallback
+            return lowerMessage === lowerMatch || lowerMessage.includes(lowerMatch);
+        })
     );
 
     if (!matchedOption) {

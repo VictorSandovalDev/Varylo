@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection, Role } from '@prisma/client';
-import { analyzeConversation } from '@/jobs/ai';
-import { handleAiAgentResponse } from '@/jobs/ai-agent';
-import { handleChatbotResponse } from '@/jobs/chatbot';
+import { runAutomationPipeline } from '@/jobs/pipeline';
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -191,26 +189,8 @@ export async function POST(req: NextRequest) {
                     data: { lastMessageAt: new Date(), lastInboundAt: new Date() }
                 });
 
-                // Pipeline: Chatbot → AI Agent → Analysis
-                (async () => {
-                    try {
-                        const chatbotResult = await handleChatbotResponse(conversation.id, text);
-                        if (chatbotResult.handled) {
-                            if (chatbotResult.transferToAi) {
-                                // Fall through to AI agent
-                            } else {
-                                return;
-                            }
-                        }
-
-                        const aiResult = await handleAiAgentResponse(conversation.id, text);
-                        if (aiResult.handled) return;
-
-                        await analyzeConversation(conversation.id);
-                    } catch (err) {
-                        console.error('[Pipeline] Instagram processing error:', err);
-                    }
-                })();
+                // Automation pipeline with channel priority
+                runAutomationPipeline(conversation.id, text, channel.automationPriority);
             }
         }
 

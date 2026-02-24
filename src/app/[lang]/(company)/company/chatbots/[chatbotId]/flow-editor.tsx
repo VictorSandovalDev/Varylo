@@ -123,7 +123,16 @@ export function FlowEditor({
 
     const removeOption = (nodeId: string, optIndex: number) => {
         const node = flow.nodes[nodeId];
-        const options = (node.options || []).filter((_, i) => i !== optIndex);
+        const options = (node.options || [])
+            .filter((_, i) => i !== optIndex)
+            .map((opt, newIndex) => {
+                // Regenerate match arrays with correct new number
+                const visibleNumber = String(newIndex + 1);
+                const fullLabel = opt.label.toLowerCase().trim();
+                const words = fullLabel.split(/\s+/).filter(w => w.length >= 2);
+                const matchSet = new Set([visibleNumber, ...(fullLabel ? [fullLabel] : []), ...words]);
+                return { ...opt, match: Array.from(matchSet) };
+            });
         updateNode(nodeId, { options });
     };
 
@@ -302,9 +311,14 @@ export function FlowEditor({
                                                         <Input
                                                             value={option.label}
                                                             onChange={(e) => {
+                                                                const label = e.target.value;
+                                                                const visibleNumber = String(optIndex + 1);
+                                                                const fullLabel = label.toLowerCase().trim();
+                                                                const words = fullLabel.split(/\s+/).filter(w => w.length >= 2);
+                                                                const matchSet = new Set([visibleNumber, ...(fullLabel ? [fullLabel] : []), ...words]);
                                                                 updateOption(nodeId, optIndex, {
-                                                                    label: e.target.value,
-                                                                    match: [String(optIndex + 1), ...e.target.value.toLowerCase().split(' ').filter(w => w.length > 2)],
+                                                                    label,
+                                                                    match: Array.from(matchSet),
                                                                 });
                                                             }}
                                                             placeholder="Texto de la opción"

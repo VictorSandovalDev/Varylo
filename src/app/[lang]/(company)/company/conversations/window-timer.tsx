@@ -10,8 +10,10 @@ function formatRemaining(ms: number): string {
     if (ms <= 0) return 'Expirada';
     const hours = Math.floor(ms / (60 * 60 * 1000));
     const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+    if (hours > 0) return `${hours}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+    if (minutes > 0) return `${minutes}m ${String(seconds).padStart(2, '0')}s`;
+    return `${seconds}s`;
 }
 
 export function WindowTimer({ conversationId }: { conversationId: string }) {
@@ -33,7 +35,7 @@ export function WindowTimer({ conversationId }: { conversationId: string }) {
         }
 
         compute();
-        const interval = setInterval(compute, 60_000);
+        const interval = setInterval(compute, 1_000);
         return () => clearInterval(interval);
     }, [lastInboundAt]);
 

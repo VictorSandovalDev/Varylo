@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { ChannelType, ChannelStatus } from '@prisma/client';
+import { ChannelType, ChannelStatus, AutomationPriority } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { encrypt } from '@/lib/encryption';
 import OpenAI from 'openai';
@@ -352,5 +352,36 @@ export async function removeOpenAIKey() {
     } catch (error) {
         console.error('Failed to remove OpenAI key:', error);
         return { success: false, message: 'Failed to remove key.' };
+    }
+}
+
+// AUTOMATION PRIORITY
+
+export async function updateChannelPriority(channelId: string, priority: AutomationPriority) {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        // Verify the channel belongs to this company
+        const channel = await prisma.channel.findFirst({
+            where: { id: channelId, companyId: session.user.companyId },
+        });
+
+        if (!channel) {
+            return { success: false, message: 'Channel not found.' };
+        }
+
+        await prisma.channel.update({
+            where: { id: channelId },
+            data: { automationPriority: priority },
+        });
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, message: 'Prioridad actualizada.' };
+    } catch (error) {
+        console.error('Failed to update channel priority:', error);
+        return { success: false, message: 'Failed to update priority.' };
     }
 }

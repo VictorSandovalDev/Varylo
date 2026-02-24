@@ -53,6 +53,11 @@ enum Priority {
   HIGH
 }
 
+enum AutomationPriority {
+  CHATBOT_FIRST
+  AI_FIRST
+}
+
 // Models
 
 model User {
@@ -101,6 +106,8 @@ model Channel {
   configJson  Json?         // WhatsApp credentials etc.
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  automationPriority AutomationPriority @default(CHATBOT_FIRST)
 
   company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
   conversations Conversation[]
@@ -252,5 +259,4 @@ model ChatbotSession {
   updatedAt      DateTime     @updatedAt
   chatbot        Chatbot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  @@unique([chatbotId, conversationId])
 }

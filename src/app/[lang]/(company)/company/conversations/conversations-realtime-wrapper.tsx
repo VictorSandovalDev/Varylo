@@ -20,6 +20,8 @@ function setReadTimestamp(conversationId: string) {
     const map = getReadTimestamps();
     map[conversationId] = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+    // Notify other components (e.g. SidebarUnreadBadge) that read state changed
+    window.dispatchEvent(new CustomEvent('varylo-read-update'));
 }
 
 export function ConversationsRealtimeWrapper({ children }: { children: React.ReactNode }) {

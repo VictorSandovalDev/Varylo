@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 const POLL_INTERVAL = 15000;
 const STORAGE_KEY = 'varylo_read_timestamps';
@@ -16,6 +16,19 @@ function getReadTimestamps(): Record<string, number> {
 
 export function SidebarUnreadBadge() {
     const [count, setCount] = useState(0);
+    const cachedConversationsRef = useRef<{ id: string; lastMessageAt: string }[]>([]);
+
+    // Recompute unread count from cached data (no fetch needed)
+    const recompute = useCallback(() => {
+        const readMap = getReadTimestamps();
+        let unread = 0;
+        for (const conv of cachedConversationsRef.current) {
+            const lastMsg = new Date(conv.lastMessageAt).getTime();
+            const readAt = readMap[conv.id] || 0;
+            if (lastMsg > readAt) unread++;
+        }
+        setCount(unread);
+    }, []);
 
     useEffect(() => {
         async function poll() {
@@ -23,14 +36,8 @@ export function SidebarUnreadBadge() {
                 const res = await fetch('/api/conversations/updates');
                 if (!res.ok) return;
                 const data = await res.json();
-                const readMap = getReadTimestamps();
-                let unread = 0;
-                for (const conv of data.conversations) {
-                    const lastMsg = new Date(conv.lastMessageAt).getTime();
-                    const readAt = readMap[conv.id] || 0;
-                    if (lastMsg > readAt) unread++;
-                }
-                setCount(unread);
+                cachedConversationsRef.current = data.conversations;
+                recompute();
             } catch {
                 // ignore
             }
@@ -38,8 +45,16 @@ export function SidebarUnreadBadge() {
 
         poll();
         const interval = setInterval(poll, POLL_INTERVAL);
-        return () => clearInterval(interval);
-    }, []);
+
+        // Listen for read-state changes from conversations page
+        const handleReadUpdate = () => recompute();
+        window.addEventListener('varylo-read-update', handleReadUpdate);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('varylo-read-update', handleReadUpdate);
+        };
+    }, [recompute]);
 
     if (count === 0) return null;
 

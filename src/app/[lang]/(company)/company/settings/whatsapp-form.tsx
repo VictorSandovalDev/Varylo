@@ -11,16 +11,22 @@ import { AlertCircle, CheckCircle2 } from "lucide-react";
 export function WhatsAppConnectionForm({
     initialPhoneNumberId,
     initialVerifyToken,
-    hasAccessToken
+    hasAccessToken,
+    channelId,
+    automationPriority,
 }: {
     initialPhoneNumberId?: string,
     initialVerifyToken?: string,
-    hasAccessToken?: boolean
+    hasAccessToken?: boolean,
+    channelId?: string | null,
+    automationPriority?: string,
 }) {
     const [state, action, isPending] = useActionState(saveWhatsAppCredentials, undefined);
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isTesting, setIsTesting] = useState(false);
     const [isDisconnecting, setIsDisconnecting] = useState(false);
+    const [priority, setPriority] = useState(automationPriority || 'CHATBOT_FIRST');
+    const [isSavingPriority, setIsSavingPriority] = useState(false);
 
     const isSuccess = state?.startsWith('Success');
     const isError = state?.startsWith('Error');
@@ -42,6 +48,20 @@ export function WhatsAppConnectionForm({
             setTestResult({ success: false, message: 'Failed to run test.' });
         } finally {
             setIsTesting(false);
+        }
+    };
+
+    const handlePriorityChange = async (newPriority: string) => {
+        if (!channelId) return;
+        setPriority(newPriority);
+        setIsSavingPriority(true);
+        try {
+            const { updateChannelPriority } = await import('./actions');
+            await updateChannelPriority(channelId, newPriority as 'CHATBOT_FIRST' | 'AI_FIRST');
+        } catch {
+            setPriority(priority); // revert on error
+        } finally {
+            setIsSavingPriority(false);
         }
     };
 
@@ -77,6 +97,26 @@ export function WhatsAppConnectionForm({
                         <Label className="text-xs text-muted-foreground">Phone Number ID</Label>
                         <p className="font-mono text-sm">{initialPhoneNumberId}</p>
                     </div>
+
+                    {channelId && (
+                        <div className="grid gap-1.5">
+                            <Label className="text-xs text-muted-foreground">Prioridad de automatización</Label>
+                            <select
+                                value={priority}
+                                onChange={(e) => handlePriorityChange(e.target.value)}
+                                disabled={isSavingPriority}
+                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            >
+                                <option value="CHATBOT_FIRST">Chatbot primero (recomendado)</option>
+                                <option value="AI_FIRST">Agente IA primero</option>
+                            </select>
+                            <p className="text-xs text-muted-foreground">
+                                {priority === 'CHATBOT_FIRST'
+                                    ? 'Los mensajes pasan primero por el chatbot, luego al agente IA si no es manejado.'
+                                    : 'Los mensajes pasan primero al agente IA, luego al chatbot si no es manejado.'}
+                            </p>
+                        </div>
+                    )}
 
                     {testResult && (
                         <div className={`flex items-center gap-2 text-sm p-3 rounded-md bg-background border ${testResult.success ? 'text-green-600 border-green-200' : 'text-destructive border-red-200'}`}>
