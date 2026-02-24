@@ -1,6 +1,5 @@
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
-import { sendWhatsAppMessage } from '@/lib/whatsapp';
 import { sendInstagramMessageWithToken } from '@/lib/instagram';
 
 interface SendMessageOptions {
@@ -28,7 +27,7 @@ export async function sendChannelMessage({ conversationId, companyId, content, f
     if (channel.type === ChannelType.WHATSAPP) {
         const config = channel.configJson as { phoneNumberId?: string; accessToken?: string } | null;
         if (config?.accessToken && config?.phoneNumberId) {
-            await fetch(`https://graph.facebook.com/v18.0/${config.phoneNumberId}/messages`, {
+            const res = await fetch(`https://graph.facebook.com/v18.0/${config.phoneNumberId}/messages`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${config.accessToken}`,
@@ -40,13 +39,27 @@ export async function sendChannelMessage({ conversationId, companyId, content, f
                     text: { body: content },
                 }),
             });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                const errorMsg = (errorData as any)?.error?.message || `HTTP ${res.status}`;
+                console.error(`[WhatsApp] Failed to send message to ${contact.phone}:`, errorMsg);
+                throw new Error(`WhatsApp API error: ${errorMsg}`);
+            }
         } else {
-            await sendWhatsAppMessage(contact.phone, content);
+            console.error('[WhatsApp] Channel missing accessToken or phoneNumberId');
+            throw new Error('WhatsApp channel not configured');
         }
     } else if (channel.type === ChannelType.INSTAGRAM) {
         const config = channel.configJson as { accessToken?: string; pageId?: string } | null;
         if (config?.accessToken) {
-            await sendInstagramMessageWithToken(contact.phone, content, config.accessToken, config.pageId);
+            const result = await sendInstagramMessageWithToken(contact.phone, content, config.accessToken, config.pageId);
+            if (!result.success) {
+                throw new Error(`Instagram API error: ${result.message}`);
+            }
+        } else {
+            console.error('[Instagram] Channel missing accessToken');
+            throw new Error('Instagram channel not configured');
         }
     }
 
