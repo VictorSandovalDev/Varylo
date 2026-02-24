@@ -7,120 +7,47 @@ import { revalidatePath } from 'next/cache';
 import { encrypt } from '@/lib/encryption';
 import OpenAI from 'openai';
 
-export async function exchangeWhatsAppCode(
-    code: string,
-    sessionInfo?: { phone_number_id?: string; waba_id?: string }
-) {
+export async function saveWhatsAppCredentials(prevState: string | undefined, formData: FormData) {
     const session = await auth();
 
     if (!session?.user?.companyId) {
-        return { success: false, message: 'No authorized session found.' };
+        return 'Error: No authorized session found.';
     }
 
     const companyId = session.user.companyId;
-    const appId = process.env.META_APP_ID;
-    const appSecret = process.env.META_APP_SECRET;
+    const phoneNumberId = formData.get('phoneNumberId') as string;
+    const accessToken = formData.get('accessToken') as string;
+    const verifyToken = formData.get('verifyToken') as string;
 
-    if (!appId || !appSecret) {
-        return { success: false, message: 'Server configuration missing (META_APP_ID / META_APP_SECRET).' };
+    if (!phoneNumberId || !accessToken || !verifyToken) {
+        return 'Error: All fields are required.';
     }
 
     try {
-        // 1. Exchange code for access token
-        const tokenUrl = `https://graph.facebook.com/v21.0/oauth/access_token?client_id=${appId}&client_secret=${appSecret}&code=${code}`;
-        const tokenRes = await fetch(tokenUrl);
-        const tokenData = await tokenRes.json();
+        // Upsert the channel: look for existing WHATSAPP channel for this company
+        // Since schema doesn't have unique constraint on [companyId, type], we findFirst then update or create.
+        // Or we can assume one channel per type per company for now.
 
-        if (!tokenRes.ok || !tokenData.access_token) {
-            console.error('Token exchange failed:', tokenData);
-            return { success: false, message: `Token exchange failed: ${tokenData.error?.message || 'Unknown error'}` };
-        }
-
-        const accessToken = tokenData.access_token as string;
-
-        // 2. Use session info from Embedded Signup if available
-        let phoneNumberId = sessionInfo?.phone_number_id;
-        let wabaId = sessionInfo?.waba_id;
-
-        // 3. If missing wabaId, try debug_token to find it from granular scopes
-        if (!wabaId) {
-            const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${accessToken}&access_token=${appId}|${appSecret}`;
-            const debugRes = await fetch(debugUrl);
-            const debugData = await debugRes.json();
-
-            if (debugData.data?.granular_scopes) {
-                const waScope = debugData.data.granular_scopes.find(
-                    (s: any) => s.scope === 'whatsapp_business_management'
-                );
-                if (waScope?.target_ids?.length > 0) {
-                    wabaId = waScope.target_ids[0];
-                }
-            }
-        }
-
-        // 4. If we have wabaId but no phoneNumberId, fetch phone numbers
-        if (wabaId && !phoneNumberId) {
-            const phonesRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/phone_numbers`, {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            const phonesData = await phonesRes.json();
-            if (phonesData.data?.length > 0) {
-                phoneNumberId = phonesData.data[0].id;
-            }
-        }
-
-        if (!phoneNumberId || !wabaId) {
-            return { success: false, message: 'Could not determine Phone Number ID or WABA ID from the signup flow.' };
-        }
-
-        // 5. Subscribe the WABA to webhooks
-        const subscribeRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/subscribed_apps`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        if (!subscribeRes.ok) {
-            const subData = await subscribeRes.json();
-            console.error('WABA subscription failed:', subData);
-            // Non-fatal: continue anyway
-        }
-
-        // 6. Register the phone number
-        const registerRes = await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/register`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
+        const existingChannel = await prisma.channel.findFirst({
+            where: {
+                companyId,
+                type: ChannelType.WHATSAPP,
             },
-            body: JSON.stringify({
-                messaging_product: 'whatsapp',
-                pin: '000000',
-            }),
         });
-        if (!registerRes.ok) {
-            const regData = await registerRes.json();
-            // 4600xx errors mean already registered — that's fine
-            if (!regData.error?.code?.toString().startsWith('460')) {
-                console.error('Phone registration failed:', regData);
-            }
-        }
 
-        // 7. Save to DB
-        const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'varylo_verify_token';
         const configJson = {
             phoneNumberId,
             accessToken,
-            wabaId,
             verifyToken,
         };
-
-        const existingChannel = await prisma.channel.findFirst({
-            where: { companyId, type: ChannelType.WHATSAPP },
-        });
 
         if (existingChannel) {
             await prisma.channel.update({
                 where: { id: existingChannel.id },
-                data: { configJson, status: ChannelStatus.CONNECTED },
+                data: {
+                    configJson,
+                    status: ChannelStatus.CONNECTED, // Assume connected if creds provided
+                },
             });
         } else {
             await prisma.channel.create({
@@ -134,10 +61,10 @@ export async function exchangeWhatsAppCode(
         }
 
         revalidatePath('/[lang]/company/settings', 'page');
-        return { success: true, message: 'WhatsApp connected successfully.' };
+        return 'Success: Credentials saved successfully.';
     } catch (error) {
-        console.error('Failed to exchange WhatsApp code:', error);
-        return { success: false, message: 'Failed to connect WhatsApp.' };
+        console.error('Failed to save WhatsApp credentials:', error);
+        return 'Error: Failed to save credentials.';
     }
 }
 

@@ -1,147 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useActionState, useState } from 'react';
+import { saveWhatsAppCredentials } from './actions';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle2, Facebook } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-// Extend window interface for FB SDK
-declare global {
-    interface Window {
-        FB: any;
-        fbAsyncInit: () => void;
-    }
-}
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export function WhatsAppConnectionForm({
     initialPhoneNumberId,
-    initialWabaId,
+    initialVerifyToken,
     hasAccessToken
 }: {
-    initialPhoneNumberId?: string;
-    initialWabaId?: string;
-    hasAccessToken?: boolean;
+    initialPhoneNumberId?: string,
+    initialVerifyToken?: string,
+    hasAccessToken?: boolean
 }) {
+    const [state, action, isPending] = useActionState(saveWhatsAppCredentials, undefined);
     const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
     const [isTesting, setIsTesting] = useState(false);
     const [isDisconnecting, setIsDisconnecting] = useState(false);
 
-    // Embedded Signup state
-    const [sdkLoaded, setSdkLoaded] = useState(false);
-    const [isConnecting, setIsConnecting] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [justConnected, setJustConnected] = useState(false);
+    const isSuccess = state?.startsWith('Success');
+    const isError = state?.startsWith('Error');
 
-    const isConnected = hasAccessToken || justConnected;
-
-    // Load FB SDK — poll for window.FB since Instagram may also load it
-    useEffect(() => {
-        if (window.FB) {
-            setSdkLoaded(true);
-            return;
-        }
-
-        // Another component (Instagram) may already be loading the SDK.
-        // Poll for window.FB instead of relying on fbAsyncInit which can be overwritten.
-        const interval = setInterval(() => {
-            if (window.FB) {
-                setSdkLoaded(true);
-                clearInterval(interval);
-            }
-        }, 200);
-
-        // Only load the SDK if no script is already loading it
-        if (!document.querySelector('script[src*="connect.facebook.net"]')) {
-            window.fbAsyncInit = function () {
-                window.FB.init({
-                    appId: process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || '',
-                    cookie: true,
-                    xfbml: true,
-                    version: 'v21.0',
-                });
-            };
-
-            const script = document.createElement('script');
-            script.src = "https://connect.facebook.net/en_US/sdk.js";
-            script.async = true;
-            script.defer = true;
-            document.body.appendChild(script);
-        }
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Listen for Embedded Signup session info via postMessage
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            if (event.origin !== 'https://www.facebook.com' && event.origin !== 'https://web.facebook.com') return;
-
-            try {
-                const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-                if (data.type === 'WA_EMBEDDED_SIGNUP') {
-                    // data.data contains { phone_number_id, waba_id }
-                    if (data.data?.phone_number_id && data.data?.waba_id) {
-                        // Store for use in the FB.login callback
-                        (window as any).__waEmbeddedSignupData = data.data;
-                    }
-                }
-            } catch {
-                // Not a JSON message we care about
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, []);
-
-    const handleLogin = () => {
-        if (!window.FB) return;
-
-        setError(null);
-        setIsConnecting(true);
-
-        // Clear any previous session data
-        (window as any).__waEmbeddedSignupData = null;
-
-        const configId = process.env.NEXT_PUBLIC_WA_CONFIG_ID;
-
-        window.FB.login(
-            (response: any) => {
-                if (response.authResponse?.code) {
-                    // Grab session info captured via postMessage
-                    const sessionInfo = (window as any).__waEmbeddedSignupData || {};
-
-                    import('./actions').then(({ exchangeWhatsAppCode }) =>
-                        exchangeWhatsAppCode(response.authResponse.code, sessionInfo)
-                    ).then((result) => {
-                        if (result.success) {
-                            setJustConnected(true);
-                        } else {
-                            setError(result.message);
-                        }
-                        setIsConnecting(false);
-                    }).catch(() => {
-                        setError('Error al procesar la conexión.');
-                        setIsConnecting(false);
-                    });
-                } else {
-                    setError('Inicio de sesión cancelado o no autorizado.');
-                    setIsConnecting(false);
-                }
-            },
-            {
-                config_id: configId,
-                response_type: 'code',
-                override_default_response_type: true,
-                extras: {
-                    feature: 'whatsapp_embedded_signup',
-                    sessionInfoVersion: 2,
-                },
-            }
-        );
-    };
+    // Derived state: Connected if hasAccessToken OR if just successfully saved (optimistic update could be complex with useActionState, 
+    // but usually page revalidation handles it. However, useActionState doesn't auto-refresh props without revalidation.
+    // The server action calls revalidatePath, so props should update if this is a subcomponent of a RSC.
+    // But we can fallback to isSuccess to switch view temporarily).
+    const isConnected = hasAccessToken || isSuccess;
 
     const handleTestConnection = async () => {
         setIsTesting(true);
@@ -150,7 +38,7 @@ export function WhatsAppConnectionForm({
             const { testWhatsAppConnection } = await import('./actions');
             const result = await testWhatsAppConnection();
             setTestResult(result);
-        } catch {
+        } catch (error) {
             setTestResult({ success: false, message: 'Failed to run test.' });
         } finally {
             setIsTesting(false);
@@ -164,8 +52,8 @@ export function WhatsAppConnectionForm({
         try {
             const { disconnectWhatsApp } = await import('./actions');
             await disconnectWhatsApp();
-            setJustConnected(false);
-        } catch {
+            // Props will update via revalidatePath
+        } catch (error) {
             alert('Error al desconectar.');
         } finally {
             setIsDisconnecting(false);
@@ -185,24 +73,13 @@ export function WhatsAppConnectionForm({
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {initialPhoneNumberId && (
-                        <div className="grid gap-1">
-                            <Label className="text-xs text-muted-foreground">Phone Number ID</Label>
-                            <p className="font-mono text-sm">{initialPhoneNumberId}</p>
-                        </div>
-                    )}
-                    {initialWabaId && (
-                        <div className="grid gap-1">
-                            <Label className="text-xs text-muted-foreground">WABA ID</Label>
-                            <p className="font-mono text-sm">{initialWabaId}</p>
-                        </div>
-                    )}
+                    <div className="grid gap-1">
+                        <Label className="text-xs text-muted-foreground">Phone Number ID</Label>
+                        <p className="font-mono text-sm">{initialPhoneNumberId}</p>
+                    </div>
 
                     {testResult && (
-                        <div className={cn(
-                            "flex items-center gap-2 text-sm p-3 rounded-md bg-background border",
-                            testResult.success ? "text-green-600 border-green-200" : "text-destructive border-red-200"
-                        )}>
+                        <div className={`flex items-center gap-2 text-sm p-3 rounded-md bg-background border ${testResult.success ? 'text-green-600 border-green-200' : 'text-destructive border-red-200'}`}>
                             {testResult.success ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                             {testResult.message}
                         </div>
@@ -236,37 +113,55 @@ export function WhatsAppConnectionForm({
             <CardHeader>
                 <CardTitle>Conexión de WhatsApp Business</CardTitle>
                 <CardDescription>
-                    Conecta tu número de WhatsApp Business con un click.
+                    Ingresa tus credenciales de Meta for Developers para conectar tu número.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex flex-col items-center justify-center py-6 space-y-4">
-                    {!process.env.NEXT_PUBLIC_WA_CONFIG_ID && (
-                        <div className="w-full text-center p-2 text-xs bg-yellow-50 text-yellow-800 border border-yellow-200 rounded mb-2">
-                            Falta NEXT_PUBLIC_WA_CONFIG_ID en .env
-                        </div>
-                    )}
-                    <Button
-                        type="button"
-                        onClick={handleLogin}
-                        disabled={!sdkLoaded || isConnecting}
-                        className="bg-[#1877F2] hover:bg-[#1864D9] text-white flex items-center gap-2 text-base h-12 px-6 shadow-sm"
-                    >
-                        <Facebook className="h-5 w-5" />
-                        {isConnecting ? 'Conectando...' : 'Conectar con Facebook'}
-                    </Button>
-                    <p className="text-xs text-muted-foreground text-center max-w-sm">
-                        Se abrirá una ventana para que conectes tu cuenta de WhatsApp Business directamente.
-                    </p>
+            <form action={action}>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="phoneNumberId">Phone Number ID</Label>
+                        <Input
+                            id="phoneNumberId"
+                            name="phoneNumberId"
+                            placeholder="Ej. 10456..."
+                            defaultValue={initialPhoneNumberId}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="accessToken">Permanent Access Token</Label>
+                        <Input
+                            id="accessToken"
+                            name="accessToken"
+                            type="password"
+                            placeholder="EAAG..."
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="verifyToken">Verify Token (Webhook)</Label>
+                        <Input
+                            id="verifyToken"
+                            name="verifyToken"
+                            placeholder="MiTokenSecreto"
+                            defaultValue={initialVerifyToken}
+                            required
+                        />
+                    </div>
 
-                    {error && (
+                    {isError && (
                         <div className="flex items-center gap-2 text-sm text-destructive">
                             <AlertCircle className="h-4 w-4" />
-                            {error}
+                            {state}
                         </div>
                     )}
-                </div>
-            </CardContent>
+                </CardContent>
+                <CardFooter>
+                    <Button type="submit" disabled={isPending} className="w-full">
+                        {isPending ? 'Guardando...' : 'Conectar WhatsApp'}
+                    </Button>
+                </CardFooter>
+            </form>
         </Card>
     );
 }
