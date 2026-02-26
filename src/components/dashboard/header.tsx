@@ -77,7 +77,7 @@ export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OF
                     <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
-                        <Link href="/company/settings" className="w-full">
+                        <Link href={role === 'agent' ? `/${lang}/agent/profile` : `/${lang}/company/settings`} className="w-full">
                             Perfil
                         </Link>
                     </DropdownMenuItem>
