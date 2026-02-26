@@ -14,16 +14,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Sidebar, TagData } from './sidebar';
+import { StatusSelector } from './status-selector';
 import { useState } from 'react';
+import { updateUserStatus } from '@/lib/user-status';
 
 interface DashboardHeaderProps {
     title: string;
     lang: string;
     role: 'super-admin' | 'company' | 'agent';
     tags?: TagData[];
+    userStatus?: 'ONLINE' | 'BUSY' | 'OFFLINE';
 }
 
-export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeaderProps) {
+export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OFFLINE' }: DashboardHeaderProps) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -59,6 +62,10 @@ export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeade
                 <h1 className="text-lg font-semibold">{title}</h1>
             </div>
 
+            {role !== 'super-admin' && (
+                <StatusSelector initialStatus={userStatus} />
+            )}
+
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full bg-primary/10 text-primary hover:bg-primary/20">
@@ -75,7 +82,10 @@ export function DashboardHeader({ title, lang, role, tags = [] }: DashboardHeade
                         </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => signOut()}>
+                    <DropdownMenuItem onClick={async () => {
+                        await updateUserStatus('OFFLINE');
+                        signOut();
+                    }}>
                         Cerrar sesión
                     </DropdownMenuItem>
                 </DropdownMenuContent>

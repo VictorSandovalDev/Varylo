@@ -2,7 +2,7 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, MessageDirection } from '@prisma/client';
 
 export async function getAnalyticsData() {
     const session = await auth();
@@ -20,9 +20,7 @@ export async function getAnalyticsData() {
         where: { companyId, status: 'OPEN', assignedAgents: { none: {} } }
     });
 
-    // Desatendido (Simple logic: OPEN and lastMessageAt > 24h ago ?? OR just 0 for MVP if undefined)
-    // Let's assume 'Desatendido' means 'Unattended' -> maybe unread?
-    // For now, I'll return 0 to match the clean slate, or maybe check for > 24h inactivity on OPEN
+    // Desatendido: OPEN conversations with no activity in 24h
     const yesterday = new Date();
     yesterday.setHours(yesterday.getHours() - 24);
     const unattendedCount = await prisma.conversation.count({
@@ -33,16 +31,24 @@ export async function getAnalyticsData() {
         }
     });
 
-    // Pendientes: Maybe 'RESOLVED' but not closed? Or just 0.
-    const pendingCount = 0;
-
+    // Pendientes: OPEN conversations where the last message is INBOUND (customer waiting for reply)
+    const openConversations = await prisma.conversation.findMany({
+        where: { companyId, status: 'OPEN' },
+        select: {
+            id: true,
+            messages: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                select: { direction: true },
+            },
+        },
+    });
+    const pendingCount = openConversations.filter(
+        c => c.messages[0]?.direction === MessageDirection.INBOUND
+    ).length;
 
     // --- 2. Agent Status ---
-    // We don't have real-time presence. define:
-    // En línea: Active users (Role AGENT/COMPANY_ADMIN)
-    // Fuera de línea: Inactive users
-    // Ocupado: Active users with > 5 open conversations (arbitrary threshold for demo)
-
+    // Uses the real UserStatus field from the database
     const allAgents = await prisma.user.findMany({
         where: {
             companyId,
@@ -60,15 +66,12 @@ export async function getAnalyticsData() {
     let offlineCount = 0;
 
     for (const agent of allAgents) {
-        if (!agent.active) {
-            offlineCount++;
+        if (agent.status === 'ONLINE') {
+            onlineCount++;
+        } else if (agent.status === 'BUSY') {
+            busyCount++;
         } else {
-            // Active
-            if (agent.assignedConversations.length >= 5) {
-                busyCount++;
-            } else {
-                onlineCount++;
-            }
+            offlineCount++;
         }
     }
 
@@ -107,17 +110,22 @@ export async function getAnalyticsData() {
 
 
     // --- 4. Conversaciones por agentes (Detailed) ---
-    const conversationsByAgent = allAgents.map(agent => ({
-        id: agent.id,
-        name: agent.name || agent.email,
-        email: agent.email,
-        role: agent.role,
-        avatar: agent.name?.[0] || '?',
-        status: agent.active ? 'active' : 'inactive',
-        openCount: agent.assignedConversations.length,
-        // unattendedCount -> needs complex logic, mock 0
-        unattendedCount: 0
-    })).filter(a => a.role === Role.AGENT); // Show only Agents as requested
+    const conversationsByAgent = allAgents.map(agent => {
+        const unattended = agent.assignedConversations.filter(
+            c => c.lastMessageAt < yesterday
+        ).length;
+
+        return {
+            id: agent.id,
+            name: agent.name || agent.email,
+            email: agent.email,
+            role: agent.role,
+            avatar: agent.name?.[0] || '?',
+            status: agent.status === 'ONLINE' ? 'active' : agent.status === 'BUSY' ? 'busy' : 'inactive',
+            openCount: agent.assignedConversations.length,
+            unattendedCount: unattended,
+        };
+    });
 
     // --- 5. Teams ---
     const teamsData: any[] = []; // Empty for now

@@ -150,6 +150,45 @@ export async function reanalyzeConversation(conversationId: string) {
     return { success: !!result };
 }
 
+export async function closeConversation(conversationId: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session?.user?.companyId) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    try {
+        const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId, companyId: session.user.companyId },
+        });
+
+        if (!conversation) {
+            return { success: false, message: "Conversation not found" };
+        }
+
+        // Send farewell message through the channel
+        await sendChannelMessage({
+            conversationId,
+            companyId: session.user.companyId,
+            content: 'Esta conversación ha sido finalizada. Si necesita más ayuda, no dude en escribirnos nuevamente.',
+            fromName: session.user.name || 'Sistema',
+        });
+
+        // Mark as resolved
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { status: 'RESOLVED' },
+        });
+
+        revalidatePath('/[lang]/company/conversations', 'page');
+        revalidatePath('/[lang]/agent', 'page');
+        return { success: true };
+    } catch (error) {
+        console.error("Error closing conversation:", error);
+        const msg = error instanceof Error ? error.message : "Failed to close conversation";
+        return { success: false, message: msg };
+    }
+}
+
 export async function deleteConversation(conversationId: string) {
     const session = await auth();
     if (!session?.user?.companyId) {

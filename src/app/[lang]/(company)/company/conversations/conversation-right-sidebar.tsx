@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert } from "lucide-react";
+import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2 } from "lucide-react";
 import { AgentSelector } from "./agent-selector";
 import { TagSelector } from "./tag-selector";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ interface ConversationRightSidebarProps {
 }
 
 import { useRouter, useParams } from "next/navigation";
-import { deleteConversation, updatePriority, reanalyzeConversation } from "./actions";
+import { deleteConversation, closeConversation, updatePriority, reanalyzeConversation } from "./actions";
 
 export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className, isAgent, insight }: ConversationRightSidebarProps) {
     const contact = conversation.contact || {};
@@ -50,6 +50,25 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
             console.error(e);
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    const [closing, setClosing] = React.useState(false);
+
+    const handleClose = async () => {
+        setClosing(true);
+        try {
+            const result = await closeConversation(conversation.id);
+            if (result.success) {
+                router.push(`/${lang}/company/conversations`);
+                router.refresh();
+            } else {
+                alert(result.message || "Error al cerrar la conversación");
+            }
+        } catch (e) {
+            alert("Error inesperado al cerrar");
+        } finally {
+            setClosing(false);
         }
     };
 
@@ -127,6 +146,28 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><MessageSquare className="h-4 w-4" /></Button>
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
+
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-green-600 hover:border-green-500/50" disabled={closing}>
+                                        {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Finalizar conversación?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Se enviará un mensaje de despedida al cliente y la conversación se marcará como resuelta.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleClose} className="bg-green-600 text-white hover:bg-green-700">
+                                            Finalizar
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
 
                             {!isAgent && (
                                 <AlertDialog>

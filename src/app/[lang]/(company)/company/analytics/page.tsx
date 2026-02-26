@@ -249,7 +249,7 @@ export default function AnalyticsPage() {
                                             </Avatar>
                                             <span className={cn(
                                                 "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
-                                                agent.status === 'active' ? "bg-emerald-500" : "bg-neutral-300"
+                                                agent.status === 'active' ? "bg-emerald-500" : agent.status === 'busy' ? "bg-yellow-500" : "bg-neutral-300"
                                             )} />
                                         </div>
                                         <div>

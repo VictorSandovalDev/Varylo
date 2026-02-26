@@ -15,17 +15,36 @@ export default async function CompanyLayout({
     const session = await auth();
 
     let tags: any[] = [];
+    let userStatus: 'ONLINE' | 'BUSY' | 'OFFLINE' = 'OFFLINE';
+
     if (session?.user?.companyId) {
         try {
-            tags = await prisma.tag.findMany({
-                where: {
-                    companyId: session.user.companyId,
-                    showInSidebar: true
-                },
-                orderBy: { name: 'asc' }
-            });
+            const [fetchedTags, user] = await Promise.all([
+                prisma.tag.findMany({
+                    where: {
+                        companyId: session.user.companyId,
+                        showInSidebar: true
+                    },
+                    orderBy: { name: 'asc' }
+                }),
+                session.user.id ? prisma.user.findUnique({
+                    where: { id: session.user.id },
+                    select: { status: true },
+                }) : null,
+            ]);
+            tags = fetchedTags;
+            userStatus = (user?.status as typeof userStatus) || 'OFFLINE';
+
+            // Auto-set to ONLINE if currently OFFLINE (user just loaded dashboard)
+            if (session.user.id && userStatus === 'OFFLINE') {
+                userStatus = 'ONLINE';
+                prisma.user.update({
+                    where: { id: session.user.id },
+                    data: { status: 'ONLINE', lastSeenAt: new Date() },
+                }).catch(() => {});
+            }
         } catch (e) {
-            console.error("Failed to fetch tags for sidebar", e);
+            console.error("Failed to fetch layout data", e);
         }
     }
 
@@ -38,6 +57,7 @@ export default async function CompanyLayout({
                     lang={lang}
                     role="company"
                     tags={tags}
+                    userStatus={userStatus}
                 />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
                     {children}

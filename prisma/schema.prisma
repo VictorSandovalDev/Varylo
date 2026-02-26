@@ -59,6 +59,12 @@ enum AutomationPriority {
   AI_FIRST
 }
 
+enum UserStatus {
+  ONLINE
+  BUSY
+  OFFLINE
+}
+
 enum CreditTransactionType {
   RECHARGE
   AI_USAGE
@@ -75,6 +81,8 @@ model User {
   passwordHash  String?
   role          Role      @default(COMPANY_ADMIN)
   active        Boolean   @default(true)
+  status        UserStatus @default(OFFLINE)
+  lastSeenAt    DateTime?
   companyId     String?
   company       Company?  @relation(fields: [companyId], references: [id])
   createdAt     DateTime  @default(now())
