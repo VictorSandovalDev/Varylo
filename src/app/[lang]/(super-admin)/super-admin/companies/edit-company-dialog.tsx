@@ -35,10 +35,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { updateCompany } from './actions';
+import { updateCompany, adjustCompanyCredits } from './actions';
 import { Company } from '@prisma/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Textarea } from "@/components/ui/textarea"
 
 interface CompanyWithUsers extends Company {
     users: any[];
@@ -55,8 +56,20 @@ interface EditCompanyDialogProps {
     company: CompanyWithUsers;
 }
 
+function formatCOP(amount: number): string {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
 export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
     const [open, setOpen] = useState(false);
+    const [creditAmount, setCreditAmount] = useState('');
+    const [creditDescription, setCreditDescription] = useState('');
+    const [creditLoading, setCreditLoading] = useState(false);
     const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -84,6 +97,38 @@ export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
         }
     }
 
+    async function onAdjustCredits() {
+        const amount = parseInt(creditAmount);
+        if (isNaN(amount) || amount === 0) {
+            toast.error('Ingresa un monto válido (positivo para agregar, negativo para descontar)');
+            return;
+        }
+        if (!creditDescription.trim()) {
+            toast.error('Ingresa una descripción para el ajuste');
+            return;
+        }
+        setCreditLoading(true);
+        try {
+            const result = await adjustCompanyCredits({
+                companyId: company.id,
+                amount,
+                description: creditDescription.trim(),
+            });
+            if (result.success) {
+                toast.success(`Créditos ajustados. Nuevo saldo: ${formatCOP(result.newBalance!)}`);
+                setCreditAmount('');
+                setCreditDescription('');
+                router.refresh();
+            } else {
+                toast.error(result.error || 'Error al ajustar créditos');
+            }
+        } catch {
+            toast.error('Ocurrió un error inesperado');
+        } finally {
+            setCreditLoading(false);
+        }
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -99,9 +144,10 @@ export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
                     </DialogDescription>
                 </DialogHeader>
                 <Tabs defaultValue="details" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="details">Detalles</TabsTrigger>
                         <TabsTrigger value="users">Usuarios</TabsTrigger>
+                        <TabsTrigger value="credits">Créditos</TabsTrigger>
                     </TabsList>
                     <TabsContent value="details">
                         <Form {...form}>
@@ -194,6 +240,44 @@ export function EditCompanyDialog({ company }: EditCompanyDialogProps) {
                                     No hay usuarios registrados en esta empresa.
                                 </p>
                             )}
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="credits">
+                        <div className="py-4 space-y-4">
+                            <div className="p-4 border rounded-lg">
+                                <p className="text-sm text-muted-foreground">Saldo actual</p>
+                                <p className="text-2xl font-bold">{formatCOP(company.creditBalance)}</p>
+                            </div>
+                            <div className="space-y-3">
+                                <div>
+                                    <label className="text-sm font-medium">Monto (COP)</label>
+                                    <Input
+                                        type="number"
+                                        placeholder="Ej: 10000 para agregar, -5000 para descontar"
+                                        value={creditAmount}
+                                        onChange={(e) => setCreditAmount(e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-sm font-medium">Descripción</label>
+                                    <Textarea
+                                        placeholder="Motivo del ajuste..."
+                                        value={creditDescription}
+                                        onChange={(e) => setCreditDescription(e.target.value)}
+                                        rows={2}
+                                    />
+                                </div>
+                                <Button
+                                    onClick={onAdjustCredits}
+                                    disabled={creditLoading}
+                                    className="w-full"
+                                >
+                                    {creditLoading ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : null}
+                                    Ajustar Créditos
+                                </Button>
+                            </div>
                         </div>
                     </TabsContent>
                 </Tabs>

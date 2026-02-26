@@ -58,6 +58,13 @@ enum AutomationPriority {
   AI_FIRST
 }
 
+enum CreditTransactionType {
+  RECHARGE
+  AI_USAGE
+  MANUAL_ADJUST
+  REFUND
+}
+
 // Models
 
 model User {
@@ -86,16 +93,19 @@ model Company {
 
   openaiApiKey          String?
   openaiApiKeyUpdatedAt DateTime?
+  creditBalance         Int           @default(0)
 
-  users         User[]
-  channels      Channel[]
-  contacts      Contact[]
-  conversations Conversation[]
-  messages      Message[]
-  insights      ConversationInsight[]
-  tags          Tag[]
-  aiAgents      AiAgent[]
-  chatbots      Chatbot[]
+  users              User[]
+  channels           Channel[]
+  contacts           Contact[]
+  conversations      Conversation[]
+  messages           Message[]
+  insights           ConversationInsight[]
+  tags               Tag[]
+  aiAgents           AiAgent[]
+  chatbots           Chatbot[]
+  creditTransactions CreditTransaction[]
+  aiUsageLogs        AiUsageLog[]
 }
 
 model Channel {
@@ -259,4 +269,32 @@ model ChatbotSession {
   updatedAt      DateTime     @updatedAt
   chatbot        Chatbot      @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model CreditTransaction {
+  id          String                @id @default(cuid())
+  companyId   String
+  type        CreditTransactionType
+  amount      Int                   // positive for recharge/refund, negative for usage
+  balanceAfter Int
+  description String?
+  referenceId String?               @unique // Wompi transaction ID for idempotency
+  createdAt   DateTime              @default(now())
+
+  company     Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+}
+
+model AiUsageLog {
+  id               String   @id @default(cuid())
+  companyId        String
+  conversationId   String?
+  model            String
+  promptTokens     Int
+  completionTokens Int
+  totalTokens      Int
+  costCop          Int      // cost in COP
+  usedOwnKey       Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 }

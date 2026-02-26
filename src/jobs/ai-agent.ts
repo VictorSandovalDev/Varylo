@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { getOpenAIForCompany } from '@/lib/openai';
 import { sendChannelMessage } from '@/lib/channel-sender';
 import { Role } from '@prisma/client';
+import { checkCreditBalance, deductCredits, logUsageOnly } from '@/lib/credits';
 
 interface AiAgentResult {
     handled: boolean;
@@ -94,7 +95,17 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
         // Add the current message (it's already in DB but make sure it's in the history)
         // The last message in the DB should be the inbound one we just received
 
-        const openai = await getOpenAIForCompany(conversation.companyId);
+        const { client: openai, usesOwnKey } = await getOpenAIForCompany(conversation.companyId);
+
+        // Credit check: if not using own key, must have credits
+        if (!usesOwnKey) {
+            const { hasCredits } = await checkCreditBalance(conversation.companyId);
+            if (!hasCredits) {
+                console.log(`[AI Agent] Company ${conversation.companyId} has no credits, skipping AI`);
+                return { handled: false };
+            }
+        }
+
         const response = await openai.chat.completions.create({
             model: aiAgent.model,
             temperature: aiAgent.temperature,
@@ -104,6 +115,30 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
         let replyContent = response.choices[0]?.message?.content;
         if (!replyContent) {
             return { handled: false };
+        }
+
+        // Track usage
+        const usage = response.usage;
+        if (usage) {
+            if (usesOwnKey) {
+                await logUsageOnly({
+                    companyId: conversation.companyId,
+                    conversationId: conversation.id,
+                    model: aiAgent.model,
+                    promptTokens: usage.prompt_tokens,
+                    completionTokens: usage.completion_tokens,
+                    totalTokens: usage.total_tokens,
+                });
+            } else {
+                await deductCredits({
+                    companyId: conversation.companyId,
+                    conversationId: conversation.id,
+                    model: aiAgent.model,
+                    promptTokens: usage.prompt_tokens,
+                    completionTokens: usage.completion_tokens,
+                    totalTokens: usage.total_tokens,
+                });
+            }
         }
 
         // Check if AI wants to transfer

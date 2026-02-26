@@ -41,6 +41,7 @@ export default async function CompaniesPage() {
                             <TableHead>Plan</TableHead>
                             <TableHead>Estado</TableHead>
                             <TableHead>Usuarios</TableHead>
+                            <TableHead>Créditos</TableHead>
                             <TableHead>Fecha Registro</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -48,7 +49,7 @@ export default async function CompaniesPage() {
                     <TableBody>
                         {companies.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                                <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
                                     No hay empresas registradas.
                                 </TableCell>
                             </TableRow>
@@ -68,6 +69,9 @@ export default async function CompaniesPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{company.users.length}</TableCell>
+                                    <TableCell className="font-mono text-sm">
+                                        {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(company.creditBalance)}
+                                    </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                         {new Date(company.createdAt).toLocaleDateString()}
                                     </TableCell>

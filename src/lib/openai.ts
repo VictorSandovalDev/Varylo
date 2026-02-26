@@ -13,7 +13,7 @@ export function getOpenAI(): OpenAI {
     return globalForOpenAI.openai;
 }
 
-export async function getOpenAIForCompany(companyId: string): Promise<OpenAI> {
+export async function getOpenAIForCompany(companyId: string): Promise<{ client: OpenAI; usesOwnKey: boolean }> {
     const company = await prisma.company.findUnique({
         where: { id: companyId },
         select: { openaiApiKey: true },
@@ -22,11 +22,11 @@ export async function getOpenAIForCompany(companyId: string): Promise<OpenAI> {
     if (company?.openaiApiKey) {
         try {
             const decryptedKey = decrypt(company.openaiApiKey);
-            return new OpenAI({ apiKey: decryptedKey });
+            return { client: new OpenAI({ apiKey: decryptedKey }), usesOwnKey: true };
         } catch (error) {
             console.error(`[OpenAI] Failed to decrypt API key for company ${companyId}, falling back to global key`);
         }
     }
 
-    return getOpenAI();
+    return { client: getOpenAI(), usesOwnKey: false };
 }

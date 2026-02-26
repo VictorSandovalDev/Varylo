@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getOpenAIForCompany } from '@/lib/openai';
+import { checkCreditBalance, deductCredits, logUsageOnly } from '@/lib/credits';
 
 export async function analyzeConversation(conversationId: string) {
     try {
@@ -27,9 +28,20 @@ export async function analyzeConversation(conversationId: string) {
 
         const contactName = conversation.contact?.name || 'Desconocido';
 
-        const openai = await getOpenAIForCompany(conversation.companyId);
+        const { client: openai, usesOwnKey } = await getOpenAIForCompany(conversation.companyId);
+
+        // Credit check: if not using own key, must have credits
+        if (!usesOwnKey) {
+            const { hasCredits } = await checkCreditBalance(conversation.companyId);
+            if (!hasCredits) {
+                console.log(`[AI] Company ${conversation.companyId} has no credits, skipping analysis`);
+                return null;
+            }
+        }
+
+        const analysisModel = 'gpt-4o-mini';
         const response = await openai.chat.completions.create({
-            model: 'gpt-4o-mini',
+            model: analysisModel,
             temperature: 0.3,
             response_format: { type: 'json_object' },
             messages: [
@@ -52,6 +64,30 @@ Responde SOLO con el JSON, sin texto adicional.`,
                 },
             ],
         });
+
+        // Track usage
+        const usage = response.usage;
+        if (usage) {
+            if (usesOwnKey) {
+                await logUsageOnly({
+                    companyId: conversation.companyId,
+                    conversationId,
+                    model: analysisModel,
+                    promptTokens: usage.prompt_tokens,
+                    completionTokens: usage.completion_tokens,
+                    totalTokens: usage.total_tokens,
+                });
+            } else {
+                await deductCredits({
+                    companyId: conversation.companyId,
+                    conversationId,
+                    model: analysisModel,
+                    promptTokens: usage.prompt_tokens,
+                    completionTokens: usage.completion_tokens,
+                    totalTokens: usage.total_tokens,
+                });
+            }
+        }
 
         const content = response.choices[0]?.message?.content;
         if (!content) return null;

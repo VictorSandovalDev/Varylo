@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import { WhatsAppConnectionForm } from "./whatsapp-form"
 import { OpenAIKeyForm } from "./openai-form"
+import { CreditBalanceCard } from "./credit-balance-card"
 import { Instagram } from "lucide-react"
 
 import { auth } from '@/auth';
@@ -28,15 +29,18 @@ export default async function SettingsPage() {
     let hasOpenAIKey = false;
     let openaiKeyUpdatedAt: string | null = null;
     let companyName = '';
+    let creditBalance = 0;
+    let userEmail = session?.user?.email || '';
 
     if (companyId) {
         const company = await prisma.company.findUnique({
             where: { id: companyId },
-            select: { name: true, openaiApiKey: true, openaiApiKeyUpdatedAt: true },
+            select: { name: true, openaiApiKey: true, openaiApiKeyUpdatedAt: true, creditBalance: true },
         });
         companyName = company?.name || '';
         hasOpenAIKey = !!company?.openaiApiKey;
         openaiKeyUpdatedAt = company?.openaiApiKeyUpdatedAt?.toISOString() || null;
+        creditBalance = company?.creditBalance || 0;
 
         const whatsappChannel = await prisma.channel.findFirst({
             where: {
@@ -124,6 +128,14 @@ export default async function SettingsPage() {
                         </div>
                     </CardContent>
                 </Card>
+
+                {/* Credit Balance */}
+                <CreditBalanceCard
+                    balance={creditBalance}
+                    hasOwnKey={hasOpenAIKey}
+                    companyId={companyId || ''}
+                    companyEmail={userEmail}
+                />
 
                 {/* Integrations */}
                 <Separator />
