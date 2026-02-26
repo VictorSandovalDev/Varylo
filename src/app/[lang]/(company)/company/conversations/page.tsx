@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquareOff, Settings, Users, Tag, Inbox, Instagram, Phone } from "lucide-react";
+import { Search, MessageSquareOff, Settings, Users, Tag, Inbox, Instagram, Phone, Globe } from "lucide-react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import ChatInput from './chat-input';
@@ -262,6 +262,10 @@ export default async function ConversationsPage({
                                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-green-200 text-green-600 bg-green-50 font-normal flex items-center gap-1">
                                                     <Phone className="h-3 w-3" /> WhatsApp
                                                 </Badge>
+                                            ) : conv.channel?.type === ChannelType.WEB_CHAT ? (
+                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-blue-200 text-blue-600 bg-blue-50 font-normal flex items-center gap-1">
+                                                    <Globe className="h-3 w-3" /> Web Chat
+                                                </Badge>
                                             ) : conv.channel?.type ? (
                                                 <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-gray-200 text-gray-500 font-normal">
                                                     {conv.channel.type}
@@ -313,14 +317,22 @@ export default async function ConversationsPage({
                                             <Badge variant="outline" className="text-[10px] h-4 px-1 border-green-200 text-green-600 bg-green-50 flex items-center gap-1">
                                                 <Phone className="h-3 w-3" /> WhatsApp
                                             </Badge>
+                                        ) : selectedConversation.channel?.type === ChannelType.WEB_CHAT ? (
+                                            <Badge variant="outline" className="text-[10px] h-4 px-1 border-blue-200 text-blue-600 bg-blue-50 flex items-center gap-1">
+                                                <Globe className="h-3 w-3" /> Web Chat
+                                            </Badge>
                                         ) : selectedConversation.channel?.type ? (
                                             <Badge variant="outline" className="text-[10px] h-4 px-1">{selectedConversation.channel.type}</Badge>
                                         ) : null}
-                                        <p className="text-xs text-muted-foreground">{selectedConversation.contact?.phone}</p>
+                                        {selectedConversation.channel?.type !== ChannelType.WEB_CHAT && (
+                                            <p className="text-xs text-muted-foreground">{selectedConversation.contact?.phone}</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                            <WindowTimer conversationId={selectedConversation.id} />
+                            {selectedConversation.channel?.type !== ChannelType.WEB_CHAT && (
+                                <WindowTimer conversationId={selectedConversation.id} />
+                            )}
                         </div>
 
 

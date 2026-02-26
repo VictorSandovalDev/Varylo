@@ -193,7 +193,7 @@ async function createSession(
         originDomain = opts.origin || 'Web';
     }
 
-    const visitorId = `${originDomain}_${Date.now()}`;
+    const visitorId = originDomain;
     const name = opts.visitorName || `Visitante ${originDomain}`;
 
     const contact = await prisma.contact.create({
