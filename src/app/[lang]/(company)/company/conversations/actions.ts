@@ -165,3 +165,34 @@ export async function deleteConversation(conversationId: string) {
         return { success: false, message: "Failed to delete conversation" };
     }
 }
+
+export async function deleteConversations(conversationIds: string[]) {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    if (session.user.role === Role.AGENT) {
+        return { success: false, message: "Agents cannot delete conversations" };
+    }
+
+    if (!conversationIds.length) {
+        return { success: false, message: "No conversations selected" };
+    }
+
+    try {
+        await prisma.conversation.deleteMany({
+            where: {
+                id: { in: conversationIds },
+                companyId: session.user.companyId,
+            }
+        });
+
+        revalidatePath('/[lang]/company/conversations', 'page');
+        revalidatePath('/[lang]/agent', 'page');
+        return { success: true, count: conversationIds.length };
+    } catch (error) {
+        console.error("Error deleting conversations:", error);
+        return { success: false, message: "Failed to delete conversations" };
+    }
+}

@@ -193,17 +193,27 @@ async function createSession(
         originDomain = opts.origin || 'Web';
     }
 
-    const visitorId = originDomain;
     const name = opts.visitorName || `Visitante ${originDomain}`;
 
-    const contact = await prisma.contact.create({
-        data: {
-            companyId,
-            phone: visitorId,
-            name,
-            email: opts.visitorEmail || undefined,
-        },
-    });
+    // Deduplicate: find existing contact by email or phone (domain)
+    let contact = null;
+
+    if (opts.visitorEmail) {
+        contact = await prisma.contact.findFirst({
+            where: { companyId, email: opts.visitorEmail },
+        });
+    }
+
+    if (!contact) {
+        contact = await prisma.contact.create({
+            data: {
+                companyId,
+                phone: originDomain,
+                name,
+                email: opts.visitorEmail || undefined,
+            },
+        });
+    }
 
     // Check for active AI agent on this channel
     const activeAiAgent = await prisma.aiAgent.findFirst({
