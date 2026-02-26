@@ -3,8 +3,9 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { Role } from '@prisma/client';
 
-export async function getContacts(search?: string, filter?: string) {
+export async function getContacts(search?: string, filter?: string, channel?: string) {
     const session = await auth();
     if (!session?.user?.companyId) {
         return [];
@@ -24,10 +25,17 @@ export async function getContacts(search?: string, filter?: string) {
     }
 
     if (filter === 'active') {
-        // Active contacts = contacts with OPEN conversations
         where.conversations = {
+            some: { status: 'OPEN' }
+        };
+    }
+
+    if (channel) {
+        where.conversations = {
+            ...where.conversations,
             some: {
-                status: 'OPEN'
+                ...where.conversations?.some,
+                channel: { type: channel },
             }
         };
     }
@@ -36,6 +44,11 @@ export async function getContacts(search?: string, filter?: string) {
         where,
         include: {
             tags: true,
+            conversations: {
+                select: { channel: { select: { type: true } } },
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+            },
             _count: {
                 select: { conversations: true }
             }
@@ -44,6 +57,36 @@ export async function getContacts(search?: string, filter?: string) {
             createdAt: 'desc'
         }
     });
+}
+
+export async function deleteContacts(contactIds: string[]) {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'Unauthorized' };
+    }
+
+    if (session.user.role === Role.AGENT) {
+        return { success: false, message: 'Agents cannot delete contacts' };
+    }
+
+    if (!contactIds.length) {
+        return { success: false, message: 'No contacts selected' };
+    }
+
+    try {
+        await prisma.contact.deleteMany({
+            where: {
+                id: { in: contactIds },
+                companyId: session.user.companyId,
+            }
+        });
+
+        revalidatePath('/[lang]/company/contacts', 'page');
+        return { success: true, count: contactIds.length };
+    } catch (error) {
+        console.error('Error deleting contacts:', error);
+        return { success: false, message: 'Failed to delete contacts' };
+    }
 }
 
 export async function createContact(data: {

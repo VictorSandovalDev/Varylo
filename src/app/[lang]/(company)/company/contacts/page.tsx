@@ -3,26 +3,24 @@ import { getContacts } from './actions';
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     Users,
-    Search,
-    Filter,
-    MoreVertical,
     Plus,
-    MessageSquare,
     MapPin,
     Mail,
     Phone,
-    ArrowUpDown
+    MoreVertical,
+    Globe,
+    Instagram,
 } from "lucide-react";
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ContactsToolbar } from './contacts-toolbar';
 
 export default async function ContactsPage(props: {
     params: Promise<{ lang: string }>,
-    searchParams: Promise<{ q?: string, filter?: string }>
+    searchParams: Promise<{ q?: string; filter?: string; channel?: string }>
 }) {
     const searchParams = await props.searchParams;
     const params = await props.params;
@@ -30,32 +28,18 @@ export default async function ContactsPage(props: {
     const session = await auth();
     if (!session) return null;
 
-    const contacts = await getContacts(searchParams.q, searchParams.filter);
+    const contacts = await getContacts(searchParams.q, searchParams.filter, searchParams.channel);
     const lang = params.lang;
 
     return (
         <div className="flex-1 flex flex-col h-full bg-white">
-            {/* Header */}
-            <header className="h-16 border-b flex items-center justify-between px-6 shrink-0 bg-white sticky top-0 z-10">
-                <h1 className="text-2xl font-semibold tracking-tight text-foreground">Contactos</h1>
-                <div className="flex items-center gap-3">
-                    <div className="relative w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Buscar..."
-                            className="pl-9 h-9 bg-gray-50/50 border-gray-200"
-                            defaultValue={searchParams.q}
-                        />
-                    </div>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><Filter className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><ArrowUpDown className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 border border-gray-200"><MoreVertical className="h-4 w-4" /></Button>
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground h-9 px-4 hidden sm:flex gap-2">
-                        <Plus className="h-4 w-4" />
-                        Mensaje
-                    </Button>
-                </div>
-            </header>
+            <ContactsToolbar
+                search={searchParams.q || ''}
+                filter={searchParams.filter || ''}
+                channel={searchParams.channel || ''}
+                contactIds={contacts.map(c => c.id)}
+                totalCount={contacts.length}
+            />
 
             {/* Content Area */}
             <main className="flex-1 overflow-y-auto p-6 bg-gray-50/30">
@@ -64,12 +48,12 @@ export default async function ContactsPage(props: {
                         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-2">
                             <Users className="h-8 w-8 text-gray-400" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900">No se encontraron contactos en esta cuenta</h2>
-                        <p className="text-muted-foreground">Empieza a añadir nuevos contactos haciendo clic en el botón de abajo o sincroniza tus canales.</p>
-                        <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-                            <Plus className="h-4 w-4" />
-                            Añadir contacto
-                        </Button>
+                        <h2 className="text-2xl font-bold text-gray-900">No se encontraron contactos</h2>
+                        <p className="text-muted-foreground">
+                            {searchParams.q ? 'No hay resultados para tu búsqueda.' :
+                             searchParams.channel ? 'No hay contactos en este canal.' :
+                             'Empieza a añadir nuevos contactos o sincroniza tus canales.'}
+                        </p>
                     </div>
                 ) : (
                     <div className="max-w-5xl mx-auto space-y-3">
@@ -85,11 +69,11 @@ export default async function ContactsPage(props: {
 
 function ContactCard({ contact, lang }: { contact: any, lang: string }) {
     const initials = (contact.name || contact.phone || '?').substring(0, 2).toUpperCase();
-
-    // Simple color hash for avatars based on contact name
     const colors = ['bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-fuchsia-600', 'bg-orange-600', 'bg-rose-600'];
     const colorIndex = contact.name ? contact.name.length % colors.length : 0;
     const avatarColor = colors[colorIndex];
+
+    const channelType = contact.conversations?.[0]?.channel?.type;
 
     return (
         <Card className="p-4 hover:shadow-md transition-shadow border-gray-200 bg-white group">
@@ -107,6 +91,21 @@ function ContactCard({ contact, lang }: { contact: any, lang: string }) {
                                 {contact.companyName}
                             </span>
                         )}
+                        {channelType === 'WHATSAPP' && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-green-200 text-green-600 bg-green-50 font-normal flex items-center gap-1">
+                                <Phone className="h-3 w-3" /> WhatsApp
+                            </Badge>
+                        )}
+                        {channelType === 'INSTAGRAM' && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-pink-200 text-pink-600 bg-pink-50 font-normal flex items-center gap-1">
+                                <Instagram className="h-3 w-3" /> Instagram
+                            </Badge>
+                        )}
+                        {channelType === 'WEB_CHAT' && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-blue-200 text-blue-600 bg-blue-50 font-normal flex items-center gap-1">
+                                <Globe className="h-3 w-3" /> Web
+                            </Badge>
+                        )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -116,10 +115,12 @@ function ContactCard({ contact, lang }: { contact: any, lang: string }) {
                                 <span className="truncate">{contact.email}</span>
                             </div>
                         )}
-                        <div className="flex items-center gap-1.5">
-                            <Phone className="h-3 w-3 opacity-50" />
-                            <span>{contact.phone}</span>
-                        </div>
+                        {!contact.phone?.startsWith('web_') && contact.phone !== contact.name?.replace('Visitante ', '') && (
+                            <div className="flex items-center gap-1.5">
+                                <Phone className="h-3 w-3 opacity-50" />
+                                <span>{contact.phone}</span>
+                            </div>
+                        )}
                         {(contact.city || contact.country) && (
                             <div className="flex items-center gap-1.5">
                                 <MapPin className="h-3 w-3 opacity-50" />
