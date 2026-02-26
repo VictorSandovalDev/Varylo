@@ -11,34 +11,36 @@ export async function getContacts(search?: string, filter?: string, channel?: st
         return [];
     }
 
-    const where: any = {
-        companyId: session.user.companyId,
-    };
+    const conditions: any[] = [];
 
     if (search) {
-        where.OR = [
-            { name: { contains: search, mode: 'insensitive' } },
-            { phone: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { companyName: { contains: search, mode: 'insensitive' } },
-        ];
+        conditions.push({
+            OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { phone: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } },
+                { companyName: { contains: search, mode: 'insensitive' } },
+            ],
+        });
     }
 
     if (filter === 'active') {
-        where.conversations = {
-            some: { status: 'OPEN' }
-        };
+        conditions.push({ conversations: { some: { status: 'OPEN' } } });
     }
 
     if (channel) {
-        where.conversations = {
-            ...where.conversations,
-            some: {
-                ...where.conversations?.some,
-                channel: { type: channel },
-            }
-        };
+        conditions.push({
+            OR: [
+                { originChannel: channel },
+                { conversations: { some: { channel: { type: channel } } } },
+            ],
+        });
     }
+
+    const where: any = {
+        companyId: session.user.companyId,
+        ...(conditions.length > 0 ? { AND: conditions } : {}),
+    };
 
     return prisma.contact.findMany({
         where,
