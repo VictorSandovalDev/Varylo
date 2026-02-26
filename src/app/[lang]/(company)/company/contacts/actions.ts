@@ -81,14 +81,14 @@ export async function deleteContacts(contactIds: string[]) {
             await tx.conversation.deleteMany({
                 where: {
                     contactId: { in: contactIds },
-                    companyId: session.user.companyId,
+                    companyId: session.user.companyId!,
                 },
             });
 
             await tx.contact.deleteMany({
                 where: {
                     id: { in: contactIds },
-                    companyId: session.user.companyId,
+                    companyId: session.user.companyId!,
                 },
             });
         });
