@@ -355,6 +355,115 @@ export async function removeOpenAIKey() {
     }
 }
 
+// WEB CHAT ACTIONS
+
+export async function activateWebChat() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, error: 'No authorized session.' };
+    }
+
+    const companyId = session.user.companyId;
+
+    try {
+        // Check if already exists
+        const existing = await prisma.channel.findFirst({
+            where: { companyId, type: ChannelType.WEB_CHAT },
+        });
+
+        if (existing && existing.status === ChannelStatus.CONNECTED) {
+            const config = existing.configJson as { apiKey?: string } | null;
+            return { success: true, apiKey: config?.apiKey || '' };
+        }
+
+        // Generate API key
+        const { randomBytes } = await import('crypto');
+        const apiKey = `wc_${randomBytes(24).toString('hex')}`;
+
+        if (existing) {
+            await prisma.channel.update({
+                where: { id: existing.id },
+                data: {
+                    status: ChannelStatus.CONNECTED,
+                    configJson: { apiKey },
+                },
+            });
+        } else {
+            await prisma.channel.create({
+                data: {
+                    companyId,
+                    type: ChannelType.WEB_CHAT,
+                    status: ChannelStatus.CONNECTED,
+                    configJson: { apiKey },
+                },
+            });
+        }
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, apiKey };
+    } catch (error) {
+        console.error('Failed to activate web chat:', error);
+        return { success: false, error: 'Error al activar Web Chat.' };
+    }
+}
+
+export async function deactivateWebChat() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, error: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: { companyId: session.user.companyId, type: ChannelType.WEB_CHAT },
+        });
+
+        if (channel) {
+            await prisma.channel.update({
+                where: { id: channel.id },
+                data: { status: ChannelStatus.DISCONNECTED, configJson: {} },
+            });
+        }
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to deactivate web chat:', error);
+        return { success: false, error: 'Error al desactivar Web Chat.' };
+    }
+}
+
+export async function regenerateWebChatKey() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, error: 'No authorized session.' };
+    }
+
+    try {
+        const channel = await prisma.channel.findFirst({
+            where: { companyId: session.user.companyId, type: ChannelType.WEB_CHAT },
+        });
+
+        if (!channel) {
+            return { success: false, error: 'Web Chat no está activado.' };
+        }
+
+        const { randomBytes } = await import('crypto');
+        const apiKey = `wc_${randomBytes(24).toString('hex')}`;
+
+        await prisma.channel.update({
+            where: { id: channel.id },
+            data: { configJson: { apiKey } },
+        });
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, apiKey };
+    } catch (error) {
+        console.error('Failed to regenerate web chat key:', error);
+        return { success: false, error: 'Error al regenerar la clave.' };
+    }
+}
+
 // AUTOMATION PRIORITY
 
 export async function updateChannelPriority(channelId: string, priority: AutomationPriority) {

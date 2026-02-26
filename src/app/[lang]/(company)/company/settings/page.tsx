@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { WhatsAppConnectionForm } from "./whatsapp-form"
 import { OpenAIKeyForm } from "./openai-form"
 import { CreditBalanceCard } from "./credit-balance-card"
+import { WebChatForm } from "./webchat-form"
 import { Instagram } from "lucide-react"
 
 import { auth } from '@/auth';
@@ -26,6 +27,10 @@ export default async function SettingsPage() {
     let whatsappConfig = null;
     let whatsappChannelId: string | null = null;
     let whatsappAutomationPriority: string = 'CHATBOT_FIRST';
+    let webchatActive = false;
+    let webchatApiKey: string | null = null;
+    let webchatChannelId: string | null = null;
+    let webchatAutomationPriority: string = 'CHATBOT_FIRST';
     let hasOpenAIKey = false;
     let openaiKeyUpdatedAt: string | null = null;
     let companyName = '';
@@ -59,6 +64,18 @@ export default async function SettingsPage() {
                     accessToken?: string
                 };
             }
+        }
+
+        const webchatChannel = await prisma.channel.findFirst({
+            where: { companyId, type: ChannelType.WEB_CHAT },
+        });
+
+        if (webchatChannel) {
+            webchatChannelId = webchatChannel.id;
+            webchatAutomationPriority = webchatChannel.automationPriority;
+            webchatActive = webchatChannel.status === 'CONNECTED';
+            const config = webchatChannel.configJson as { apiKey?: string } | null;
+            webchatApiKey = config?.apiKey || null;
         }
     }
 
@@ -152,6 +169,13 @@ export default async function SettingsPage() {
                     hasAccessToken={!!whatsappConfig?.accessToken}
                     channelId={whatsappChannelId}
                     automationPriority={whatsappAutomationPriority}
+                />
+
+                <WebChatForm
+                    isActive={webchatActive}
+                    apiKey={webchatApiKey}
+                    channelId={webchatChannelId}
+                    automationPriority={webchatAutomationPriority}
                 />
 
                 <Card>
