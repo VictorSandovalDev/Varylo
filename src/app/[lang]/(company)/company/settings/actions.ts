@@ -371,18 +371,18 @@ export async function activateWebChat() {
             where: { companyId, type: ChannelType.WEB_CHAT },
         });
 
-        if (existing && existing.status === ChannelStatus.CONNECTED) {
-            const config = existing.configJson as { apiKey?: string } | null;
-            return { success: true, apiKey: config?.apiKey || '' };
-        }
-
-        // Generate API key
-        const { randomBytes } = await import('crypto');
-        const apiKey = `wc_${randomBytes(24).toString('hex')}`;
-
+        let apiKey: string;
         let channelId: string;
 
-        if (existing) {
+        if (existing && existing.status === ChannelStatus.CONNECTED) {
+            // Already active — reuse existing key
+            const config = existing.configJson as { apiKey?: string } | null;
+            apiKey = config?.apiKey || '';
+            channelId = existing.id;
+        } else if (existing) {
+            // Exists but disconnected — reactivate with new key
+            const { randomBytes } = await import('crypto');
+            apiKey = `wc_${randomBytes(24).toString('hex')}`;
             await prisma.channel.update({
                 where: { id: existing.id },
                 data: {
@@ -392,6 +392,9 @@ export async function activateWebChat() {
             });
             channelId = existing.id;
         } else {
+            // Create new channel
+            const { randomBytes } = await import('crypto');
+            apiKey = `wc_${randomBytes(24).toString('hex')}`;
             const newChannel = await prisma.channel.create({
                 data: {
                     companyId,
@@ -403,7 +406,7 @@ export async function activateWebChat() {
             channelId = newChannel.id;
         }
 
-        // Auto-connect existing active chatbots and AI agents to this channel
+        // Always auto-connect active chatbots and AI agents to this channel
         const [chatbots, aiAgents] = await Promise.all([
             prisma.chatbot.findMany({
                 where: { companyId, active: true },

@@ -45,8 +45,11 @@ export async function handleChatbotResponse(conversationId: string, inboundMessa
         });
 
         if (!chatbot) {
+            console.log(`[Chatbot] No active chatbot found for channel ${conversation.channelId} (type: ${conversation.channel?.type}), company ${conversation.companyId}`);
             return { handled: false };
         }
+
+        console.log(`[Chatbot] Found chatbot "${chatbot.name}" (${chatbot.id}) for channel ${conversation.channelId}`);
 
         const flow = chatbot.flowJson as unknown as ChatbotFlow;
         if (!flow?.startNodeId || !flow.nodes?.[flow.startNodeId]) {

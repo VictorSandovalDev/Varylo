@@ -47,13 +47,23 @@ export async function createChatbot(prevState: string | undefined, formData: For
     }
 
     try {
+        // If no channels selected, auto-connect to all active channels
+        let connectIds = channelIds;
+        if (connectIds.length === 0) {
+            const activeChannels = await prisma.channel.findMany({
+                where: { companyId: session.user.companyId, status: 'CONNECTED' },
+                select: { id: true },
+            });
+            connectIds = activeChannels.map(c => c.id);
+        }
+
         await prisma.chatbot.create({
             data: {
                 companyId: session.user.companyId,
                 name,
                 flowJson: DEFAULT_FLOW as unknown as Prisma.InputJsonValue,
-                channels: channelIds.length > 0 ? {
-                    connect: channelIds.map(id => ({ id })),
+                channels: connectIds.length > 0 ? {
+                    connect: connectIds.map(id => ({ id })),
                 } : undefined,
             },
         });
