@@ -380,6 +380,8 @@ export async function activateWebChat() {
         const { randomBytes } = await import('crypto');
         const apiKey = `wc_${randomBytes(24).toString('hex')}`;
 
+        let channelId: string;
+
         if (existing) {
             await prisma.channel.update({
                 where: { id: existing.id },
@@ -388,8 +390,9 @@ export async function activateWebChat() {
                     configJson: { apiKey },
                 },
             });
+            channelId = existing.id;
         } else {
-            await prisma.channel.create({
+            const newChannel = await prisma.channel.create({
                 data: {
                     companyId,
                     type: ChannelType.WEB_CHAT,
@@ -397,7 +400,35 @@ export async function activateWebChat() {
                     configJson: { apiKey },
                 },
             });
+            channelId = newChannel.id;
         }
+
+        // Auto-connect existing active chatbots and AI agents to this channel
+        const [chatbots, aiAgents] = await Promise.all([
+            prisma.chatbot.findMany({
+                where: { companyId, active: true },
+                select: { id: true },
+            }),
+            prisma.aiAgent.findMany({
+                where: { companyId, active: true },
+                select: { id: true },
+            }),
+        ]);
+
+        await Promise.all([
+            ...chatbots.map(cb =>
+                prisma.chatbot.update({
+                    where: { id: cb.id },
+                    data: { channels: { connect: { id: channelId } } },
+                })
+            ),
+            ...aiAgents.map(agent =>
+                prisma.aiAgent.update({
+                    where: { id: agent.id },
+                    data: { channels: { connect: { id: channelId } } },
+                })
+            ),
+        ]);
 
         revalidatePath('/[lang]/company/settings', 'page');
         return { success: true, apiKey };

@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { content, sessionId, visitorName, visitorEmail } = body;
+        const { content, sessionId, visitorName, visitorEmail, origin: visitorOrigin } = body;
 
         if (!content?.trim()) {
             return NextResponse.json({ error: 'Missing content' }, { status: 400, headers: CORS_HEADERS });
@@ -55,7 +55,9 @@ export async function POST(req: NextRequest) {
         let conversation;
 
         if (!currentSessionId) {
-            const result = await createSession(channel, { visitorName, visitorEmail });
+            // Use Origin header or body origin as website identifier
+            const originUrl = visitorOrigin || req.headers.get('origin') || req.headers.get('referer') || 'Web';
+            const result = await createSession(channel, { visitorName, visitorEmail, origin: originUrl });
             currentSessionId = result.conversationId;
             conversation = result.conversation;
         } else {
@@ -177,11 +179,22 @@ export async function GET(req: NextRequest) {
 /** Creates contact + conversation, returns the conversation with contact included */
 async function createSession(
     channel: { id: string; companyId: string; automationPriority: any },
-    opts: { visitorName?: string; visitorEmail?: string }
+    opts: { visitorName?: string; visitorEmail?: string; origin?: string }
 ) {
     const companyId = channel.companyId;
-    const visitorId = `web_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const name = opts.visitorName || 'Visitante Web';
+
+    // Extract clean domain from origin URL
+    let originDomain = 'Web';
+    try {
+        if (opts.origin && opts.origin !== 'Web') {
+            originDomain = new URL(opts.origin).hostname.replace(/^www\./, '');
+        }
+    } catch {
+        originDomain = opts.origin || 'Web';
+    }
+
+    const visitorId = `${originDomain}_${Date.now()}`;
+    const name = opts.visitorName || `Visitante ${originDomain}`;
 
     const contact = await prisma.contact.create({
         data: {
