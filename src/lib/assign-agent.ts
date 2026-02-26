@@ -2,17 +2,17 @@ import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
 
 /**
- * Find the best agent to assign a new conversation to.
- * Strategy: pick the active agent with the fewest OPEN conversations.
- * If no agents exist, fall back to the COMPANY_ADMIN.
+ * Find the best user to assign a new conversation to.
+ * Strategy: pick the active user (AGENT or COMPANY_ADMIN) with the
+ * fewest OPEN conversations assigned, distributing the load evenly.
  */
 export async function findLeastBusyAgent(companyId: string): Promise<string | null> {
-    // Get all active agents with their open conversation count
-    const agents = await prisma.user.findMany({
+    // Get all active agents AND admins with their open conversation count
+    const users = await prisma.user.findMany({
         where: {
             companyId,
             active: true,
-            role: Role.AGENT,
+            role: { in: [Role.AGENT, Role.COMPANY_ADMIN] },
         },
         select: {
             id: true,
@@ -26,21 +26,9 @@ export async function findLeastBusyAgent(companyId: string): Promise<string | nu
         },
     });
 
-    if (agents.length > 0) {
-        // Sort by fewest open conversations, pick the first
-        agents.sort((a, b) => a._count.assignedConversations - b._count.assignedConversations);
-        return agents[0].id;
-    }
+    if (users.length === 0) return null;
 
-    // No agents — fall back to COMPANY_ADMIN
-    const admin = await prisma.user.findFirst({
-        where: {
-            companyId,
-            active: true,
-            role: Role.COMPANY_ADMIN,
-        },
-        select: { id: true },
-    });
-
-    return admin?.id || null;
+    // Sort by fewest open conversations, pick the least busy
+    users.sort((a, b) => a._count.assignedConversations - b._count.assignedConversations);
+    return users[0].id;
 }
