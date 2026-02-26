@@ -7,12 +7,8 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
 
-// Helper to determine if we should compare hash or plain (for seed compatibility if needed)
-// But for security we should really use bcrypt. Ideally we update seed to use bcrypt.
 async function verifyPassword(plain: string, hashed: string | null) {
     if (!hashed) return false;
-    // Fallback for simple "password123" if the seed put plain text (NOT SECURE in prod, just for MVP demo robustness if seed didn't hash)
-    if (hashed === plain) return true;
     return await bcrypt.compare(plain, hashed);
 }
 
@@ -28,7 +24,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         Credentials({
             async authorize(credentials) {
                 const parsedCredentials = z
-                    .object({ email: z.string().email(), password: z.string().min(6) })
+                    .object({ email: z.string().email(), password: z.string().min(8).max(128) })
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {

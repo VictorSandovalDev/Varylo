@@ -3,16 +3,34 @@
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { Plan, CompanyStatus, CreditTransactionType } from '@prisma/client';
+import { Plan, CompanyStatus, CreditTransactionType, Role } from '@prisma/client';
 import { addCredits } from '@/lib/credits';
+import { auth } from '@/auth';
+
+/** Verify caller is authenticated SUPER_ADMIN */
+async function requireSuperAdmin() {
+    const session = await auth();
+    if (!session?.user?.id) {
+        throw new Error('Unauthorized: No session');
+    }
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true },
+    });
+    if (user?.role !== Role.SUPER_ADMIN) {
+        throw new Error('Forbidden: Super admin access required');
+    }
+    return session;
+}
 
 const createCompanySchema = z.object({
-    name: z.string().min(1, 'El nombre es obligatorio'),
+    name: z.string().min(1, 'El nombre es obligatorio').max(200),
     plan: z.nativeEnum(Plan),
     status: z.nativeEnum(CompanyStatus),
 });
 
 export async function createCompany(data: z.infer<typeof createCompanySchema>) {
+    await requireSuperAdmin();
     const result = createCompanySchema.safeParse(data);
 
     if (!result.success) {
@@ -44,6 +62,7 @@ const updateCompanySchema = z.object({
 });
 
 export async function updateCompany(data: z.infer<typeof updateCompanySchema>) {
+    await requireSuperAdmin();
     const result = updateCompanySchema.safeParse(data);
 
     if (!result.success) {
@@ -75,6 +94,7 @@ const adjustCreditsSchema = z.object({
 });
 
 export async function adjustCompanyCredits(data: z.infer<typeof adjustCreditsSchema>) {
+    await requireSuperAdmin();
     const result = adjustCreditsSchema.safeParse(data);
 
     if (!result.success) {

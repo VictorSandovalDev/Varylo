@@ -2,6 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection, Role } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
+import { createHmac } from 'crypto';
+
+const MAX_MESSAGE_LENGTH = 4096;
+
+/** Verify Meta X-Hub-Signature-256 header */
+function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+    const appSecret = process.env.META_APP_SECRET;
+    if (!appSecret) {
+        console.error('[WhatsApp] META_APP_SECRET not configured');
+        return false;
+    }
+    if (!signature || !signature.startsWith('sha256=')) return false;
+
+    const expectedSignature = createHmac('sha256', appSecret)
+        .update(rawBody)
+        .digest('hex');
+    return signature === `sha256=${expectedSignature}`;
+}
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
@@ -13,28 +31,17 @@ export async function GET(req: NextRequest) {
         return new NextResponse('Forbidden', { status: 403 });
     }
 
-    // 1. Check strict environment variable first (optional fallback)
-    const envVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'varylo_verify_token';
-    if (token === envVerifyToken) {
+    // Check environment variable (required, no fallback)
+    const envVerifyToken = process.env.WHATSAPP_VERIFY_TOKEN;
+    if (envVerifyToken && token === envVerifyToken) {
         return new NextResponse(challenge, { status: 200 });
     }
 
-    // 2. Check against database channels
+    // Check against database channels
     try {
-        // We need to find if ANY channel has this verify token in its config
-        // Since configJson is a JSON field, the query strategy depends on the DB capability.
-        // For broad compatibility in MVP or if using generic JSON, we might fetch all WhatsApp channels
-        // or attempt a raw query. 
-        // Given the scale of MVP, fetching all active WhatsApp channels is acceptable but risky for scale.
-        // Ideally: strict raw query or JSON filter.
-
-        // Using Prisma's findFirst with raw JSON filtering is cleaner if supported, 
-        // but for safety in this context let's try a direct approach.
-
         const matchingChannel = await prisma.channel.findFirst({
             where: {
                 type: ChannelType.WHATSAPP,
-                // Prisma JSON filtering syntax:
                 configJson: {
                     path: ['verifyToken'],
                     equals: token
@@ -45,9 +52,8 @@ export async function GET(req: NextRequest) {
         if (matchingChannel) {
             return new NextResponse(challenge, { status: 200 });
         }
-
-    } catch (error) {
-        console.error('Error verifying webhook token:', error);
+    } catch {
+        // Don't log internal details
     }
 
     return new NextResponse('Forbidden', { status: 403 });
@@ -55,7 +61,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json();
+        const rawBody = await req.text();
+
+        // Verify webhook signature from Meta
+        const signature = req.headers.get('x-hub-signature-256');
+        if (!verifyWebhookSignature(rawBody, signature)) {
+            return new NextResponse('Forbidden', { status: 403 });
+        }
+
+        const body = JSON.parse(rawBody);
 
         // Check if it's a WhatsApp status update or message
         const entry = body.entry?.[0];
@@ -69,25 +83,20 @@ export async function POST(req: NextRequest) {
             const messageId = message.id;
             const phoneNumberId = value.metadata?.phone_number_id;
 
-            if (!text || !phoneNumberId) return NextResponse.json({ status: 'ignored' });
+            if (!text?.trim() || !phoneNumberId) return NextResponse.json({ status: 'ignored' });
 
-            // Find the channel (company) associated with this phone number ID
-            // Note: We stored configJson in Channel. We need to query channels and check the config.
-            // This is inefficient loop, better to store phoneNumberId in a specific field or use JSON query if DB supports.
-            // Postgres supports JSON query.
+            // Validate message length
+            if (text.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ status: 'ignored' });
 
-            // Assume we can find the channel. For MVP, we'll try to find a channel where configJson->>'phoneNumberId' equals phoneNumberId
-            // Prisma raw query or filtered findMany.
-            // Since it's MVP, let's just use findFirst with manual filter or assume we have one main channel for demo.
-            // Or simple raw query.
-
-            const channels = await prisma.channel.findMany({
-                where: { type: ChannelType.WHATSAPP }
-            });
-
-            const channel = channels.find((c) => {
-                const config = c.configJson as { phoneNumberId?: string } | null;
-                return config?.phoneNumberId === phoneNumberId;
+            // Find the channel by phoneNumberId using JSON filtering
+            const channel = await prisma.channel.findFirst({
+                where: {
+                    type: ChannelType.WHATSAPP,
+                    configJson: {
+                        path: ['phoneNumberId'],
+                        equals: phoneNumberId,
+                    },
+                },
             });
 
             if (channel) {
@@ -103,8 +112,14 @@ export async function POST(req: NextRequest) {
                         data: {
                             companyId,
                             phone: from,
-                            name: value.contacts?.[0]?.profile?.name || from
+                            name: value.contacts?.[0]?.profile?.name || from,
+                            originChannel: ChannelType.WHATSAPP,
                         }
+                    });
+                } else if (!contact.originChannel) {
+                    await prisma.contact.update({
+                        where: { id: contact.id },
+                        data: { originChannel: ChannelType.WHATSAPP },
                     });
                 }
 
@@ -196,7 +211,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ status: 'success' });
     } catch (error) {
-        console.error('Error processing webhook:', error);
+        console.error('[WhatsApp Webhook] Processing error:', error instanceof Error ? error.message : 'Unknown');
         return NextResponse.json({ status: 'error' }, { status: 500 });
     }
 }

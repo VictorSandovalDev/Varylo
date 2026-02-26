@@ -51,7 +51,7 @@ export async function getContacts(search?: string, filter?: string, channel?: st
             },
             _count: {
                 select: { conversations: true }
-            }
+            },
         },
         orderBy: {
             createdAt: 'desc'

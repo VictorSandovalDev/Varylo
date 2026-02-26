@@ -76,24 +76,23 @@ export async function updateAgent(prevState: string | undefined, formData: FormD
 
 export async function toggleAgentStatus(id: string, isActive: boolean) {
     const session = await auth();
-    console.log('[toggleAgentStatus] Session:', session?.user);
-
     if (!session?.user?.companyId) {
-        console.error('[toggleAgentStatus] No companyId in session');
         throw new Error('Unauthorized');
     }
 
+    // Only COMPANY_ADMIN can toggle agent status
+    if (session.user.role === Role.AGENT) {
+        throw new Error('Agents cannot modify other agents');
+    }
+
     try {
-        console.log(`[toggleAgentStatus] Toggling user ${id} to ${isActive} for company ${session.user.companyId}`);
         await prisma.user.update({
-            where: { id, companyId: session.user.companyId },
+            where: { id, companyId: session.user.companyId, role: Role.AGENT },
             data: { active: isActive },
         });
-        console.log('[toggleAgentStatus] Success');
         revalidatePath('/[lang]/company/agents', 'page');
     } catch (error) {
-        console.error('[toggleAgentStatus] Failed:', error);
-        throw error;
+        throw new Error('Failed to update agent status');
     }
 }
 
@@ -101,19 +100,23 @@ export async function deleteAgent(id: string) {
     const session = await auth();
     if (!session?.user?.companyId) return 'Error: No authorized session found.';
 
+    // Only COMPANY_ADMIN can delete agents
+    if (session.user.role === Role.AGENT) {
+        return 'Error: Agents cannot delete other agents.';
+    }
+
     try {
         await prisma.user.delete({
             where: {
                 id,
-                companyId: session.user.companyId, // Ensure ownership
-                role: Role.AGENT // Security: Prevent deleting admins via this action
+                companyId: session.user.companyId,
+                role: Role.AGENT,
             },
         });
 
         revalidatePath('/[lang]/company/agents', 'page');
         return 'Success: Agent deleted successfully.';
-    } catch (error: any) {
-        console.error('Failed to delete agent:', error);
-        return `Error: Failed to delete agent. ${error.message}`;
+    } catch {
+        return 'Error: Failed to delete agent.';
     }
 }

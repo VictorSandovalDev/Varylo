@@ -39,6 +39,7 @@ interface Contact {
     companyName: string | null;
     city: string | null;
     country: string | null;
+    originChannel: string | null;
     tags: { id: string; name: string; color: string }[];
     conversations: { channel: { type: string } }[];
 }
@@ -259,7 +260,7 @@ function ContactCard({ contact, lang, selectMode, isSelected, onToggle }: {
     const colors = ['bg-blue-600', 'bg-emerald-600', 'bg-violet-600', 'bg-fuchsia-600', 'bg-orange-600', 'bg-rose-600'];
     const colorIndex = contact.name ? contact.name.length % colors.length : 0;
     const avatarColor = colors[colorIndex];
-    const channelType = contact.conversations?.[0]?.channel?.type;
+    const channelType = contact.originChannel || contact.conversations?.[0]?.channel?.type;
 
     return (
         <Card

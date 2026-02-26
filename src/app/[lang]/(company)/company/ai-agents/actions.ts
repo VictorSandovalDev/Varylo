@@ -13,8 +13,12 @@ export async function createAiAgent(prevState: string | undefined, formData: For
     const name = formData.get('name') as string;
     const systemPrompt = formData.get('systemPrompt') as string;
     const contextInfo = formData.get('contextInfo') as string;
-    const model = formData.get('model') as string || 'gpt-4o-mini';
-    const temperature = parseFloat(formData.get('temperature') as string) || 0.7;
+    const allowedModels = ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    const model = allowedModels.includes(formData.get('model') as string)
+        ? (formData.get('model') as string)
+        : 'gpt-4o-mini';
+    const rawTemp = parseFloat(formData.get('temperature') as string);
+    const temperature = isNaN(rawTemp) ? 0.7 : Math.min(2.0, Math.max(0, rawTemp));
     const transferKeywordsRaw = formData.get('transferKeywords') as string;
     const channelIds = formData.getAll('channelIds') as string[];
 
@@ -23,10 +27,20 @@ export async function createAiAgent(prevState: string | undefined, formData: For
     }
 
     const transferKeywords = transferKeywordsRaw
-        ? transferKeywordsRaw.split(',').map(k => k.trim()).filter(Boolean)
+        ? transferKeywordsRaw.split(',').map(k => k.trim()).filter(Boolean).slice(0, 50)
         : ['humano', 'agente', 'persona'];
 
     try {
+        // Verify channel IDs belong to this company
+        let validChannelIds = channelIds;
+        if (channelIds.length > 0) {
+            const validChannels = await prisma.channel.findMany({
+                where: { id: { in: channelIds }, companyId: session.user.companyId },
+                select: { id: true },
+            });
+            validChannelIds = validChannels.map(c => c.id);
+        }
+
         await prisma.aiAgent.create({
             data: {
                 companyId: session.user.companyId,
@@ -36,8 +50,8 @@ export async function createAiAgent(prevState: string | undefined, formData: For
                 model,
                 temperature,
                 transferKeywords,
-                channels: channelIds.length > 0 ? {
-                    connect: channelIds.map(id => ({ id })),
+                channels: validChannelIds.length > 0 ? {
+                    connect: validChannelIds.map(id => ({ id })),
                 } : undefined,
             },
         });
@@ -58,18 +72,28 @@ export async function updateAiAgent(prevState: string | undefined, formData: For
     const name = formData.get('name') as string;
     const systemPrompt = formData.get('systemPrompt') as string;
     const contextInfo = formData.get('contextInfo') as string;
-    const model = formData.get('model') as string || 'gpt-4o-mini';
-    const temperature = parseFloat(formData.get('temperature') as string) || 0.7;
+    const allowedModels = ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'];
+    const model = allowedModels.includes(formData.get('model') as string)
+        ? (formData.get('model') as string)
+        : 'gpt-4o-mini';
+    const rawTemp = parseFloat(formData.get('temperature') as string);
+    const temperature = isNaN(rawTemp) ? 0.7 : Math.min(2.0, Math.max(0, rawTemp));
     const transferKeywordsRaw = formData.get('transferKeywords') as string;
     const channelIds = formData.getAll('channelIds') as string[];
 
     if (!id || !name || !systemPrompt) return 'Error: Campos requeridos faltantes.';
 
     const transferKeywords = transferKeywordsRaw
-        ? transferKeywordsRaw.split(',').map(k => k.trim()).filter(Boolean)
+        ? transferKeywordsRaw.split(',').map(k => k.trim()).filter(Boolean).slice(0, 50)
         : ['humano', 'agente', 'persona'];
 
     try {
+        // Verify channel IDs belong to this company
+        const validChannels = await prisma.channel.findMany({
+            where: { id: { in: channelIds }, companyId: session.user.companyId },
+            select: { id: true },
+        });
+
         await prisma.aiAgent.update({
             where: { id, companyId: session.user.companyId },
             data: {
@@ -80,7 +104,7 @@ export async function updateAiAgent(prevState: string | undefined, formData: For
                 temperature,
                 transferKeywords,
                 channels: {
-                    set: channelIds.map(cid => ({ id: cid })),
+                    set: validChannels.map(c => ({ id: c.id })),
                 },
             },
         });

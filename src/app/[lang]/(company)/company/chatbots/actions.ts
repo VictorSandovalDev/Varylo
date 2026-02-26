@@ -55,6 +55,13 @@ export async function createChatbot(prevState: string | undefined, formData: For
                 select: { id: true },
             });
             connectIds = activeChannels.map(c => c.id);
+        } else {
+            // Verify all provided channel IDs belong to this company
+            const validChannels = await prisma.channel.findMany({
+                where: { id: { in: connectIds }, companyId: session.user.companyId },
+                select: { id: true },
+            });
+            connectIds = validChannels.map(c => c.id);
         }
 
         await prisma.chatbot.create({
@@ -87,12 +94,18 @@ export async function updateChatbot(prevState: string | undefined, formData: For
     if (!id || !name) return 'Error: Campos requeridos faltantes.';
 
     try {
+        // Verify all channel IDs belong to this company
+        const validChannels = await prisma.channel.findMany({
+            where: { id: { in: channelIds }, companyId: session.user.companyId },
+            select: { id: true },
+        });
+
         await prisma.chatbot.update({
             where: { id, companyId: session.user.companyId },
             data: {
                 name,
                 channels: {
-                    set: channelIds.map(cid => ({ id: cid })),
+                    set: validChannels.map(c => ({ id: c.id })),
                 },
             },
         });

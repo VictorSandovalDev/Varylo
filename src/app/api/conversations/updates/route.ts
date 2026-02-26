@@ -28,7 +28,7 @@ export async function GET() {
     const raw = conversations
         .map(c => `${c.id}:${c.lastMessageAt.getTime()}`)
         .join('|');
-    const fingerprint = crypto.createHash('md5').update(raw).digest('hex');
+    const fingerprint = crypto.createHash('sha256').update(raw).digest('hex');
 
     return NextResponse.json({ fingerprint, conversations });
 }

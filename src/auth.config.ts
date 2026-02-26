@@ -27,15 +27,9 @@ export const authConfig = {
         },
         authorized({ auth, request: { nextUrl } }) {
             const isLoggedIn = !!auth?.user;
+            const userRole = (auth?.user as any)?.role;
 
-            // Strip locale to check routes generically
-            // /en/super-admin -> /super-admin
             const segments = nextUrl.pathname.split('/');
-            // segments[0] is empty, segments[1] is locale (or path if missing), etc.
-            // But getting a "pathWithoutLocale" is safer.
-            // Assumption: Middleware ensures we usually have locale, but here we might not?
-            // "authorized" runs AFTER middleware? Yes.
-            // So path likely has locale: /es/...
             const pathWithoutLocale = '/' + segments.slice(2).join('/');
 
             const isSuperAdminRoute = pathWithoutLocale.startsWith('/super-admin');
@@ -43,12 +37,25 @@ export const authConfig = {
             const isAgentRoute = pathWithoutLocale.startsWith('/agent');
             const isDashboardRoute = pathWithoutLocale.startsWith('/dashboard');
 
+            // All protected routes require authentication
             if (isSuperAdminRoute || isCompanyRoute || isAgentRoute || isDashboardRoute) {
-                if (isLoggedIn) return true;
-                return false; // Redirect unauthenticated users to login page
+                if (!isLoggedIn) return false;
+
+                // Role-based access control
+                if (isSuperAdminRoute && userRole !== 'SUPER_ADMIN') {
+                    return Response.redirect(new URL(`/${segments[1]}/login`, nextUrl));
+                }
+                if (isCompanyRoute && userRole !== 'COMPANY_ADMIN' && userRole !== 'SUPER_ADMIN') {
+                    return Response.redirect(new URL(`/${segments[1]}/login`, nextUrl));
+                }
+                if (isAgentRoute && userRole !== 'AGENT' && userRole !== 'COMPANY_ADMIN' && userRole !== 'SUPER_ADMIN') {
+                    return Response.redirect(new URL(`/${segments[1]}/login`, nextUrl));
+                }
+
+                return true;
             }
 
-            // Allow access to other pages (marketing)
+            // Allow access to other pages (marketing, auth)
             return true;
         },
     },

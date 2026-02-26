@@ -4,17 +4,31 @@ import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { Plan, Role } from '@prisma/client';
+import { z } from 'zod';
+
+const registerSchema = z.object({
+    companyName: z.string().min(1).max(200).trim(),
+    name: z.string().min(1).max(100).trim(),
+    email: z.string().email().max(254),
+    password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
+    plan: z.nativeEnum(Plan),
+});
 
 export async function register(prevState: string | undefined, formData: FormData) {
-    const companyName = formData.get('companyName') as string;
-    const name = formData.get('name') as string;
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-    const plan = formData.get('plan') as Plan;
+    const parsed = registerSchema.safeParse({
+        companyName: formData.get('companyName'),
+        name: formData.get('name'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        plan: formData.get('plan'),
+    });
 
-    if (!companyName || !name || !email || !password || !plan) {
-        return 'All fields are required.';
+    if (!parsed.success) {
+        const firstError = parsed.error.issues[0]?.message;
+        return firstError || 'Datos inválidos.';
     }
+
+    const { companyName, name, email, password, plan } = parsed.data;
 
     // 1. Check if user exists
     const existingUser = await prisma.user.findUnique({

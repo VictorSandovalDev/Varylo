@@ -52,7 +52,7 @@ export async function toggleConversationAgent(conversationId: string, agentId: s
         throw new Error("Unauthorized");
     }
 
-    // Verify ownership
+    // Verify conversation ownership
     const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId, companyId: session.user.companyId },
         include: { assignedAgents: true }
@@ -62,10 +62,18 @@ export async function toggleConversationAgent(conversationId: string, agentId: s
         throw new Error("Conversation not found");
     }
 
+    // Verify agent belongs to same company
+    const agent = await prisma.user.findFirst({
+        where: { id: agentId, companyId: session.user.companyId, role: Role.AGENT },
+    });
+    if (!agent) {
+        throw new Error("Agent not found");
+    }
+
     const isAssigned = conversation.assignedAgents.some(a => a.id === agentId);
 
     await prisma.conversation.update({
-        where: { id: conversationId },
+        where: { id: conversationId, companyId: session.user.companyId },
         data: {
             assignedAgents: isAssigned
                 ? { disconnect: { id: agentId } }

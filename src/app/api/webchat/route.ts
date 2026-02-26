@@ -5,25 +5,41 @@ import { runAutomationPipeline } from '@/jobs/pipeline';
 
 export const dynamic = 'force-dynamic';
 
-const CORS_HEADERS: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, x-webchat-key',
-    'Cache-Control': 'no-store, no-cache, must-revalidate',
-};
+const MAX_MESSAGE_LENGTH = 4096;
+const MAX_NAME_LENGTH = 100;
+const MAX_EMAIL_LENGTH = 254;
 
-export async function OPTIONS() {
-    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+function getCorsHeaders(req?: NextRequest): Record<string, string> {
+    const allowedOrigins = process.env.WEBCHAT_ALLOWED_ORIGINS?.split(',').map(o => o.trim());
+    const origin = req?.headers.get('origin') || '';
+
+    // If WEBCHAT_ALLOWED_ORIGINS is set, validate origin; otherwise allow all (dev mode)
+    const allowedOrigin = allowedOrigins
+        ? (allowedOrigins.includes(origin) ? origin : allowedOrigins[0])
+        : '*';
+
+    return {
+        'Access-Control-Allow-Origin': allowedOrigin,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, x-webchat-key',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
+    };
 }
 
-/** Find the WEB_CHAT channel by API key */
+export async function OPTIONS(req: NextRequest) {
+    return new NextResponse(null, { status: 204, headers: getCorsHeaders(req) });
+}
+
+/** Find the WEB_CHAT channel by API key using indexed JSON query */
 async function findChannelByKey(apiKey: string) {
-    const channels = await prisma.channel.findMany({
-        where: { type: ChannelType.WEB_CHAT, status: 'CONNECTED' },
-    });
-    return channels.find((c) => {
-        const config = c.configJson as { apiKey?: string } | null;
-        return config?.apiKey === apiKey;
+    if (!apiKey || typeof apiKey !== 'string' || apiKey.length > 100) return null;
+    return prisma.channel.findFirst({
+        where: {
+            type: ChannelType.WEB_CHAT,
+            status: 'CONNECTED',
+            configJson: { path: ['apiKey'], equals: apiKey },
+        },
     });
 }
 
@@ -35,19 +51,27 @@ export async function POST(req: NextRequest) {
     try {
         const apiKey = req.headers.get('x-webchat-key');
         if (!apiKey) {
-            return NextResponse.json({ error: 'Missing x-webchat-key header' }, { status: 401, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Missing x-webchat-key header' }, { status: 401, headers: getCorsHeaders(req) });
         }
 
         const channel = await findChannelByKey(apiKey);
         if (!channel) {
-            return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: getCorsHeaders(req) });
         }
 
         const body = await req.json();
         const { content, sessionId, visitorName, visitorEmail, origin: visitorOrigin } = body;
 
-        if (!content?.trim()) {
-            return NextResponse.json({ error: 'Missing content' }, { status: 400, headers: CORS_HEADERS });
+        if (!content?.trim() || typeof content !== 'string' || content.length > MAX_MESSAGE_LENGTH) {
+            return NextResponse.json({ error: 'Invalid content' }, { status: 400, headers: getCorsHeaders(req) });
+        }
+
+        // Validate optional fields
+        if (visitorName && (typeof visitorName !== 'string' || visitorName.length > MAX_NAME_LENGTH)) {
+            return NextResponse.json({ error: 'Invalid name' }, { status: 400, headers: getCorsHeaders(req) });
+        }
+        if (visitorEmail && (typeof visitorEmail !== 'string' || visitorEmail.length > MAX_EMAIL_LENGTH || !visitorEmail.includes('@'))) {
+            return NextResponse.json({ error: 'Invalid email' }, { status: 400, headers: getCorsHeaders(req) });
         }
 
         // If no sessionId, create session on the fly with the first message
@@ -72,7 +96,7 @@ export async function POST(req: NextRequest) {
         }
 
         if (!conversation) {
-            return NextResponse.json({ error: 'Session not found' }, { status: 404, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Session not found' }, { status: 404, headers: getCorsHeaders(req) });
         }
 
         // Save inbound message
@@ -116,11 +140,11 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(
             { sessionId: currentSessionId, messageId: message.id, responses },
-            { headers: CORS_HEADERS }
+            { headers: getCorsHeaders(req) }
         );
     } catch (error) {
         console.error('[WebChat] Error:', error);
-        return NextResponse.json({ error: 'Internal error' }, { status: 500, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'Internal error' }, { status: 500, headers: getCorsHeaders(req) });
     }
 }
 
@@ -128,19 +152,19 @@ export async function GET(req: NextRequest) {
     try {
         const apiKey = req.headers.get('x-webchat-key');
         if (!apiKey) {
-            return NextResponse.json({ error: 'Missing x-webchat-key header' }, { status: 401, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Missing x-webchat-key header' }, { status: 401, headers: getCorsHeaders(req) });
         }
 
         const channel = await findChannelByKey(apiKey);
         if (!channel) {
-            return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: getCorsHeaders(req) });
         }
 
         const sessionId = req.nextUrl.searchParams.get('sessionId');
         const after = req.nextUrl.searchParams.get('after');
 
         if (!sessionId) {
-            return NextResponse.json({ error: 'Missing sessionId' }, { status: 400, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Missing sessionId' }, { status: 400, headers: getCorsHeaders(req) });
         }
 
         // Verify conversation belongs to this channel's company
@@ -153,7 +177,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!conversation) {
-            return NextResponse.json({ error: 'Session not found' }, { status: 404, headers: CORS_HEADERS });
+            return NextResponse.json({ error: 'Session not found' }, { status: 404, headers: getCorsHeaders(req) });
         }
 
         const messages = await prisma.message.findMany({
@@ -171,10 +195,10 @@ export async function GET(req: NextRequest) {
             },
         });
 
-        return NextResponse.json({ messages }, { headers: CORS_HEADERS });
+        return NextResponse.json({ messages }, { headers: getCorsHeaders(req) });
     } catch (error) {
         console.error('[WebChat] Error fetching messages:', error);
-        return NextResponse.json({ error: 'Internal error' }, { status: 500, headers: CORS_HEADERS });
+        return NextResponse.json({ error: 'Internal error' }, { status: 500, headers: getCorsHeaders(req) });
     }
 }
 
@@ -213,7 +237,13 @@ async function createSession(
                 phone: originDomain,
                 name,
                 email: opts.visitorEmail || undefined,
+                originChannel: ChannelType.WEB_CHAT,
             },
+        });
+    } else if (!contact.originChannel) {
+        await prisma.contact.update({
+            where: { id: contact.id },
+            data: { originChannel: ChannelType.WEB_CHAT },
         });
     }
 

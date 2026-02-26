@@ -28,83 +28,53 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
     const [isOpen, setIsOpen] = React.useState(false);
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container mx-auto flex h-14 max-w-screen-2xl items-center px-4">
-                <Link href={`/${lang}`} className="mr-6 flex items-center space-x-2">
-                    <span className="font-bold text-xl inline-block">
-                        VARYLO
-                    </span>
+        <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-xl">
+            <div className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4">
+                <Link href={`/${lang}`} className="mr-8 flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm">V</div>
+                    <span className="font-bold text-xl text-white">VARYLO</span>
                 </Link>
 
-                {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-                    <Link href={`/${lang}/#hero`} className="transition-colors hover:text-foreground/80 text-foreground/60">{nav.home}</Link>
-                    <Link href={`/${lang}/#features`} className="transition-colors hover:text-foreground/80 text-foreground/60">{nav.features}</Link>
-                    <Link href={`/${lang}/#pricing`} className="transition-colors hover:text-foreground/80 text-foreground/60">{nav.pricing}</Link>
+                <nav className="hidden md:flex items-center gap-8 text-sm">
+                    <Link href={`/${lang}/#hero`} className="text-zinc-400 hover:text-white transition-colors">{nav.home}</Link>
+                    <Link href={`/${lang}/#features`} className="text-zinc-400 hover:text-white transition-colors">{nav.features}</Link>
+                    <Link href={`/${lang}/#pricing`} className="text-zinc-400 hover:text-white transition-colors">{nav.pricing}</Link>
                 </nav>
 
-                <div className="flex flex-1 items-center justify-end space-x-2">
-                    <div className="hidden md:flex items-center space-x-2">
+                <div className="flex flex-1 items-center justify-end gap-3">
+                    <div className="hidden md:flex items-center gap-3">
                         <LanguageSwitcher />
                         <Link href={`/${lang}/login`}>
-                            <Button variant="ghost" size="sm">{nav.login}</Button>
+                            <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white hover:bg-white/5">{nav.login}</Button>
                         </Link>
                         <Link href={`/${lang}/register`}>
-                            <Button size="sm">{nav.getStarted}</Button>
+                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 text-white shadow-lg shadow-blue-600/20">{nav.getStarted}</Button>
                         </Link>
                     </div>
 
-                    {/* Mobile Menu Trigger */}
                     <Sheet open={isOpen} onOpenChange={setIsOpen}>
                         <SheetTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                className="px-0 text-base hover:bg-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 md:hidden"
-                            >
+                            <Button variant="ghost" className="px-0 text-white hover:bg-transparent focus-visible:bg-transparent md:hidden">
                                 <Menu className="h-6 w-6" />
                                 <span className="sr-only">Toggle Menu</span>
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="right" className="pl-1 pr-0">
-                            <div className="flex flex-col space-y-4 px-7 mt-8">
-                                <Link
-                                    href={`/${lang}/#hero`}
-                                    className="text-lg font-medium"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    {nav.home}
-                                </Link>
-                                <Link
-                                    href={`/${lang}/#features`}
-                                    className="text-lg font-medium"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    {nav.features}
-                                </Link>
-                                <Link
-                                    href={`/${lang}/#pricing`}
-                                    className="text-lg font-medium"
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    {nav.pricing}
-                                </Link>
-                                <div className="h-px bg-muted" />
+                        <SheetContent side="right" className="bg-zinc-950 border-white/5 text-white">
+                            <div className="flex flex-col gap-6 mt-8 px-2">
+                                <Link href={`/${lang}/#hero`} className="text-lg font-medium text-zinc-300 hover:text-white" onClick={() => setIsOpen(false)}>{nav.home}</Link>
+                                <Link href={`/${lang}/#features`} className="text-lg font-medium text-zinc-300 hover:text-white" onClick={() => setIsOpen(false)}>{nav.features}</Link>
+                                <Link href={`/${lang}/#pricing`} className="text-lg font-medium text-zinc-300 hover:text-white" onClick={() => setIsOpen(false)}>{nav.pricing}</Link>
+                                <div className="h-px bg-white/10" />
                                 <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">Idioma</span>
+                                    <span className="text-sm text-zinc-400">Idioma</span>
                                     <LanguageSwitcher />
                                 </div>
-                                <div className="h-px bg-muted" />
-                                <Link
-                                    href={`/${lang}/login`}
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    <Button variant="outline" className="w-full justify-start">{nav.login}</Button>
+                                <div className="h-px bg-white/10" />
+                                <Link href={`/${lang}/login`} onClick={() => setIsOpen(false)}>
+                                    <Button variant="outline" className="w-full border-white/10 text-white hover:bg-white/5">{nav.login}</Button>
                                 </Link>
-                                <Link
-                                    href={`/${lang}/register`}
-                                    onClick={() => setIsOpen(false)}
-                                >
-                                    <Button className="w-full justify-start">{nav.getStarted}</Button>
+                                <Link href={`/${lang}/register`} onClick={() => setIsOpen(false)}>
+                                    <Button className="w-full bg-gradient-to-r from-blue-600 to-violet-600 border-0 text-white">{nav.getStarted}</Button>
                                 </Link>
                             </div>
                         </SheetContent>

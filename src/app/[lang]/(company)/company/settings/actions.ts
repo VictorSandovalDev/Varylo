@@ -43,10 +43,10 @@ export async function saveWhatsAppCredentials(prevState: string | undefined, for
 
         if (existingChannel) {
             await prisma.channel.update({
-                where: { id: existingChannel.id },
+                where: { id: existingChannel.id, companyId },
                 data: {
                     configJson,
-                    status: ChannelStatus.CONNECTED, // Assume connected if creds provided
+                    status: ChannelStatus.CONNECTED,
                 },
             });
         } else {
@@ -168,7 +168,7 @@ export async function saveInstagramCredentials(prevState: string | undefined, fo
         return 'Error: Page ID and Access Token are required.';
     }
 
-    const GLOBAL_VERIFY_TOKEN = process.env.INSTAGRAM_VERIFY_TOKEN || 'varylo_default_verify_token';
+    const GLOBAL_VERIFY_TOKEN = process.env.INSTAGRAM_VERIFY_TOKEN || '';
 
     try {
         const existingChannel = await prisma.channel.findFirst({
@@ -186,7 +186,7 @@ export async function saveInstagramCredentials(prevState: string | undefined, fo
 
         if (existingChannel) {
             await prisma.channel.update({
-                where: { id: existingChannel.id },
+                where: { id: existingChannel.id, companyId },
                 data: {
                     configJson,
                     status: ChannelStatus.CONNECTED,
@@ -517,7 +517,7 @@ export async function updateChannelPriority(channelId: string, priority: Automat
         }
 
         await prisma.channel.update({
-            where: { id: channelId },
+            where: { id: channelId, companyId: session.user.companyId },
             data: { automationPriority: priority },
         });
 
