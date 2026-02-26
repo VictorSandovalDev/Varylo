@@ -44,10 +44,8 @@ export function ConversationList({ conversations, selectedId, filter, isAgent, c
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
 
-    // Filter by channel client-side
-    const filtered = channelFilter
-        ? conversations.filter(c => c.channel?.type === channelFilter)
-        : conversations;
+    // Filtering is done server-side via Prisma query
+    const filtered = conversations;
 
     const toggleSelect = (id: string) => {
         setSelected(prev => {

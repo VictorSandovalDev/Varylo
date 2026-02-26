@@ -85,6 +85,10 @@ export default async function ConversationsPage({
         };
     }
 
+    if (channelFilter) {
+        where.channel = { type: channelFilter };
+    }
+
     const conversations = await prisma.conversation.findMany({
         where,
         include: {
@@ -165,7 +169,7 @@ export default async function ConversationsPage({
                     {/* Tabs */}
                     <div className="flex px-4 gap-4 text-sm font-medium text-muted-foreground overflow-x-auto">
                         <Link
-                            href="?filter=mine"
+                            href={`?filter=mine${channelFilter ? `&channel=${channelFilter}` : ''}`}
                             className={cn(
                                 "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
                                 filter === 'mine' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
@@ -176,7 +180,7 @@ export default async function ConversationsPage({
                         {!isAgent && (
                             <>
                                 <Link
-                                    href="?filter=unassigned"
+                                    href={`?filter=unassigned${channelFilter ? `&channel=${channelFilter}` : ''}`}
                                     className={cn(
                                         "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
                                         filter === 'unassigned' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
@@ -185,7 +189,7 @@ export default async function ConversationsPage({
                                     Sin asignar <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{unassignedCount}</Badge>
                                 </Link>
                                 <Link
-                                    href="?filter=all"
+                                    href={`?filter=all${channelFilter ? `&channel=${channelFilter}` : ''}`}
                                     className={cn(
                                         "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
                                         filter === 'all' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
