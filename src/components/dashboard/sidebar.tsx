@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Tag, Bot, Workflow } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Bot, Workflow } from 'lucide-react';
 import { useState } from 'react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { SidebarUnreadBadge } from './unread-badge';
@@ -43,7 +43,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
             break;
         case 'company':
             items = [...companyAdminItems];
-            // Inject tags into Conversations and Contacts
+            // Inject tags into Conversations
             if (tags && tags.length > 0) {
                 const sidebarTags = tags.filter(t => t.showInSidebar);
                 if (sidebarTags.length > 0) {
@@ -64,18 +64,6 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
                                         />
                                     )
                                 }))
-                            ]
-                        };
-                    }
-
-                    const contactIndex = items.findIndex(i => i.href === '/company/contacts');
-                    if (contactIndex !== -1) {
-                        const baseItem = items[contactIndex];
-                        items[contactIndex] = {
-                            ...baseItem,
-                            children: [
-                                { title: 'Todos los contactos', href: '/company/contacts', icon: Users },
-                                { title: 'Activos', href: '/company/contacts?filter=active', icon: Users }
                             ]
                         };
                     }
@@ -184,43 +172,20 @@ export const superAdminItems: NavItem[] = [
 
 export const companyAdminItems: NavItem[] = [
     { title: 'Dashboard', href: '/company', icon: LayoutDashboard },
-    {
-        title: 'Analíticas',
-        href: '/company/analytics',
-        icon: BarChart3,
-        children: [
-            { title: 'Resumen', href: '/company/analytics', icon: BarChart3 }, // Using same icon for now, effectively hidden by UI logic usually or irrelevant
-            { title: 'Conversaciones', href: '/company/analytics/conversations', icon: MessageSquare },
-            { title: 'Agentes', href: '/company/analytics/agents', icon: Users },
-            { title: 'Etiquetas', href: '/company/analytics/tags', icon: BarChart3 },
-            { title: 'Bandeja de entrada', href: '/company/analytics/inbox', icon: Inbox },
-            { title: 'Equipo', href: '/company/analytics/teams', icon: Users },
-            { title: 'Encuestas', href: '/company/analytics/surveys', icon: BarChart3 },
-            { title: 'SLA', href: '/company/analytics/sla', icon: BarChart3 },
-        ]
-    },
     { title: 'Conversaciones', href: '/company/conversations', icon: MessageSquare },
+    { title: 'Contactos', href: '/company/contacts', icon: Users },
     {
-        title: 'Contactos',
-        href: '/company/contacts',
-        icon: Users,
+        title: 'Automatización',
+        href: '/company/chatbots',
+        icon: Workflow,
         children: [
-            { title: 'Todos los contactos', href: '/company/contacts', icon: Users },
-            { title: 'Activo', href: '/company/contacts?filter=active', icon: Users },
+            { title: 'Chatbots', href: '/company/chatbots', icon: Workflow },
+            { title: 'Agentes IA', href: '/company/ai-agents', icon: Bot },
         ]
     },
-    { title: 'Agentes', href: '/company/agents', icon: Users },
-    { title: 'Agentes IA', href: '/company/ai-agents', icon: Bot },
-    { title: 'Chatbots', href: '/company/chatbots', icon: Workflow },
-    {
-        title: 'Configuración',
-        href: '/company/settings',
-        icon: Settings,
-        children: [
-            { title: 'General', href: '/company/settings', icon: Settings },
-            { title: 'Etiquetas', href: '/company/settings/tags', icon: Tag },
-        ]
-    },
+    { title: 'Equipo', href: '/company/agents', icon: Users },
+    { title: 'Analíticas', href: '/company/analytics', icon: BarChart3 },
+    { title: 'Configuración', href: '/company/settings', icon: Settings },
 ];
 
 export const agentItems: NavItem[] = [
