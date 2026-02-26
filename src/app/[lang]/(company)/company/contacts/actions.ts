@@ -76,11 +76,21 @@ export async function deleteContacts(contactIds: string[]) {
     }
 
     try {
-        await prisma.contact.deleteMany({
-            where: {
-                id: { in: contactIds },
-                companyId: session.user.companyId,
-            }
+        await prisma.$transaction(async (tx) => {
+            // Delete conversations first (messages, insights, chatbot sessions cascade automatically)
+            await tx.conversation.deleteMany({
+                where: {
+                    contactId: { in: contactIds },
+                    companyId: session.user.companyId,
+                },
+            });
+
+            await tx.contact.deleteMany({
+                where: {
+                    id: { in: contactIds },
+                    companyId: session.user.companyId,
+                },
+            });
         });
 
         revalidatePath('/[lang]/company/contacts', 'page');

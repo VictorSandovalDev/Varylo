@@ -170,7 +170,7 @@ model Conversation {
 
   company         Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
   channel         Channel            @relation(fields: [channelId], references: [id])
-  contact         Contact            @relation(fields: [contactId], references: [id])
+  contact         Contact            @relation(fields: [contactId], references: [id], onDelete: Cascade)
   handledByAiAgentId String?
   handledByAiAgent   AiAgent?           @relation(fields: [handledByAiAgentId], references: [id])
 
