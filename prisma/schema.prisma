@@ -29,6 +29,7 @@ enum ChannelType {
   INSTAGRAM
   MESSENGER
   TELEGRAM
+  WEB_CHAT
 }
 
 enum ChannelStatus {

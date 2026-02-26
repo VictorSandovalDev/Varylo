@@ -50,6 +50,8 @@ export async function sendChannelMessage({ conversationId, companyId, content, f
             console.error('[WhatsApp] Channel missing accessToken or phoneNumberId');
             throw new Error('WhatsApp channel not configured');
         }
+    } else if (channel.type === ChannelType.WEB_CHAT) {
+        // Web chat: no external API to call, message is stored in DB below
     } else if (channel.type === ChannelType.INSTAGRAM) {
         const config = channel.configJson as { accessToken?: string; pageId?: string } | null;
         if (config?.accessToken) {
