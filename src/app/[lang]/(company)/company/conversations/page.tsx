@@ -277,7 +277,7 @@ export default async function ConversationsPage({
                                                     : "bg-card border rounded-bl-none text-foreground"
                                             )}
                                         >
-                                            <p>{msg.content}</p>
+                                            <p className="whitespace-pre-wrap">{msg.content}</p>
                                             <p className={cn(
                                                 "text-[10px] mt-1 text-right opacity-80",
                                                 isOutbound ? "text-primary-foreground/70" : "text-muted-foreground"
