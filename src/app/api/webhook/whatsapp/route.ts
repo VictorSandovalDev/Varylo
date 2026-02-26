@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { ChannelType, MessageDirection, Role } from '@prisma/client';
+import { ChannelType, MessageDirection } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
 import { createHmac } from 'crypto';
+import { findLeastBusyAgent } from '@/lib/assign-agent';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -154,22 +155,8 @@ export async function POST(req: NextRequest) {
                             },
                         });
                     } else {
-                        // Fallback: assign to random human agent
-                        let selectedAgentId: string | null = null;
-
-                        const agents = await prisma.user.findMany({
-                            where: {
-                                companyId,
-                                active: true,
-                                role: Role.AGENT,
-                            },
-                            select: { id: true },
-                        });
-
-                        if (agents.length > 0) {
-                            const randomIndex = Math.floor(Math.random() * agents.length);
-                            selectedAgentId = agents[randomIndex].id;
-                        }
+                        // Assign to agent with fewest open conversations, or COMPANY_ADMIN
+                        const selectedAgentId = await findLeastBusyAgent(companyId);
 
                         conversation = await prisma.conversation.create({
                             data: {
