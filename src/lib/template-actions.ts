@@ -74,7 +74,7 @@ export async function getWhatsAppTemplates(
             `https://graph.facebook.com/v18.0/${config.wabaId}/message_templates?limit=100`,
             {
                 headers: { Authorization: `Bearer ${config.accessToken}` },
-                next: { revalidate: 300 },
+                cache: 'no-store',
             }
         );
 
