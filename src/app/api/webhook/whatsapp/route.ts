@@ -8,30 +8,18 @@ import { findLeastBusyAgent } from '@/lib/assign-agent';
 const MAX_MESSAGE_LENGTH = 4096;
 
 /** Verify Meta X-Hub-Signature-256 header */
-function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
+function verifyWebhookSignature(rawBody: Buffer, signature: string | null): boolean {
     const appSecret = process.env.META_APP_SECRET;
     if (!appSecret) {
-        console.error('[WhatsApp] META_APP_SECRET not configured — env var is missing');
+        console.error('[WhatsApp] META_APP_SECRET not configured');
         return false;
     }
-    if (!signature) {
-        console.error('[WhatsApp] No x-hub-signature-256 header received');
-        return false;
-    }
-    if (!signature.startsWith('sha256=')) {
-        console.error('[WhatsApp] Signature header does not start with sha256=:', signature.substring(0, 20));
-        return false;
-    }
+    if (!signature || !signature.startsWith('sha256=')) return false;
 
     const expectedSignature = createHmac('sha256', appSecret)
         .update(rawBody)
         .digest('hex');
-    const expected = `sha256=${expectedSignature}`;
-    const match = signature === expected;
-    if (!match) {
-        console.error('[WhatsApp] Signature mismatch — secret length:', appSecret.length, 'body length:', rawBody.length);
-    }
-    return match;
+    return `sha256=${expectedSignature}` === signature;
 }
 
 export async function GET(req: NextRequest) {
@@ -74,15 +62,15 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
     try {
-        const rawBody = await req.text();
+        const rawBuffer = Buffer.from(await req.arrayBuffer());
 
         // Verify webhook signature from Meta
         const signature = req.headers.get('x-hub-signature-256');
-        if (!verifyWebhookSignature(rawBody, signature)) {
+        if (!verifyWebhookSignature(rawBuffer, signature)) {
             return new NextResponse('Forbidden', { status: 403 });
         }
 
-        const body = JSON.parse(rawBody);
+        const body = JSON.parse(rawBuffer.toString('utf-8'));
 
         // Check if it's a WhatsApp status update or message
         const entry = body.entry?.[0];
