@@ -11,15 +11,27 @@ const MAX_MESSAGE_LENGTH = 4096;
 function verifyWebhookSignature(rawBody: string, signature: string | null): boolean {
     const appSecret = process.env.META_APP_SECRET;
     if (!appSecret) {
-        console.error('[WhatsApp] META_APP_SECRET not configured');
+        console.error('[WhatsApp] META_APP_SECRET not configured — env var is missing');
         return false;
     }
-    if (!signature || !signature.startsWith('sha256=')) return false;
+    if (!signature) {
+        console.error('[WhatsApp] No x-hub-signature-256 header received');
+        return false;
+    }
+    if (!signature.startsWith('sha256=')) {
+        console.error('[WhatsApp] Signature header does not start with sha256=:', signature.substring(0, 20));
+        return false;
+    }
 
     const expectedSignature = createHmac('sha256', appSecret)
         .update(rawBody)
         .digest('hex');
-    return signature === `sha256=${expectedSignature}`;
+    const expected = `sha256=${expectedSignature}`;
+    const match = signature === expected;
+    if (!match) {
+        console.error('[WhatsApp] Signature mismatch — secret length:', appSecret.length, 'body length:', rawBody.length);
+    }
+    return match;
 }
 
 export async function GET(req: NextRequest) {
