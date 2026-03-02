@@ -61,14 +61,18 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    console.log('[WhatsApp POST] Request received');
     try {
         const rawBuffer = Buffer.from(await req.arrayBuffer());
 
         // Verify webhook signature from Meta
         const signature = req.headers.get('x-hub-signature-256');
+        console.log('[WhatsApp POST] Signature present:', !!signature, 'Body length:', rawBuffer.length);
         if (!verifyWebhookSignature(rawBuffer, signature)) {
+            console.error('[WhatsApp POST] Signature verification FAILED');
             return new NextResponse('Forbidden', { status: 403 });
         }
+        console.log('[WhatsApp POST] Signature OK');
 
         const body = JSON.parse(rawBuffer.toString('utf-8'));
 
