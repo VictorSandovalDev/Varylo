@@ -314,10 +314,21 @@ export async function createWhatsAppTemplate(params: {
             }
         );
 
+        const data = await res.json().catch(() => ({}));
+
         if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
+            console.error('[createWhatsAppTemplate] Meta API error:', JSON.stringify(data, null, 2));
+            console.error('[createWhatsAppTemplate] Request body:', JSON.stringify({
+                name: params.name,
+                category: params.category,
+                language: params.language,
+                allow_category_change: true,
+                components,
+            }, null, 2));
             const msg = (data as any)?.error?.message || `HTTP ${res.status}`;
-            return { success: false, error: `Error de Meta: ${msg}` };
+            const code = (data as any)?.error?.code;
+            const subcode = (data as any)?.error?.error_subcode;
+            return { success: false, error: `Error de Meta (${code || res.status}${subcode ? '/' + subcode : ''}): ${msg}` };
         }
 
         return { success: true };
