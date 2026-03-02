@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContactAvatar } from "@/components/contact-avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2 } from "lucide-react";
+import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2, Bot } from "lucide-react";
 import { AgentSelector } from "./agent-selector";
 import { TagSelector } from "./tag-selector";
 import { cn } from "@/lib/utils";
@@ -262,6 +262,18 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                             <span className="truncate">{contact.name || contact.phone || 'Cliente'}</span>
                                         </div>
                                     </div>
+
+                                    {conversation.handledByAiAgent && (
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Agente IA</label>
+                                            <div className="flex items-center gap-2 text-sm p-2 bg-purple-50 rounded-md border border-purple-200">
+                                                <div className="h-6 w-6 rounded-full bg-purple-100 flex items-center justify-center">
+                                                    <Bot className="h-3.5 w-3.5 text-purple-600" />
+                                                </div>
+                                                <span className="truncate text-purple-700 font-medium">{conversation.handledByAiAgent.name}</span>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {conversation.assignedAgents && conversation.assignedAgents.length > 0 && (
                                         <div className="space-y-1">

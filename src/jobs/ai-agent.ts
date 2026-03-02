@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { getOpenAIForCompany } from '@/lib/openai';
-import { sendChannelMessage } from '@/lib/channel-sender';
+import { sendChannelMessage, sendWhatsAppTypingIndicator } from '@/lib/channel-sender';
 import { Role } from '@prisma/client';
 import { checkCreditBalance, deductCredits, logUsageOnly } from '@/lib/credits';
 
@@ -18,6 +18,7 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
                     include: { channels: true },
                 },
                 channel: true,
+                contact: true,
                 messages: {
                     orderBy: { createdAt: 'asc' },
                     take: 50,
@@ -94,6 +95,20 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
 
         // Add the current message (it's already in DB but make sure it's in the history)
         // The last message in the DB should be the inbound one we just received
+
+        // Send typing indicator so the user sees "typing..." in WhatsApp
+        if (conversation.channel?.type === 'WHATSAPP') {
+            const config = conversation.channel.configJson as { phoneNumberId?: string; accessToken?: string } | null;
+            const lastInbound = [...conversation.messages].reverse().find(m => m.direction === 'INBOUND');
+            if (config?.phoneNumberId && config?.accessToken && lastInbound?.providerMessageId) {
+                await sendWhatsAppTypingIndicator(
+                    config.phoneNumberId,
+                    config.accessToken,
+                    conversation.contact?.phone || '',
+                    lastInbound.providerMessageId,
+                );
+            }
+        }
 
         const { client: openai, usesOwnKey } = await getOpenAIForCompany(conversation.companyId);
 

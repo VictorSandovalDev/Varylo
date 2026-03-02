@@ -100,6 +100,7 @@ export default async function ConversationsPage({
             },
             contact: true,
             assignedAgents: true,
+            handledByAiAgent: { select: { id: true, name: true } },
             channel: true
         },
         orderBy: {
@@ -148,6 +149,7 @@ export default async function ConversationsPage({
                             orderBy: { createdAt: 'asc' }
                         },
                         assignedAgents: true,
+                        handledByAiAgent: { select: { id: true, name: true } },
                         tags: true,
                         channel: true,
                         insights: {

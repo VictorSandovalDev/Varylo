@@ -9,6 +9,35 @@ interface SendMessageOptions {
     fromName?: string;
 }
 
+/**
+ * Send a typing indicator + mark-as-read to WhatsApp.
+ * The typing bubble appears for up to 25 seconds or until the reply is sent.
+ */
+export async function sendWhatsAppTypingIndicator(
+    phoneNumberId: string,
+    accessToken: string,
+    recipientPhone: string,
+    inboundMessageId: string,
+) {
+    try {
+        await fetch(`https://graph.facebook.com/v21.0/${phoneNumberId}/messages`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                messaging_product: 'whatsapp',
+                status: 'read',
+                message_id: inboundMessageId,
+                typing_indicator: { type: 'text' },
+            }),
+        });
+    } catch {
+        // Non-critical – don't block the response if this fails
+    }
+}
+
 export async function sendChannelMessage({ conversationId, companyId, content, fromName }: SendMessageOptions) {
     const conversation = await prisma.conversation.findUnique({
         where: { id: conversationId },

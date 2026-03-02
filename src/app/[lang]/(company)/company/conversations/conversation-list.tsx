@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ContactAvatar } from '@/components/contact-avatar';
 import { Badge } from '@/components/ui/badge';
-import { Instagram, Phone, Globe } from 'lucide-react';
+import { Instagram, Phone, Globe, Bot } from 'lucide-react';
 import { UnreadDot } from './unread-dot';
 import { ConversationListActions } from './conversation-list-actions';
 
@@ -15,6 +15,7 @@ interface ConversationItem {
     channel: { type: string } | null;
     messages: { content: string; createdAt: string | Date }[];
     assignedAgents: { id: string; name: string | null }[];
+    handledByAiAgent?: { id: string; name: string } | null;
 }
 
 interface ConversationListProps {
@@ -81,6 +82,11 @@ export function ConversationList({ conversations, selectedId, filter, isAgent }:
                                             {conv.channel.type}
                                         </Badge>
                                     ) : null}
+                                    {conv.handledByAiAgent && (
+                                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-purple-200 text-purple-600 bg-purple-50 font-normal flex items-center gap-1">
+                                            <Bot className="h-3 w-3" /> {conv.handledByAiAgent.name}
+                                        </Badge>
+                                    )}
                                     {conv.assignedAgents && conv.assignedAgents.length > 0 && (
                                         <div className="flex -space-x-2">
                                             {conv.assignedAgents.slice(0, 3).map(agent => (
