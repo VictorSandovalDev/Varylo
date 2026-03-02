@@ -8,13 +8,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Instagram, Building2, Bell, Plug, Brain, Tag, FileText } from "lucide-react";
+import { Instagram, Building2, Bell, Plug, Brain, Tag, FileText, BookOpen } from "lucide-react";
 import { WhatsAppConnectionForm } from "./whatsapp-form";
 import { OpenAIKeyForm } from "./openai-form";
 import { CreditBalanceCard } from "./credit-balance-card";
 import { WebChatForm } from "./webchat-form";
 import { TagsSection } from "./tags-section";
 import { TemplatesSection } from "./templates-section";
+import { GuidesSection } from "./guides-section";
 
 const TABS = [
     { key: 'general', label: 'General', icon: Building2 },
@@ -22,6 +23,7 @@ const TABS = [
     { key: 'ai', label: 'IA y Créditos', icon: Brain },
     { key: 'tags', label: 'Etiquetas', icon: Tag },
     { key: 'templates', label: 'Plantillas', icon: FileText },
+    { key: 'guides', label: 'Guías', icon: BookOpen },
 ];
 
 export default async function SettingsPage(props: {
@@ -204,6 +206,10 @@ export default async function SettingsPage(props: {
 
                 {activeTab === 'templates' && (
                     <TemplatesSection />
+                )}
+
+                {activeTab === 'guides' && (
+                    <GuidesSection />
                 )}
             </div>
         </div>
