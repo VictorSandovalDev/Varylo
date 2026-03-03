@@ -69,8 +69,12 @@ export async function register(prevState: string | undefined, formData: FormData
         return 'Failed to create account.';
     }
 
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(email, name, companyName).catch(() => {});
+    // Send welcome email before redirecting
+    try {
+        await sendWelcomeEmail(email, name, companyName);
+    } catch (err) {
+        console.error('[Welcome Email] Failed:', err);
+    }
 
     redirect('/login');
 }
