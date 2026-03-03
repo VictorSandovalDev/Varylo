@@ -63,8 +63,12 @@ export async function sendPasswordResetEmail(
 </body>
 </html>`;
 
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    throw new Error('SMTP not configured: missing SMTP_HOST, SMTP_USER, or SMTP_PASSWORD');
+  }
+
   await transporter.sendMail({
-    from: `Varylo <${process.env.EMAIL_FROM || 'hello@varylo.app'}>`,
+    from: `Varylo <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to: email,
     subject,
     html,

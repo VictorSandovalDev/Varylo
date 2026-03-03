@@ -46,7 +46,8 @@ export async function requestPasswordReset(
 
     // Always return success to not reveal if email exists
     return { success: true };
-  } catch {
-    return { success: true }; // Don't leak errors either
+  } catch (err) {
+    console.error('[PasswordReset] Error:', err);
+    return { error: 'No se pudo enviar el correo. Intenta de nuevo más tarde.' };
   }
 }
