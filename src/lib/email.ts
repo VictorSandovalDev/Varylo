@@ -1,14 +1,16 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 465,
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASSWORD,
-  },
-});
+function getTransporter() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  });
+}
 
 export async function sendPasswordResetEmail(
   email: string,
@@ -134,9 +136,10 @@ export async function sendWelcomeEmail(
 
 async function sendMail(to: string, subject: string, html: string) {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-    throw new Error('SMTP not configured: missing SMTP_HOST, SMTP_USER, or SMTP_PASSWORD');
+    throw new Error(`SMTP not configured: HOST=${!!process.env.SMTP_HOST}, USER=${!!process.env.SMTP_USER}, PASS=${!!process.env.SMTP_PASSWORD}`);
   }
 
+  const transporter = getTransporter();
   await transporter.sendMail({
     from: `Varylo <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
     to,
