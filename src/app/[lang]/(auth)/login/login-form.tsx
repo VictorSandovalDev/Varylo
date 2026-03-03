@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { authenticate } from './actions';
@@ -16,7 +17,7 @@ function SubmitButton({ text, pendingText }: { text: string, pendingText: string
     );
 }
 
-export default function LoginForm({ dict }: { dict: any }) {
+export default function LoginForm({ dict, lang }: { dict: any; lang: string }) {
     const [errorMessage, dispatch] = useActionState(authenticate, undefined);
 
     return (
@@ -32,7 +33,15 @@ export default function LoginForm({ dict }: { dict: any }) {
                 />
             </div>
             <div className="space-y-2">
-                <Label htmlFor="password">{dict.passwordLabel}</Label>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="password">{dict.passwordLabel}</Label>
+                    <Link
+                        href={`/${lang}/forgot-password`}
+                        className="text-sm text-primary hover:underline"
+                    >
+                        {dict.forgotPassword}
+                    </Link>
+                </div>
                 <Input
                     id="password"
                     name="password"

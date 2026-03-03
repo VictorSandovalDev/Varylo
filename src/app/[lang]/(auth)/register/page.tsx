@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import RegisterForm from './register-form';
 import { getDictionary, Locale } from '@/lib/dictionary';
 
@@ -15,6 +16,12 @@ export default async function RegisterPage({ params }: { params: Promise<{ lang:
                 </p>
             </div>
             <RegisterForm dict={d} />
+            <p className="text-center text-sm text-muted-foreground">
+                {d.hasAccount}{' '}
+                <Link href={`/${lang}/login`} className="font-medium text-primary hover:underline">
+                    {d.login}
+                </Link>
+            </p>
         </div>
     );
 }

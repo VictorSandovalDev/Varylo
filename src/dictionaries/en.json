@@ -200,7 +200,10 @@
             "emailLabel": "Email",
             "passwordLabel": "Password",
             "submitButton": "Sign in",
-            "submitButtonPending": "Signing in..."
+            "submitButtonPending": "Signing in...",
+            "forgotPassword": "Forgot your password?",
+            "noAccount": "Don't have an account?",
+            "register": "Sign up"
         },
         "register": {
             "title": "Create your account",
@@ -214,7 +217,29 @@
             "planLabel": "Plan",
             "planPlaceholder": "Select a plan",
             "submitButton": "Create Account",
-            "submitButtonPending": "Creating account..."
+            "submitButtonPending": "Creating account...",
+            "hasAccount": "Already have an account?",
+            "login": "Sign in"
+        },
+        "forgotPassword": {
+            "title": "Forgot your password?",
+            "subtitle": "Enter your email and we'll send you a link to reset it.",
+            "emailLabel": "Email",
+            "submitButton": "Send reset link",
+            "submitButtonPending": "Sending...",
+            "success": "If the email is registered, you'll receive a link to reset your password.",
+            "backToLogin": "Back to sign in"
+        },
+        "resetPassword": {
+            "title": "Reset password",
+            "subtitle": "Enter your new password.",
+            "passwordLabel": "New password",
+            "confirmPasswordLabel": "Confirm password",
+            "submitButton": "Reset password",
+            "submitButtonPending": "Resetting...",
+            "success": "Your password has been reset. You can now sign in.",
+            "invalidToken": "This link is invalid or has expired. Please request a new one.",
+            "passwordMismatch": "Passwords do not match."
         }
     }
 }
