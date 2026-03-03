@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
 import {
@@ -117,7 +118,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
             {/* Logo */}
             <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
                 <Link href={`/${lang}`} className="flex items-center gap-2.5 font-semibold" onClick={onLinkClick}>
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">V</div>
+                    <Image src="/favicon.png" alt="Varylo" width={28} height={28} className="rounded-lg" />
                     <span className="text-sidebar-foreground">VARYLO</span>
                 </Link>
             </div>

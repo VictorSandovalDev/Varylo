@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
 import {
@@ -38,7 +39,7 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
         <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm' : 'bg-white/80 backdrop-blur-sm'}`}>
             <div className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4">
                 <Link href={`/${lang}`} className="mr-8 flex items-center gap-2.5 group">
-                    <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-sm group-hover:bg-emerald-700 transition-colors">V</div>
+                    <Image src="/favicon.png" alt="Varylo" width={32} height={32} className="rounded-lg shadow-sm" />
                     <span className="font-bold text-xl text-gray-900 tracking-tight">VARYLO</span>
                 </Link>
 

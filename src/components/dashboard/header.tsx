@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { User, Menu } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -58,7 +59,7 @@ export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OF
 
             <div className="w-full flex-1 lg:hidden">
                 <div className="flex items-center gap-2 ml-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">V</div>
+                    <Image src="/favicon.png" alt="Varylo" width={24} height={24} className="rounded-md" />
                     <span className="font-bold text-sm">VARYLO</span>
                 </div>
             </div>
