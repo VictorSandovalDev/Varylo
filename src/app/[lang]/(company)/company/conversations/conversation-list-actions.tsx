@@ -48,6 +48,12 @@ export function ConversationListActions({ conversationId, status, isAgent }: { c
         }
     }
 
+    const hasReopen = status === 'RESOLVED';
+    const hasDelete = !isAgent;
+    const hasAnyAction = hasReopen || hasDelete;
+
+    if (!hasAnyAction) return null;
+
     return (
         <>
             <DropdownMenu>
@@ -60,7 +66,7 @@ export function ConversationListActions({ conversationId, status, isAgent }: { c
                     </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" onClick={(e) => e.preventDefault()}>
-                    {status === 'RESOLVED' && (
+                    {hasReopen && (
                         <DropdownMenuItem
                             className="text-amber-700 focus:text-amber-700"
                             onClick={(e) => {
@@ -72,7 +78,7 @@ export function ConversationListActions({ conversationId, status, isAgent }: { c
                             Reabrir
                         </DropdownMenuItem>
                     )}
-                    {!isAgent && (
+                    {hasDelete && (
                         <DropdownMenuItem
                             className="text-destructive focus:text-destructive"
                             onClick={(e) => {
