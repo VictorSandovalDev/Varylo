@@ -3,17 +3,32 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
-import { LayoutDashboard, Users, MessageSquare, Settings, CreditCard, BarChart3, Inbox, ChevronDown, ChevronRight, Bot, Workflow } from 'lucide-react';
-import { useState } from 'react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import {
+    LayoutDashboard,
+    MessageSquare,
+    Settings,
+    CreditCard,
+    BarChart3,
+    Inbox,
+    Bot,
+    Sparkles,
+    Contact,
+    UsersRound,
+    Building2,
+    UserCircle,
+} from 'lucide-react';
 import { SidebarUnreadBadge } from './unread-badge';
-
 
 export interface NavItem {
     title: string;
     href: string;
     icon: React.ComponentType<{ className?: string }>;
     children?: NavItem[];
+}
+
+export interface SectionGroup {
+    label?: string;
+    items: NavItem[];
 }
 
 export interface TagData {
@@ -29,28 +44,30 @@ interface SidebarProps {
     role: SidebarRole;
     lang: string;
     tags?: TagData[];
-    className?: string; // Add className prop
-    onLinkClick?: () => void; // Add callback for mobile close
+    className?: string;
+    onLinkClick?: () => void;
 }
 
 export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarProps) {
     const pathname = usePathname();
 
-    let items: NavItem[] = [];
+    let sections: SectionGroup[] = [];
+    let bottomItems: NavItem[] = [];
+
     switch (role) {
         case 'super-admin':
-            items = superAdminItems;
+            sections = superAdminSections;
             break;
-        case 'company':
-            items = [...companyAdminItems];
-            // Inject tags into Conversations
+        case 'company': {
+            // Build company sections, injecting tag children into Conversaciones
+            const commItems = [...companyCommunicationItems];
             if (tags && tags.length > 0) {
                 const sidebarTags = tags.filter(t => t.showInSidebar);
                 if (sidebarTags.length > 0) {
-                    const convIndex = items.findIndex(i => i.href === '/company/conversations');
+                    const convIndex = commItems.findIndex(i => i.href === '/company/conversations');
                     if (convIndex !== -1) {
-                        const baseItem = items[convIndex];
-                        items[convIndex] = {
+                        const baseItem = commItems[convIndex];
+                        commItems[convIndex] = {
                             ...baseItem,
                             children: [
                                 { title: 'Todas', href: '/company/conversations', icon: MessageSquare },
@@ -69,29 +86,70 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
                     }
                 }
             }
+            sections = [
+                { items: [{ title: 'Dashboard', href: '/company', icon: LayoutDashboard }] },
+                { label: 'COMUNICACIÓN', items: commItems },
+                {
+                    label: 'AUTOMATIZACIÓN', items: [
+                        { title: 'Chatbots', href: '/company/chatbots', icon: Bot },
+                        { title: 'Agentes IA', href: '/company/ai-agents', icon: Sparkles },
+                    ]
+                },
+                {
+                    label: 'GESTIÓN', items: [
+                        { title: 'Equipo', href: '/company/agents', icon: UsersRound },
+                        { title: 'Analíticas', href: '/company/analytics', icon: BarChart3 },
+                    ]
+                },
+            ];
+            bottomItems = [{ title: 'Configuración', href: '/company/settings', icon: Settings }];
             break;
+        }
         case 'agent':
-            items = agentItems;
+            sections = agentSections;
             break;
         default:
-            items = [];
+            sections = [];
     }
 
     return (
-        <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col gap-2 h-full max-h-screen", className)}>
+        <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col h-full max-h-screen", className)}>
+            {/* Logo */}
             <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
                 <Link href={`/${lang}`} className="flex items-center gap-2.5 font-semibold" onClick={onLinkClick}>
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">V</div>
                     <span className="text-sidebar-foreground">VARYLO</span>
                 </Link>
             </div>
-            <div className="flex-1 overflow-auto py-2">
-                <nav className="grid items-start px-4 text-sm font-medium lg:px-6">
-                    {items.map((item, index) => (
-                        <SidebarItem key={index} item={item} lang={lang} pathname={pathname} onLinkClick={onLinkClick} />
+
+            {/* Navigation */}
+            <div className="flex-1 overflow-auto py-3">
+                <nav className="grid items-start px-3 text-sm font-medium">
+                    {sections.map((section, sIdx) => (
+                        <div key={sIdx} className={sIdx > 0 ? "mt-4" : ""}>
+                            {section.label && (
+                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-3 mb-1.5 block font-semibold">
+                                    {section.label}
+                                </span>
+                            )}
+                            {section.items.map((item, index) => (
+                                <SidebarItem key={index} item={item} lang={lang} pathname={pathname} onLinkClick={onLinkClick} />
+                            ))}
+                        </div>
                     ))}
                 </nav>
             </div>
+
+            {/* Bottom pinned items */}
+            {bottomItems.length > 0 && (
+                <div className="border-t border-sidebar-border px-3 py-3">
+                    <nav className="grid items-start text-sm font-medium">
+                        {bottomItems.map((item, index) => (
+                            <SidebarItem key={index} item={item} lang={lang} pathname={pathname} onLinkClick={onLinkClick} />
+                        ))}
+                    </nav>
+                </div>
+            )}
         </div>
     );
 }
@@ -99,29 +157,25 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
 function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lang: string, pathname: string, onLinkClick?: () => void }) {
     const localizedHref = `/${lang}${item.href}`;
     const isActive = pathname === localizedHref || (item.children && item.children.some(child => pathname === `/${lang}${child.href}`));
-    const [isOpen, setIsOpen] = useState(isActive);
 
     const showUnreadBadge = item.title === 'Conversaciones' || (item.title === 'Inbox' && item.href === '/agent');
 
     if (item.children) {
         return (
-            <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-                <CollapsibleTrigger asChild>
-                    <button
-                        className={clsx(
-                            "flex w-full items-center justify-between rounded-lg px-3 py-2 transition-all",
-                            isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                        )}
-                    >
-                        <div className="flex items-center gap-3">
-                            <item.icon className="h-4 w-4" />
-                            {item.title}
-                            {showUnreadBadge && <SidebarUnreadBadge />}
-                        </div>
-                        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-6 space-y-1 mt-1">
+            <div className="w-full">
+                <Link
+                    href={localizedHref}
+                    onClick={onLinkClick}
+                    className={clsx(
+                        "flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all",
+                        isActive ? "bg-primary/10 text-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-muted"
+                    )}
+                >
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                    {showUnreadBadge && <SidebarUnreadBadge />}
+                </Link>
+                <div className="pl-6 space-y-0.5 mt-0.5">
                     {item.children.map((child, index) => {
                         const childHref = `/${lang}${child.href}`;
                         const isChildActive = pathname === childHref;
@@ -129,29 +183,29 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                             <Link
                                 key={index}
                                 href={childHref}
-                                onClick={onLinkClick} // Close sidebar on mobile
+                                onClick={onLinkClick}
                                 className={clsx(
-                                    "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all",
-                                    isChildActive ? "text-sidebar-accent-foreground font-medium bg-sidebar-accent/60" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                    "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-all",
+                                    isChildActive ? "text-primary font-medium bg-primary/5" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted"
                                 )}
                             >
-                                {child.icon && <child.icon className="h-4 w-4" />}
+                                {child.icon && <child.icon className="h-3.5 w-3.5" />}
                                 {child.title}
                             </Link>
                         )
                     })}
-                </CollapsibleContent>
-            </Collapsible>
+                </div>
+            </div>
         )
     }
 
     return (
         <Link
             href={localizedHref}
-            onClick={onLinkClick} // Close sidebar on mobile
+            onClick={onLinkClick}
             className={clsx(
                 "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                isActive ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                isActive ? "bg-primary/10 text-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-muted"
             )}
         >
             <item.icon className="h-4 w-4" />
@@ -162,33 +216,53 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
 }
 
 
-// Predefined Nav Items for Roles
+// --- Section definitions ---
+
+const companyCommunicationItems: NavItem[] = [
+    { title: 'Conversaciones', href: '/company/conversations', icon: MessageSquare },
+    { title: 'Contactos', href: '/company/contacts', icon: Contact },
+];
+
+const superAdminSections: SectionGroup[] = [
+    { items: [{ title: 'Dashboard', href: '/super-admin', icon: LayoutDashboard }] },
+    {
+        label: 'ADMINISTRACIÓN', items: [
+            { title: 'Empresas', href: '/super-admin/companies', icon: Building2 },
+            { title: 'Planes & Facturación', href: '/super-admin/billing', icon: CreditCard },
+        ]
+    },
+    {
+        label: 'MÉTRICAS', items: [
+            { title: 'Analíticas', href: '/super-admin/analytics', icon: BarChart3 },
+        ]
+    },
+];
+
+const agentSections: SectionGroup[] = [
+    { items: [{ title: 'Inbox', href: '/agent', icon: Inbox }] },
+    { items: [{ title: 'Mi Perfil', href: '/agent/profile', icon: UserCircle }] },
+];
+
+// Keep these exports for backwards compatibility with layouts that import them
 export const superAdminItems: NavItem[] = [
     { title: 'Dashboard', href: '/super-admin', icon: LayoutDashboard },
-    { title: 'Empresas', href: '/super-admin/companies', icon: Users },
-    { title: 'Métricas', href: '/super-admin/analytics', icon: BarChart3 },
-    { title: 'Planes', href: '/super-admin/billing', icon: CreditCard },
+    { title: 'Empresas', href: '/super-admin/companies', icon: Building2 },
+    { title: 'Analíticas', href: '/super-admin/analytics', icon: BarChart3 },
+    { title: 'Planes & Facturación', href: '/super-admin/billing', icon: CreditCard },
 ];
 
 export const companyAdminItems: NavItem[] = [
     { title: 'Dashboard', href: '/company', icon: LayoutDashboard },
     { title: 'Conversaciones', href: '/company/conversations', icon: MessageSquare },
-    { title: 'Contactos', href: '/company/contacts', icon: Users },
-    {
-        title: 'Automatización',
-        href: '/company/chatbots',
-        icon: Workflow,
-        children: [
-            { title: 'Chatbots', href: '/company/chatbots', icon: Workflow },
-            { title: 'Agentes IA', href: '/company/ai-agents', icon: Bot },
-        ]
-    },
-    { title: 'Equipo', href: '/company/agents', icon: Users },
+    { title: 'Contactos', href: '/company/contacts', icon: Contact },
+    { title: 'Chatbots', href: '/company/chatbots', icon: Bot },
+    { title: 'Agentes IA', href: '/company/ai-agents', icon: Sparkles },
+    { title: 'Equipo', href: '/company/agents', icon: UsersRound },
     { title: 'Analíticas', href: '/company/analytics', icon: BarChart3 },
     { title: 'Configuración', href: '/company/settings', icon: Settings },
 ];
 
 export const agentItems: NavItem[] = [
     { title: 'Inbox', href: '/agent', icon: Inbox },
-    { title: 'Perfil', href: '/agent/profile', icon: Settings },
+    { title: 'Mi Perfil', href: '/agent/profile', icon: UserCircle },
 ];

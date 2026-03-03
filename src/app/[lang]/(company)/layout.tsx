@@ -53,11 +53,13 @@ export default async function CompanyLayout({
             <Sidebar role="company" lang={lang} tags={tags} className="hidden lg:block" />
             <div className="flex flex-col">
                 <DashboardHeader
-                    title="Company Dashboard"
+                    title="Panel de Empresa"
                     lang={lang}
                     role="company"
                     tags={tags}
                     userStatus={userStatus}
+                    userName={session?.user?.name || undefined}
+                    userEmail={session?.user?.email || undefined}
                 />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
                     {children}

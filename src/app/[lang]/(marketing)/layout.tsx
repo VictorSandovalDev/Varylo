@@ -23,7 +23,7 @@ export default async function MarketingLayout({
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                         <div className="col-span-2 md:col-span-1">
                             <div className="flex items-center gap-2 mb-3">
-                                <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-xs">V</div>
+                                <div className="h-7 w-7 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-xs">V</div>
                                 <span className="font-bold text-lg text-white">VARYLO</span>
                             </div>
                             <p className="text-sm text-zinc-500 leading-relaxed">

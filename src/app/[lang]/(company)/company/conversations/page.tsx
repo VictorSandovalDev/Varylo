@@ -187,7 +187,7 @@ export default async function ConversationsPage({
                     <div className="px-4 py-3 flex items-center justify-between">
                         <h2 className="font-semibold flex items-center gap-2">
                             Conversaciones
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 font-normal border-none text-[10px] h-5 px-1.5">
+                            <Badge variant="secondary" className="bg-muted text-muted-foreground font-normal border-none text-[10px] h-5 px-1.5">
                                 {filter === 'resolved' ? 'Finalizadas' : 'Abiertas'}
                             </Badge>
                         </h2>
@@ -202,7 +202,7 @@ export default async function ConversationsPage({
                                 filter === 'mine' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
                             )}
                         >
-                            Mías <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{mineCount}</Badge>
+                            Mías <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-muted text-muted-foreground text-[10px]">{mineCount}</Badge>
                         </Link>
                         {!isAgent && (
                             <>
@@ -213,7 +213,7 @@ export default async function ConversationsPage({
                                         filter === 'unassigned' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
                                     )}
                                 >
-                                    Sin asignar <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{unassignedCount}</Badge>
+                                    Sin asignar <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-muted text-muted-foreground text-[10px]">{unassignedCount}</Badge>
                                 </Link>
                                 <Link
                                     href={`?filter=all`}
@@ -222,7 +222,7 @@ export default async function ConversationsPage({
                                         filter === 'all' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
                                     )}
                                 >
-                                    Todos <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{allCount}</Badge>
+                                    Todos <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-muted text-muted-foreground text-[10px]">{allCount}</Badge>
                                 </Link>
                             </>
                         )}
@@ -234,7 +234,7 @@ export default async function ConversationsPage({
                             )}
                         >
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            Finalizadas <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{resolvedCount}</Badge>
+                            Finalizadas <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-muted text-muted-foreground text-[10px]">{resolvedCount}</Badge>
                         </Link>
                     </ScrollableTabs>
                 </div>
@@ -246,7 +246,7 @@ export default async function ConversationsPage({
                         <Input
                             type="search"
                             placeholder="Buscar..."
-                            className="pl-8 h-9 bg-white"
+                            className="pl-8 h-9 bg-background"
                         />
                     </div>
                 </div>
@@ -321,7 +321,7 @@ export default async function ConversationsPage({
                             <div className="max-w-2xl w-full space-y-8 text-center">
                                 <div className="space-y-4">
                                     <div className="flex justify-center">
-                                        <div className="bg-white p-4 rounded-full shadow-sm">
+                                        <div className="bg-primary/10 p-4 rounded-full">
                                             <Inbox className="h-12 w-12 text-primary" />
                                         </div>
                                     </div>
@@ -374,9 +374,9 @@ export default async function ConversationsPage({
                                         <div className="flex flex-col gap-4 h-full justify-between">
                                             <div className="flex justify-center py-4">
                                                 <div className="flex -space-x-3">
-                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-blue-100 text-primary">A</AvatarFallback></Avatar>
-                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-green-100 text-green-600">B</AvatarFallback></Avatar>
-                                                    <Avatar className="border-2 border-white ring-2 ring-gray-100"><AvatarFallback className="bg-purple-100 text-purple-600">C</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-muted"><AvatarFallback className="bg-blue-100 text-primary">A</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-muted"><AvatarFallback className="bg-green-100 text-green-600">B</AvatarFallback></Avatar>
+                                                    <Avatar className="border-2 border-white ring-2 ring-muted"><AvatarFallback className="bg-purple-100 text-purple-600">C</AvatarFallback></Avatar>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-center">
@@ -395,8 +395,8 @@ export default async function ConversationsPage({
                                     <Card className="p-6 hover:shadow-md transition-all border shadow-sm group">
                                         <div className="flex flex-col gap-4 h-full justify-between">
                                             <div className="flex justify-center py-4">
-                                                <div className="bg-gray-100 p-3 rounded-lg">
-                                                    <code className="text-xs text-gray-500">/saludo Hola, ¿cómo estás?</code>
+                                                <div className="bg-muted p-3 rounded-lg">
+                                                    <code className="text-xs text-muted-foreground">/saludo Hola, ¿cómo estás?</code>
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-center">

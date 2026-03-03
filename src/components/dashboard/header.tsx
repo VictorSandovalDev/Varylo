@@ -24,10 +24,13 @@ interface DashboardHeaderProps {
     role: 'super-admin' | 'company' | 'agent';
     tags?: TagData[];
     userStatus?: 'ONLINE' | 'BUSY' | 'OFFLINE';
+    userName?: string;
+    userEmail?: string;
 }
 
-export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OFFLINE' }: DashboardHeaderProps) {
+export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OFFLINE', userName, userEmail }: DashboardHeaderProps) {
     const [open, setOpen] = useState(false);
+    const initial = userName ? userName.charAt(0).toUpperCase() : null;
 
     return (
         <header className="flex h-14 items-center gap-4 border-b bg-background px-6 lg:h-[60px] justify-between lg:justify-end">
@@ -54,8 +57,10 @@ export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OF
             </Sheet>
 
             <div className="w-full flex-1 lg:hidden">
-                {/* Spacer or Title for mobile if needed, usually hidden on mobile header since Sidebar has logo */}
-                <span className="font-bold ml-2">VARYLO</span>
+                <div className="flex items-center gap-2 ml-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-bold">V</div>
+                    <span className="font-bold text-sm">VARYLO</span>
+                </div>
             </div>
 
             <div className="hidden lg:flex w-full flex-1">
@@ -69,12 +74,21 @@ export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OF
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full bg-primary/10 text-primary hover:bg-primary/20">
-                        <User className="h-5 w-5" />
+                        {initial ? (
+                            <span className="text-sm font-semibold">{initial}</span>
+                        ) : (
+                            <User className="h-5 w-5" />
+                        )}
                         <span className="sr-only">Toggle user menu</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                    <DropdownMenuLabel>
+                        <div>
+                            <p>Mi Cuenta</p>
+                            {userEmail && <p className="text-xs font-normal text-muted-foreground">{userEmail}</p>}
+                        </div>
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>
                         <Link href={role === 'agent' ? `/${lang}/agent/profile` : `/${lang}/company/settings`} className="w-full">

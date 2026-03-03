@@ -31,7 +31,7 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
         <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/80 backdrop-blur-xl">
             <div className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4">
                 <Link href={`/${lang}`} className="mr-8 flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm">V</div>
+                    <div className="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">V</div>
                     <span className="font-bold text-xl text-white">VARYLO</span>
                 </Link>
 
@@ -48,7 +48,7 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
                             <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white hover:bg-white/5">{nav.login}</Button>
                         </Link>
                         <Link href={`/${lang}/register`}>
-                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 text-white shadow-lg shadow-blue-600/20">{nav.getStarted}</Button>
+                            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 border-0 text-white shadow-lg shadow-indigo-600/20">{nav.getStarted}</Button>
                         </Link>
                     </div>
 
@@ -74,7 +74,7 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
                                     <Button variant="outline" className="w-full border-white/10 text-white hover:bg-white/5">{nav.login}</Button>
                                 </Link>
                                 <Link href={`/${lang}/register`} onClick={() => setIsOpen(false)}>
-                                    <Button className="w-full bg-gradient-to-r from-blue-600 to-violet-600 border-0 text-white">{nav.getStarted}</Button>
+                                    <Button className="w-full bg-indigo-600 hover:bg-indigo-500 border-0 text-white">{nav.getStarted}</Button>
                                 </Link>
                             </div>
                         </SheetContent>

@@ -35,7 +35,7 @@ export default async function CompanyDashboard() {
                         <CardTitle className="text-sm font-medium">
                             Conversaciones Totales
                         </CardTitle>
-                        <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                        <MessageSquare className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalConversations || 0}</div>
@@ -49,7 +49,7 @@ export default async function CompanyDashboard() {
                         <CardTitle className="text-sm font-medium">
                             Agentes
                         </CardTitle>
-                        <Users className="h-4 w-4 text-muted-foreground" />
+                        <Users className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{totalAgents || 0}</div>
@@ -63,7 +63,7 @@ export default async function CompanyDashboard() {
                         <CardTitle className="text-sm font-medium">
                             Canales Activos
                         </CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
+                        <Activity className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{connectedChannels || 0}</div>
@@ -77,7 +77,7 @@ export default async function CompanyDashboard() {
                         <CardTitle className="text-sm font-medium">
                             Satisfacción (CSAT)
                         </CardTitle>
-                        <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                        <ArrowUpRight className="h-4 w-4 text-emerald-600" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{csatScore}</div>

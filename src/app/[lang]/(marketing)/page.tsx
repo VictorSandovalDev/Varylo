@@ -16,15 +16,15 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
             <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden">
                 {/* Background effects */}
                 <div className="absolute inset-0">
-                    <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[128px] animate-pulse" />
-                    <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/15 rounded-full blur-[128px] animate-pulse [animation-delay:1s]" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-cyan-500/5 rounded-full blur-[128px]" />
+                    <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[128px] animate-pulse" />
+                    <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-indigo-400/10 rounded-full blur-[128px] animate-pulse [animation-delay:1s]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[128px]" />
                 </div>
                 {/* Grid overlay */}
                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
 
                 <div className="relative z-10 container mx-auto px-4 text-center max-w-5xl">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-1.5 text-sm text-blue-400 font-medium mb-8">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-1.5 text-sm text-indigo-400 font-medium mb-8">
                         <Zap className="h-3.5 w-3.5" />
                         {d.hero.badge}
                     </div>
@@ -38,7 +38,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
                         <Link href={`/${lang}/register`}>
-                            <Button size="lg" className="h-14 px-10 text-base bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 text-white shadow-lg shadow-blue-600/25 w-full sm:w-auto gap-2">
+                            <Button size="lg" className="h-14 px-10 text-base bg-indigo-600 hover:bg-indigo-500 border-0 text-white shadow-lg shadow-indigo-600/25 w-full sm:w-auto gap-2">
                                 {d.hero.ctaPrimary}
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
@@ -91,7 +91,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
 
             {/* Metrics */}
             <section className="py-32 relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-600/5 to-transparent" />
                 <div className="container mx-auto px-4 relative">
                     <div className="text-center mb-20">
                         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">{d.solution.title}</h2>
@@ -100,7 +100,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
                         {Object.values(d.solution.metrics).map((m: any, i: number) => (
                             <div key={i} className="text-center">
-                                <div className="text-5xl sm:text-6xl font-black bg-gradient-to-b from-blue-400 to-violet-400 bg-clip-text text-transparent">
+                                <div className="text-5xl sm:text-6xl font-black bg-gradient-to-b from-indigo-400 to-indigo-300 bg-clip-text text-transparent">
                                     {m.value}
                                 </div>
                                 <p className="text-zinc-500 mt-3 text-sm">{m.label}</p>
@@ -119,29 +119,25 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                         {[
-                            { icon: MessageSquare, ...d.features.omnichannel, color: 'blue', isNew: false },
-                            { icon: Bot, ...d.features.aiAgents, color: 'violet', isNew: true },
+                            { icon: MessageSquare, ...d.features.omnichannel, color: 'indigo', isNew: false },
+                            { icon: Bot, ...d.features.aiAgents, color: 'emerald', isNew: true },
                             { icon: Workflow, ...d.features.chatbots, color: 'emerald', isNew: true },
-                            { icon: Users, ...d.features.agents, color: 'orange', isNew: false },
-                            { icon: BarChart3, ...d.features.analytics, color: 'cyan', isNew: false },
-                            { icon: Sparkles, ...d.features.ai, color: 'pink', isNew: false },
+                            { icon: Users, ...d.features.agents, color: 'indigo', isNew: false },
+                            { icon: BarChart3, ...d.features.analytics, color: 'indigo', isNew: false },
+                            { icon: Sparkles, ...d.features.ai, color: 'emerald', isNew: false },
                         ].map((f, i) => {
                             const colorMap: Record<string, string> = {
-                                blue: 'from-blue-500/20 to-blue-500/0 text-blue-400 bg-blue-500/10',
-                                violet: 'from-violet-500/20 to-violet-500/0 text-violet-400 bg-violet-500/10',
+                                indigo: 'from-indigo-500/20 to-indigo-500/0 text-indigo-400 bg-indigo-500/10',
                                 emerald: 'from-emerald-500/20 to-emerald-500/0 text-emerald-400 bg-emerald-500/10',
-                                orange: 'from-orange-500/20 to-orange-500/0 text-orange-400 bg-orange-500/10',
-                                cyan: 'from-cyan-500/20 to-cyan-500/0 text-cyan-400 bg-cyan-500/10',
-                                pink: 'from-pink-500/20 to-pink-500/0 text-pink-400 bg-pink-500/10',
                             };
-                            const c = colorMap[f.color] || colorMap.blue;
+                            const c = colorMap[f.color] || colorMap.indigo;
                             const [gradFrom, , iconColor, iconBg] = c.split(' ');
                             return (
                                 <div key={i} className="group relative rounded-2xl border border-white/5 bg-white/[0.02] backdrop-blur-sm p-8 hover:border-white/10 transition-all duration-500 overflow-hidden">
                                     <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r ${gradFrom}`} />
                                     {f.isNew && (
                                         <div className="absolute top-4 right-4">
-                                            <span className="bg-gradient-to-r from-blue-600 to-violet-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">New</span>
+                                            <span className="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">New</span>
                                         </div>
                                     )}
                                     <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center mb-6`}>
@@ -158,7 +154,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
 
             {/* How it Works */}
             <section id="how" className="py-32 relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-600/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-600/5 to-transparent" />
                 <div className="container mx-auto px-4 relative">
                     <div className="text-center mb-20">
                         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">{d.how.title}</h2>
@@ -166,11 +162,11 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                     </div>
                     <div className="max-w-4xl mx-auto relative">
                         {/* Connecting line */}
-                        <div className="hidden md:block absolute top-10 left-[16.67%] right-[16.67%] h-px bg-gradient-to-r from-blue-600/50 via-violet-600/50 to-blue-600/50" />
+                        <div className="hidden md:block absolute top-10 left-[16.67%] right-[16.67%] h-px bg-gradient-to-r from-indigo-600/50 via-emerald-500/50 to-indigo-600/50" />
                         <div className="grid md:grid-cols-3 gap-16">
                             {[d.how.step1, d.how.step2, d.how.step3].map((step: any, i: number) => (
                                 <div key={i} className="text-center relative">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-violet-600 rounded-2xl flex items-center justify-center mx-auto mb-8 font-bold text-3xl text-white shadow-lg shadow-blue-600/20 relative z-10">
+                                    <div className="w-20 h-20 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-8 font-bold text-3xl text-white shadow-lg shadow-indigo-600/20 relative z-10">
                                         {i + 1}
                                     </div>
                                     <h3 className="font-bold text-lg mb-3">{step.title}</h3>
@@ -196,7 +192,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                                 </div>
                                 <p className="text-zinc-300 text-sm leading-relaxed mb-8">&ldquo;{t.text}&rdquo;</p>
                                 <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center text-white font-bold text-sm">
+                                    <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
                                         {t.author.split(' ').map((n: string) => n[0]).join('')}
                                     </div>
                                     <div>
@@ -212,7 +208,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
 
             {/* Pricing */}
             <section id="pricing" className="py-32 relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/5 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-indigo-600/5 to-transparent" />
                 <div className="container mx-auto px-4 relative">
                     <div className="text-center mb-20">
                         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight">{d.pricing.title}</h2>
@@ -241,16 +237,16 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                             </ul>
                         </div>
                         {/* Pro */}
-                        <div className="rounded-2xl border border-blue-500/30 bg-gradient-to-b from-blue-600/10 to-transparent backdrop-blur-sm p-8 relative lg:scale-105 shadow-lg shadow-blue-600/10">
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-violet-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Popular</div>
+                        <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-600/10 to-transparent backdrop-blur-sm p-8 relative lg:scale-105 shadow-lg shadow-indigo-600/10">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Popular</div>
                             <h3 className="text-lg font-semibold">{d.pricing.pro.title}</h3>
                             <div className="flex items-baseline gap-1 mt-4 mb-2">
-                                <span className="text-5xl font-black bg-gradient-to-r from-blue-400 to-violet-400 bg-clip-text text-transparent">$79</span>
+                                <span className="text-5xl font-black text-indigo-400">$79</span>
                                 <span className="text-zinc-500">/mes</span>
                             </div>
                             <p className="text-zinc-500 text-sm mb-8">{d.pricing.pro.description}</p>
                             <Link href={`/${lang}/register?plan=PRO`} className="block">
-                                <Button className="w-full bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 text-white shadow-lg shadow-blue-600/25">
+                                <Button className="w-full bg-indigo-600 hover:bg-indigo-500 border-0 text-white shadow-lg shadow-indigo-600/25">
                                     {d.pricing.cta}
                                 </Button>
                             </Link>
@@ -305,16 +301,16 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
             {/* Final CTA */}
             <section className="py-32 relative overflow-hidden">
                 <div className="absolute inset-0">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-600/10 rounded-full blur-[128px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-indigo-600/10 rounded-full blur-[128px]" />
                 </div>
                 <div className="container mx-auto px-4 relative">
                     <div className="max-w-3xl mx-auto text-center">
-                        <h2 className="text-4xl sm:text-6xl font-black tracking-tight bg-gradient-to-r from-blue-400 via-violet-400 to-blue-400 bg-clip-text text-transparent mb-6">
+                        <h2 className="text-4xl sm:text-6xl font-black tracking-tight text-indigo-400 mb-6">
                             {d.cta.title}
                         </h2>
                         <p className="text-zinc-400 text-lg mb-10">{d.cta.subtitle}</p>
                         <Link href={`/${lang}/register`}>
-                            <Button size="lg" className="h-14 px-10 text-base bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 text-white shadow-lg shadow-blue-600/25 gap-2">
+                            <Button size="lg" className="h-14 px-10 text-base bg-indigo-600 hover:bg-indigo-500 border-0 text-white shadow-lg shadow-indigo-600/25 gap-2">
                                 {d.cta.button}
                                 <ArrowRight className="h-4 w-4" />
                             </Button>
