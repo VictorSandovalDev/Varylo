@@ -12,6 +12,7 @@ import { Instagram, Building2, Bell, Plug, Brain, Tag, FileText, BookOpen } from
 import { WhatsAppConnectionForm } from "./whatsapp-form";
 import { OpenAIKeyForm } from "./openai-form";
 import { CreditBalanceCard } from "./credit-balance-card";
+import { GoogleCalendarForm } from "./google-calendar-form";
 import { WebChatForm } from "./webchat-form";
 import { TagsSection } from "./tags-section";
 import { TemplatesSection } from "./templates-section";
@@ -40,7 +41,15 @@ export default async function SettingsPage(props: {
     const [company, whatsappChannel, webchatChannel, tags] = await Promise.all([
         prisma.company.findUnique({
             where: { id: companyId },
-            select: { name: true, openaiApiKey: true, openaiApiKeyUpdatedAt: true, creditBalance: true },
+            select: {
+                name: true,
+                openaiApiKey: true,
+                openaiApiKeyUpdatedAt: true,
+                creditBalance: true,
+                googleCalendarEmail: true,
+                googleCalendarConnectedAt: true,
+                googleCalendarRefreshToken: true,
+            },
         }),
         prisma.channel.findFirst({ where: { companyId, type: ChannelType.WHATSAPP } }),
         prisma.channel.findFirst({ where: { companyId, type: ChannelType.WEB_CHAT } }),
@@ -56,6 +65,9 @@ export default async function SettingsPage(props: {
     const openaiKeyUpdatedAt = company?.openaiApiKeyUpdatedAt?.toISOString() || null;
     const creditBalance = company?.creditBalance || 0;
     const userEmail = session?.user?.email || '';
+    const hasGoogleCalendar = !!company?.googleCalendarRefreshToken;
+    const googleCalendarEmail = company?.googleCalendarEmail || null;
+    const googleCalendarConnectedAt = company?.googleCalendarConnectedAt?.toISOString() || null;
 
     // WhatsApp config
     const whatsappConfig = whatsappChannel?.configJson as { phoneNumberId?: string; verifyToken?: string; accessToken?: string; appSecret?: string; wabaId?: string } | null;
@@ -196,6 +208,11 @@ export default async function SettingsPage(props: {
                             hasOwnKey={hasOpenAIKey}
                             companyId={companyId}
                             companyEmail={userEmail}
+                        />
+                        <GoogleCalendarForm
+                            isConnected={hasGoogleCalendar}
+                            email={googleCalendarEmail}
+                            connectedAt={googleCalendarConnectedAt}
                         />
                     </>
                 )}

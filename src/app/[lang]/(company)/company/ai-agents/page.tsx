@@ -19,15 +19,22 @@ export default async function AiAgentsPage() {
     const session = await auth();
     if (!session?.user?.companyId) return null;
 
-    const aiAgents = await prisma.aiAgent.findMany({
-        where: { companyId: session.user.companyId },
-        include: { channels: true },
-        orderBy: { createdAt: 'desc' },
-    });
+    const [aiAgents, channels, company] = await Promise.all([
+        prisma.aiAgent.findMany({
+            where: { companyId: session.user.companyId },
+            include: { channels: true },
+            orderBy: { createdAt: 'desc' },
+        }),
+        prisma.channel.findMany({
+            where: { companyId: session.user.companyId },
+        }),
+        prisma.company.findUnique({
+            where: { id: session.user.companyId },
+            select: { googleCalendarRefreshToken: true },
+        }),
+    ]);
 
-    const channels = await prisma.channel.findMany({
-        where: { companyId: session.user.companyId },
-    });
+    const hasGoogleCalendar = !!company?.googleCalendarRefreshToken;
 
     return (
         <Card>
@@ -36,7 +43,7 @@ export default async function AiAgentsPage() {
                     <CardTitle>Agentes IA</CardTitle>
                     <CardDescription>Gestiona tus agentes de inteligencia artificial que responden automáticamente.</CardDescription>
                 </div>
-                <CreateAiAgentDialog channels={channels.map(c => ({ id: c.id, type: c.type }))} />
+                <CreateAiAgentDialog channels={channels.map(c => ({ id: c.id, type: c.type }))} hasGoogleCalendar={hasGoogleCalendar} />
             </CardHeader>
             <CardContent>
                 <Table>
@@ -93,8 +100,11 @@ export default async function AiAgentsPage() {
                                                     temperature: agent.temperature,
                                                     transferKeywords: agent.transferKeywords,
                                                     channelIds: agent.channels.map(c => c.id),
+                                                    calendarEnabled: agent.calendarEnabled,
+                                                    calendarId: agent.calendarId,
                                                 }}
                                                 channels={channels.map(c => ({ id: c.id, type: c.type }))}
+                                                hasGoogleCalendar={hasGoogleCalendar}
                                             />
                                             <DeleteAiAgentDialog agentId={agent.id} agentName={agent.name} />
                                         </div>

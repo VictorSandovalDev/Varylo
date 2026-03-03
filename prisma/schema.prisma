@@ -104,6 +104,10 @@ model Company {
   openaiApiKeyUpdatedAt DateTime?
   creditBalance         Int           @default(0)
 
+  googleCalendarRefreshToken String?
+  googleCalendarEmail        String?
+  googleCalendarConnectedAt  DateTime?
+
   users              User[]
   channels           Channel[]
   contacts           Contact[]
@@ -248,6 +252,8 @@ model AiAgent {
   model              String    @default("gpt-4o-mini")
   temperature        Float     @default(0.7)
   transferKeywords   String[]  @default(["humano", "agente", "persona"])
+  calendarEnabled    Boolean   @default(false)
+  calendarId         String    @default("primary")
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
   company            Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)

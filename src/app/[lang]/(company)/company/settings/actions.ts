@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { ChannelType, ChannelStatus, AutomationPriority } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { encrypt } from '@/lib/encryption';
+import { getGoogleAuthUrl } from '@/lib/google-calendar';
 import OpenAI from 'openai';
 
 export async function saveWhatsAppCredentials(prevState: string | undefined, formData: FormData) {
@@ -499,6 +500,48 @@ export async function regenerateWebChatKey() {
     } catch (error) {
         console.error('Failed to regenerate web chat key:', error);
         return { success: false, error: 'Error al regenerar la clave.' };
+    }
+}
+
+// GOOGLE CALENDAR ACTIONS
+
+export async function initiateGoogleCalendarConnect() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { error: 'No authorized session.' };
+    }
+
+    try {
+        const state = encrypt(session.user.companyId);
+        const url = getGoogleAuthUrl(state);
+        return { url };
+    } catch (error) {
+        console.error('Failed to initiate Google Calendar connect:', error);
+        return { error: 'Error al iniciar conexión.' };
+    }
+}
+
+export async function disconnectGoogleCalendar() {
+    const session = await auth();
+    if (!session?.user?.companyId) {
+        return { success: false, message: 'No authorized session.' };
+    }
+
+    try {
+        await prisma.company.update({
+            where: { id: session.user.companyId },
+            data: {
+                googleCalendarRefreshToken: null,
+                googleCalendarEmail: null,
+                googleCalendarConnectedAt: null,
+            },
+        });
+
+        revalidatePath('/[lang]/company/settings', 'page');
+        return { success: true, message: 'Google Calendar desconectado.' };
+    } catch (error) {
+        console.error('Failed to disconnect Google Calendar:', error);
+        return { success: false, message: 'Error al desconectar.' };
     }
 }
 

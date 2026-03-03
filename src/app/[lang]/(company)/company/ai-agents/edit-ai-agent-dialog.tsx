@@ -23,6 +23,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Loader2, Pencil } from "lucide-react";
 
 interface AiAgentData {
@@ -34,6 +35,8 @@ interface AiAgentData {
     temperature: number;
     transferKeywords: string[];
     channelIds: string[];
+    calendarEnabled: boolean;
+    calendarId: string;
 }
 
 interface Channel {
@@ -41,10 +44,11 @@ interface Channel {
     type: string;
 }
 
-export function EditAiAgentDialog({ agent, channels }: { agent: AiAgentData; channels: Channel[] }) {
+export function EditAiAgentDialog({ agent, channels, hasGoogleCalendar }: { agent: AiAgentData; channels: Channel[]; hasGoogleCalendar: boolean }) {
     const [state, action, isPending] = useActionState(updateAiAgent, undefined);
     const [open, setOpen] = useState(false);
     const [selectedChannels, setSelectedChannels] = useState<string[]>(agent.channelIds);
+    const [calendarEnabled, setCalendarEnabled] = useState(agent.calendarEnabled);
 
     useEffect(() => {
         if (state?.startsWith('Success')) {
@@ -148,6 +152,40 @@ export function EditAiAgentDialog({ agent, channels }: { agent: AiAgentData; cha
                         <p className="text-xs text-muted-foreground">
                             Separadas por coma. Si el cliente escribe alguna, se transfiere a un humano.
                         </p>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border p-3">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="edit-calendarEnabled" className="flex flex-col gap-1">
+                                <span>Google Calendar</span>
+                                <span className="font-normal text-xs text-muted-foreground">
+                                    {hasGoogleCalendar
+                                        ? 'Permite al agente consultar disponibilidad y agendar reuniones.'
+                                        : 'Conecta Google Calendar en Settings > IA y Créditos primero.'}
+                                </span>
+                            </Label>
+                            <Switch
+                                id="edit-calendarEnabled"
+                                checked={calendarEnabled}
+                                onCheckedChange={setCalendarEnabled}
+                                disabled={!hasGoogleCalendar}
+                            />
+                        </div>
+                        <input type="hidden" name="calendarEnabled" value={calendarEnabled ? 'on' : 'off'} />
+                        {calendarEnabled && (
+                            <div className="space-y-2 mt-2">
+                                <Label htmlFor="edit-calendarId">Calendar ID</Label>
+                                <Input
+                                    id="edit-calendarId"
+                                    name="calendarId"
+                                    defaultValue={agent.calendarId}
+                                    placeholder="primary"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Usa &quot;primary&quot; para el calendario principal o el ID de otro calendario.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">

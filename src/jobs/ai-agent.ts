@@ -3,11 +3,15 @@ import { getOpenAIForCompany } from '@/lib/openai';
 import { sendChannelMessage, sendWhatsAppTypingIndicator } from '@/lib/channel-sender';
 import { checkCreditBalance, deductCredits, logUsageOnly } from '@/lib/credits';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
+import { CALENDAR_TOOLS, executeCalendarTool } from '@/lib/calendar-tools';
+import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 
 interface AiAgentResult {
     handled: boolean;
     transferredToHuman?: boolean;
 }
+
+const MAX_TOOL_ITERATIONS = 5;
 
 export async function handleAiAgentResponse(conversationId: string, inboundMessage: string): Promise<AiAgentResult> {
     try {
@@ -84,11 +88,21 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
             return { handled: true, transferredToHuman: true };
         }
 
+        // Check if calendar is enabled for this agent and company has it connected
+        let calendarEnabled = false;
+        if (aiAgent.calendarEnabled) {
+            const company = await prisma.company.findUnique({
+                where: { id: conversation.companyId },
+                select: { googleCalendarRefreshToken: true },
+            });
+            calendarEnabled = !!company?.googleCalendarRefreshToken;
+        }
+
         // Build chat history
-        const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+        const messages: ChatCompletionMessageParam[] = [
             {
                 role: 'system',
-                content: buildSystemPrompt(aiAgent.systemPrompt, aiAgent.contextInfo),
+                content: buildSystemPrompt(aiAgent.systemPrompt, aiAgent.contextInfo, calendarEnabled),
             },
         ];
 
@@ -98,9 +112,6 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
                 content: msg.content,
             });
         }
-
-        // Add the current message (it's already in DB but make sure it's in the history)
-        // The last message in the DB should be the inbound one we just received
 
         // Send typing indicator so the user sees "typing..." in WhatsApp
         if (conversation.channel?.type === 'WHATSAPP') {
@@ -127,39 +138,92 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
             }
         }
 
-        const response = await openai.chat.completions.create({
-            model: aiAgent.model,
-            temperature: aiAgent.temperature,
-            messages,
-        });
+        // Build tools array
+        const tools: ChatCompletionTool[] | undefined = calendarEnabled ? CALENDAR_TOOLS : undefined;
 
-        let replyContent = response.choices[0]?.message?.content;
-        if (!replyContent) {
-            return { handled: false };
+        // Function calling loop
+        let totalPromptTokens = 0;
+        let totalCompletionTokens = 0;
+        let totalTokens = 0;
+        let replyContent: string | null = null;
+
+        for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
+            const response = await openai.chat.completions.create({
+                model: aiAgent.model,
+                temperature: aiAgent.temperature,
+                messages,
+                ...(tools ? { tools } : {}),
+            });
+
+            // Accumulate token usage
+            if (response.usage) {
+                totalPromptTokens += response.usage.prompt_tokens;
+                totalCompletionTokens += response.usage.completion_tokens;
+                totalTokens += response.usage.total_tokens;
+            }
+
+            const choice = response.choices[0];
+            if (!choice) break;
+
+            const assistantMessage = choice.message;
+
+            // If there are tool calls, execute them and loop
+            if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+                // Add assistant message with tool calls to history
+                messages.push(assistantMessage);
+
+                // Execute each tool call
+                for (const toolCall of assistantMessage.tool_calls) {
+                    if (toolCall.type !== 'function') continue;
+                    const args = JSON.parse(toolCall.function.arguments);
+                    const result = await executeCalendarTool(
+                        toolCall.function.name,
+                        args,
+                        conversation.companyId,
+                        aiAgent.calendarId,
+                    );
+
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: result,
+                    });
+                }
+
+                // Continue the loop to get the next response
+                continue;
+            }
+
+            // No tool calls — this is the final text response
+            replyContent = assistantMessage.content;
+            break;
         }
 
-        // Track usage
-        const usage = response.usage;
-        if (usage) {
+        // Track usage (accumulated across all iterations)
+        if (totalTokens > 0) {
             if (usesOwnKey) {
                 await logUsageOnly({
                     companyId: conversation.companyId,
                     conversationId: conversation.id,
                     model: aiAgent.model,
-                    promptTokens: usage.prompt_tokens,
-                    completionTokens: usage.completion_tokens,
-                    totalTokens: usage.total_tokens,
+                    promptTokens: totalPromptTokens,
+                    completionTokens: totalCompletionTokens,
+                    totalTokens,
                 });
             } else {
                 await deductCredits({
                     companyId: conversation.companyId,
                     conversationId: conversation.id,
                     model: aiAgent.model,
-                    promptTokens: usage.prompt_tokens,
-                    completionTokens: usage.completion_tokens,
-                    totalTokens: usage.total_tokens,
+                    promptTokens: totalPromptTokens,
+                    completionTokens: totalCompletionTokens,
+                    totalTokens,
                 });
             }
+        }
+
+        if (!replyContent) {
+            return { handled: false };
         }
 
         // Check if AI wants to transfer
@@ -191,7 +255,7 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
     }
 }
 
-function buildSystemPrompt(systemPrompt: string, contextInfo: string | null): string {
+function buildSystemPrompt(systemPrompt: string, contextInfo: string | null, calendarEnabled: boolean): string {
     const now = new Date();
     const days = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -203,6 +267,15 @@ function buildSystemPrompt(systemPrompt: string, contextInfo: string | null): st
     if (contextInfo) {
         prompt += `\n\nInformación de contexto adicional:\n${contextInfo}`;
     }
+
+    if (calendarEnabled) {
+        prompt += '\n\nTienes acceso a Google Calendar. Puedes consultar disponibilidad, listar eventos y agendar reuniones. Cuando un cliente quiera agendar una reunión:';
+        prompt += '\n1. Primero verifica la disponibilidad con check_calendar_availability.';
+        prompt += '\n2. Si está disponible, crea el evento con create_calendar_event.';
+        prompt += '\n3. Confirma al cliente con los detalles de la reunión.';
+        prompt += '\nSi el horario no está disponible, sugiere alternativas. Usa formato 24h para las horas internamente pero comunica en formato 12h al cliente.';
+    }
+
     prompt += '\n\nSi el usuario insiste en hablar con un humano o si no puedes resolver su consulta, responde con [TRANSFER_TO_HUMAN] al inicio de tu mensaje seguido de un mensaje de despedida amable.';
     return prompt;
 }

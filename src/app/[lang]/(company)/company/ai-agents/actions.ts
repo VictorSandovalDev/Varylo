@@ -21,6 +21,8 @@ export async function createAiAgent(prevState: string | undefined, formData: For
     const temperature = isNaN(rawTemp) ? 0.7 : Math.min(2.0, Math.max(0, rawTemp));
     const transferKeywordsRaw = formData.get('transferKeywords') as string;
     const channelIds = formData.getAll('channelIds') as string[];
+    const calendarEnabled = formData.get('calendarEnabled') === 'on';
+    const calendarId = (formData.get('calendarId') as string)?.trim() || 'primary';
 
     if (!name || !systemPrompt) {
         return 'Error: Nombre y prompt del sistema son requeridos.';
@@ -50,6 +52,8 @@ export async function createAiAgent(prevState: string | undefined, formData: For
                 model,
                 temperature,
                 transferKeywords,
+                calendarEnabled,
+                calendarId,
                 channels: validChannelIds.length > 0 ? {
                     connect: validChannelIds.map(id => ({ id })),
                 } : undefined,
@@ -80,6 +84,8 @@ export async function updateAiAgent(prevState: string | undefined, formData: For
     const temperature = isNaN(rawTemp) ? 0.7 : Math.min(2.0, Math.max(0, rawTemp));
     const transferKeywordsRaw = formData.get('transferKeywords') as string;
     const channelIds = formData.getAll('channelIds') as string[];
+    const calendarEnabled = formData.get('calendarEnabled') === 'on';
+    const calendarId = (formData.get('calendarId') as string)?.trim() || 'primary';
 
     if (!id || !name || !systemPrompt) return 'Error: Campos requeridos faltantes.';
 
@@ -103,6 +109,8 @@ export async function updateAiAgent(prevState: string | undefined, formData: For
                 model,
                 temperature,
                 transferKeywords,
+                calendarEnabled,
+                calendarId,
                 channels: {
                     set: validChannels.map(c => ({ id: c.id })),
                 },

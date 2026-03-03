@@ -23,6 +23,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Loader2 } from "lucide-react";
 
 interface Channel {
@@ -30,10 +31,11 @@ interface Channel {
     type: string;
 }
 
-export function CreateAiAgentDialog({ channels }: { channels: Channel[] }) {
+export function CreateAiAgentDialog({ channels, hasGoogleCalendar }: { channels: Channel[]; hasGoogleCalendar: boolean }) {
     const [state, action, isPending] = useActionState(createAiAgent, undefined);
     const [open, setOpen] = useState(false);
     const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+    const [calendarEnabled, setCalendarEnabled] = useState(false);
 
     useEffect(() => {
         if (state?.startsWith('Success')) {
@@ -142,6 +144,40 @@ export function CreateAiAgentDialog({ channels }: { channels: Channel[] }) {
                         <p className="text-xs text-muted-foreground">
                             Separadas por coma. Si el cliente escribe alguna, se transfiere a un humano.
                         </p>
+                    </div>
+
+                    <div className="space-y-2 rounded-md border p-3">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="calendarEnabled" className="flex flex-col gap-1">
+                                <span>Google Calendar</span>
+                                <span className="font-normal text-xs text-muted-foreground">
+                                    {hasGoogleCalendar
+                                        ? 'Permite al agente consultar disponibilidad y agendar reuniones.'
+                                        : 'Conecta Google Calendar en Settings > IA y Créditos primero.'}
+                                </span>
+                            </Label>
+                            <Switch
+                                id="calendarEnabled"
+                                checked={calendarEnabled}
+                                onCheckedChange={setCalendarEnabled}
+                                disabled={!hasGoogleCalendar}
+                            />
+                        </div>
+                        <input type="hidden" name="calendarEnabled" value={calendarEnabled ? 'on' : 'off'} />
+                        {calendarEnabled && (
+                            <div className="space-y-2 mt-2">
+                                <Label htmlFor="calendarId">Calendar ID</Label>
+                                <Input
+                                    id="calendarId"
+                                    name="calendarId"
+                                    defaultValue="primary"
+                                    placeholder="primary"
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                    Usa &quot;primary&quot; para el calendario principal o el ID de otro calendario.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">
