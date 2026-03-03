@@ -189,6 +189,40 @@ export async function closeConversation(conversationId: string) {
     }
 }
 
+export async function reopenConversation(conversationId: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session?.user?.companyId) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    try {
+        const conversation = await prisma.conversation.findUnique({
+            where: { id: conversationId, companyId: session.user.companyId },
+        });
+
+        if (!conversation) {
+            return { success: false, message: "Conversation not found" };
+        }
+
+        if (conversation.status !== 'RESOLVED') {
+            return { success: false, message: "Conversation is not resolved" };
+        }
+
+        await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { status: 'OPEN' },
+        });
+
+        revalidatePath('/[lang]/company/conversations', 'page');
+        revalidatePath('/[lang]/agent', 'page');
+        return { success: true };
+    } catch (error) {
+        console.error("Error reopening conversation:", error);
+        const msg = error instanceof Error ? error.message : "Failed to reopen conversation";
+        return { success: false, message: msg };
+    }
+}
+
 export async function deleteConversation(conversationId: string) {
     const session = await auth();
     if (!session?.user?.companyId) {

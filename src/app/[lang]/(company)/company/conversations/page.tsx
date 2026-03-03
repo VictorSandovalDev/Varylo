@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ContactAvatar } from "@/components/contact-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquareOff, Settings, Users, Tag, Inbox, Instagram, Phone, Globe } from "lucide-react";
+import { Search, MessageSquareOff, Settings, Users, Tag, Inbox, Instagram, Phone, Globe, CheckCircle2 } from "lucide-react";
 import Link from 'next/link';
 import { cn } from "@/lib/utils";
 import ChatInput from './chat-input';
@@ -21,6 +21,7 @@ import { WindowTimer } from './window-timer';
 import { ConversationListActions } from './conversation-list-actions';
 import { ConversationList } from './conversation-list';
 import { NewConversationButton } from './new-conversation-button';
+import { ReopenBanner } from './reopen-banner';
 
 // Server Component receiving searchParams
 export default async function ConversationsPage({
@@ -42,7 +43,7 @@ export default async function ConversationsPage({
     let filter = params?.filter || 'mine';
     const tag = params?.tag;
 
-    if (isAgent && filter !== 'mine') {
+    if (isAgent && filter !== 'mine' && filter !== 'resolved') {
         filter = 'mine';
     }
 
@@ -56,7 +57,7 @@ export default async function ConversationsPage({
 
     // --- 1. Fetch Counts for Tabs ---
     // Efficiently fetch counts using Promise.all
-    const [mineCount, unassignedCount, allCount] = await Promise.all([
+    const [mineCount, unassignedCount, allCount, resolvedCount] = await Promise.all([
         prisma.conversation.count({
             where: { companyId: session.user.companyId, assignedAgents: { some: { id: userId } }, status: 'OPEN' }
         }),
@@ -65,16 +66,27 @@ export default async function ConversationsPage({
         }) : Promise.resolve(0),
         !isAgent ? prisma.conversation.count({
             where: { companyId: session.user.companyId, status: 'OPEN' }
-        }) : Promise.resolve(0)
+        }) : Promise.resolve(0),
+        isAgent
+            ? prisma.conversation.count({
+                where: { companyId: session.user.companyId, assignedAgents: { some: { id: userId } }, status: 'RESOLVED' }
+            })
+            : prisma.conversation.count({
+                where: { companyId: session.user.companyId, status: 'RESOLVED' }
+            })
     ]);
 
     // --- 2. Fetch Filtered Conversations ---
     const where: any = {
         companyId: session.user.companyId,
-        status: 'OPEN'
+        status: filter === 'resolved' ? 'RESOLVED' : 'OPEN'
     };
 
-    if (filter === 'mine') {
+    if (filter === 'resolved') {
+        if (isAgent) {
+            where.assignedAgents = { some: { id: userId } };
+        }
+    } else if (filter === 'mine') {
         where.assignedAgents = { some: { id: userId } };
     } else if (filter === 'unassigned' && !isAgent) {
         where.assignedAgents = { none: {} };
@@ -174,7 +186,9 @@ export default async function ConversationsPage({
                     <div className="px-4 py-3 flex items-center justify-between">
                         <h2 className="font-semibold flex items-center gap-2">
                             Conversaciones
-                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 font-normal border-none text-[10px] h-5 px-1.5">Abiertas</Badge>
+                            <Badge variant="secondary" className="bg-gray-100 text-gray-700 font-normal border-none text-[10px] h-5 px-1.5">
+                                {filter === 'resolved' ? 'Finalizadas' : 'Abiertas'}
+                            </Badge>
                         </h2>
                         <NewConversationButton contacts={contactsForTemplate} lang={lang} />
                     </div>
@@ -211,6 +225,16 @@ export default async function ConversationsPage({
                                 </Link>
                             </>
                         )}
+                        <Link
+                            href={`?filter=resolved`}
+                            className={cn(
+                                "pb-3 border-b-2 px-1 transition-colors whitespace-nowrap flex items-center gap-1.5",
+                                filter === 'resolved' ? "border-primary text-primary" : "border-transparent hover:text-primary/80"
+                            )}
+                        >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Finalizadas <Badge variant="secondary" className="px-1 py-0 h-4 min-w-[16px] justify-center bg-gray-100 text-gray-600 text-[10px]">{resolvedCount}</Badge>
+                        </Link>
                     </div>
                 </div>
 
@@ -281,9 +305,13 @@ export default async function ConversationsPage({
                         <MessageList messages={messages} />
 
                         {/* Input Area */}
-                        <div className="p-4 bg-card border-t">
-                            <ChatInput conversationId={selectedConversation.id} />
-                        </div>
+                        {selectedConversation.status === 'RESOLVED' ? (
+                            <ReopenBanner conversationId={selectedConversation.id} />
+                        ) : (
+                            <div className="p-4 bg-card border-t">
+                                <ChatInput conversationId={selectedConversation.id} />
+                            </div>
+                        )}
                     </>
                 ) : (
                     // --- WELCOME DASHBOARD (Empty State) ---

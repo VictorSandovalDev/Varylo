@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContactAvatar } from "@/components/contact-avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2, Bot } from "lucide-react";
+import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2, Bot, RotateCcw } from "lucide-react";
 import { AgentSelector } from "./agent-selector";
 import { TagSelector } from "./tag-selector";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,7 @@ interface ConversationRightSidebarProps {
 }
 
 import { useRouter, useParams } from "next/navigation";
-import { deleteConversation, closeConversation, updatePriority, reanalyzeConversation } from "./actions";
+import { deleteConversation, closeConversation, reopenConversation, updatePriority, reanalyzeConversation } from "./actions";
 
 export function ConversationRightSidebar({ conversation, companyTags, companyAgents, className, isAgent, insight }: ConversationRightSidebarProps) {
     const contact = conversation.contact || {};
@@ -51,6 +51,25 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
             console.error(e);
         } finally {
             setAnalyzing(false);
+        }
+    };
+
+    const [reopening, setReopening] = React.useState(false);
+
+    const handleReopen = async () => {
+        setReopening(true);
+        try {
+            const result = await reopenConversation(conversation.id);
+            if (result.success) {
+                router.push(`/${lang}/company/conversations?filter=mine&conversationId=${conversation.id}`);
+                router.refresh();
+            } else {
+                alert(result.message || "Error al reabrir la conversación");
+            }
+        } catch (e) {
+            alert("Error inesperado al reabrir");
+        } finally {
+            setReopening(false);
         }
     };
 
@@ -149,27 +168,51 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><StickyNote className="h-4 w-4" /></Button>
                             <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-primary hover:border-primary/50"><Pin className="h-4 w-4" /></Button>
 
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-green-600 hover:border-green-500/50" disabled={closing}>
-                                        {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>¿Finalizar conversación?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Se enviará un mensaje de despedida al cliente y la conversación se marcará como resuelta.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleClose} className="bg-green-600 text-white hover:bg-green-700">
-                                            Finalizar
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {conversation.status === 'RESOLVED' ? (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-amber-600 hover:border-amber-500/50" disabled={reopening}>
+                                            {reopening ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Reabrir conversación?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Reabrir esta conversación puede generar un costo en Meta si la ventana de 24 horas ha expirado. Se requerirá enviar una plantilla para iniciar contacto.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleReopen}>
+                                                {reopening ? 'Reabriendo...' : 'Reabrir'}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            ) : (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="outline" size="icon" className="h-8 w-8 rounded-full bg-muted border-gray-200 text-gray-600 hover:text-green-600 hover:border-green-500/50" disabled={closing}>
+                                            {closing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Finalizar conversación?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Se enviará un mensaje de despedida al cliente y la conversación se marcará como resuelta.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleClose} className="bg-green-600 text-white hover:bg-green-700">
+                                                Finalizar
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
 
                             {!isAgent && (
                                 <AlertDialog>

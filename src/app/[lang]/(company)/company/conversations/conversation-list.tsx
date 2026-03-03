@@ -11,6 +11,7 @@ import { ConversationListActions } from './conversation-list-actions';
 
 interface ConversationItem {
     id: string;
+    status: string;
     contact: { name: string | null; phone: string } | null;
     channel: { type: string } | null;
     messages: { content: string; createdAt: string | Date }[];
@@ -58,7 +59,7 @@ export function ConversationList({ conversations, selectedId, filter, isAgent }:
                                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                                             {lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                         </span>
-                                        {!isAgent && <ConversationListActions conversationId={conv.id} />}
+                                        <ConversationListActions conversationId={conv.id} status={conv.status} isAgent={isAgent} />
                                     </div>
                                 </div>
                                 <p className="text-sm text-muted-foreground truncate mb-2">
