@@ -1,19 +1,20 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function ScrollableTabs({ children }: { children: React.ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
-    const [canScroll, setCanScroll] = useState(false);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
 
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
 
         const check = () => {
-            setCanScroll(el.scrollWidth > el.clientWidth && el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+            setCanScrollLeft(el.scrollLeft > 4);
+            setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
         };
 
         check();
@@ -25,25 +26,33 @@ export function ScrollableTabs({ children }: { children: React.ReactNode }) {
         };
     }, []);
 
-    const scrollRight = () => {
-        ref.current?.scrollBy({ left: 120, behavior: 'smooth' });
+    const scroll = (dir: number) => {
+        ref.current?.scrollBy({ left: dir * 120, behavior: 'smooth' });
     };
 
     return (
-        <div className="relative">
+        <div className="flex items-stretch">
+            {canScrollLeft && (
+                <button
+                    onClick={() => scroll(-1)}
+                    className="flex items-center px-1 text-muted-foreground hover:text-foreground transition-colors border-r"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+            )}
             <div
                 ref={ref}
-                className="flex px-4 gap-4 text-sm font-medium text-muted-foreground overflow-x-auto scrollbar-hide"
+                className="flex-1 flex px-4 gap-4 text-sm font-medium text-muted-foreground overflow-x-auto"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
                 {children}
             </div>
-            {canScroll && (
+            {canScrollRight && (
                 <button
-                    onClick={scrollRight}
-                    className="absolute right-0 top-0 bottom-0 w-8 flex items-center justify-center bg-gradient-to-l from-card via-card/90 to-transparent"
+                    onClick={() => scroll(1)}
+                    className="flex items-center px-1 text-muted-foreground hover:text-foreground transition-colors border-l"
                 >
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    <ChevronRight className="h-4 w-4" />
                 </button>
             )}
         </div>
