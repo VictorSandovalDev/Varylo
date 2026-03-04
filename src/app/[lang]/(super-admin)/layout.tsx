@@ -13,7 +13,7 @@ export default async function SuperAdminLayout({
     return (
         <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
             <Sidebar role="super-admin" lang={lang} />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-h-screen">
                 <DashboardHeader title="Panel de Administración" lang={lang} role="super-admin" />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
                     {children}

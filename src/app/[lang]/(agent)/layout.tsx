@@ -40,7 +40,7 @@ export default async function AgentLayout({
     return (
         <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
             <Sidebar role="agent" lang={lang} />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-h-screen">
                 <DashboardHeader
                     title="Panel de Agente"
                     lang={lang}
