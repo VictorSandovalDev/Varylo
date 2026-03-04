@@ -203,7 +203,17 @@
             "submitButtonPending": "Signing in...",
             "forgotPassword": "Forgot your password?",
             "noAccount": "Don't have an account?",
-            "register": "Sign up"
+            "register": "Sign up",
+            "panel": {
+                "headline": "Your command center for customer support",
+                "subheadline": "Centralize all your channels, automate with AI and multiply your sales.",
+                "features": [
+                    "Unified inbox: WhatsApp, Instagram & more",
+                    "AI agents that respond 24/7",
+                    "Real-time analytics",
+                    "No-code smart chatbots"
+                ]
+            }
         },
         "register": {
             "title": "Create your account",
@@ -214,12 +224,56 @@
             "namePlaceholder": "John Doe",
             "emailLabel": "Email",
             "passwordLabel": "Password",
+            "confirmPasswordLabel": "Confirm Password",
             "planLabel": "Plan",
             "planPlaceholder": "Select a plan",
             "submitButton": "Create Account",
             "submitButtonPending": "Creating account...",
             "hasAccount": "Already have an account?",
-            "login": "Sign in"
+            "login": "Sign in",
+            "steps": {
+                "account": "Account",
+                "payment": "Payment",
+                "ready": "Ready"
+            },
+            "step1": {
+                "title": "Create your account",
+                "subtitle": "Enter your details to get started"
+            },
+            "step2": {
+                "title": "Add your card",
+                "subtitle": "You won't be charged until your trial ends",
+                "cardHolder": "Cardholder name",
+                "cardNumber": "Card number",
+                "expMonth": "Month",
+                "expYear": "Year",
+                "cvc": "CVC",
+                "trialInfo": "3 days free",
+                "trialDescription": "Your trial starts today. No charges will be made until it ends.",
+                "submitButton": "Activate free trial",
+                "submitButtonPending": "Processing..."
+            },
+            "step3": {
+                "title": "We're all set!",
+                "subtitle": "Your 3-day trial has started",
+                "description": "You can now start setting up your channels and explore all of Varylo's features.",
+                "goToDashboard": "Go to dashboard"
+            },
+            "panel": {
+                "headline": "Start your free trial",
+                "trialBadge": "3 days free",
+                "features": [
+                    "Full access to all features",
+                    "No charges during trial",
+                    "Cancel anytime",
+                    "Priority support included"
+                ]
+            },
+            "errors": {
+                "passwordMismatch": "Passwords do not match",
+                "signInFailed": "Sign in failed. Try accessing from",
+                "signInLink": "the login page"
+            }
         },
         "forgotPassword": {
             "title": "Forgot your password?",

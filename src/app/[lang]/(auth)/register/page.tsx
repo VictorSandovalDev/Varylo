@@ -1,6 +1,9 @@
-import Link from 'next/link';
-import RegisterForm from './register-form';
+import Image from 'next/image';
 import { getDictionary, Locale } from '@/lib/dictionary';
+import { getWompiConfig } from '@/lib/wompi-config';
+import { prisma } from '@/lib/prisma';
+import { CheckCircle2, Sparkles } from 'lucide-react';
+import { RegisterWizard } from './register-wizard';
 
 export default async function RegisterPage({
     params,
@@ -15,23 +18,115 @@ export default async function RegisterPage({
     const d = dict.auth.register;
 
     const validPlans = ['STARTER', 'PRO', 'SCALE'];
-    const selectedPlan = plan && validPlans.includes(plan.toUpperCase()) ? plan.toUpperCase() : 'STARTER';
+    const selectedPlanSlug = plan && validPlans.includes(plan.toUpperCase()) ? plan.toUpperCase() : 'STARTER';
+
+    // Fetch Wompi config
+    const wompiConfig = await getWompiConfig();
+
+    // Fetch PlanPricing for selected plan
+    let planPricingId: string | undefined;
+    let planName: string | undefined;
+    let planPrice: number | undefined;
+
+    try {
+        const pricing = await prisma.planPricing.findFirst({
+            where: {
+                active: true,
+                landingPlan: { slug: selectedPlanSlug.toLowerCase() },
+            },
+            include: { landingPlan: { select: { name: true } } },
+        });
+        if (pricing) {
+            planPricingId = pricing.id;
+            planName = pricing.landingPlan.name;
+            planPrice = pricing.priceInCents;
+        }
+    } catch {
+        // PlanPricing may not exist yet
+    }
+
+    const panel = d.panel;
 
     return (
-        <div className="w-full max-w-md space-y-6 rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 backdrop-blur-sm">
-            <div className="text-center">
-                <h2 className="text-2xl font-semibold tracking-tight text-white">{d.title}</h2>
-                <p className="mt-2 text-sm text-zinc-400">
-                    {d.subtitle}
+        <div className="flex min-h-screen">
+            {/* Left panel — dark emerald gradient */}
+            <div className="hidden lg:flex lg:w-[480px] xl:w-[520px] relative flex-col justify-between bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-950 p-12 text-white overflow-hidden shrink-0">
+                {/* Grid overlay */}
+                <div
+                    className="pointer-events-none absolute inset-0 opacity-[0.04]"
+                    style={{
+                        backgroundImage:
+                            'linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px)',
+                        backgroundSize: '48px 48px',
+                    }}
+                />
+                <div className="pointer-events-none absolute -bottom-32 -right-32 h-[500px] w-[500px] rounded-full bg-emerald-400/15 blur-[120px]" />
+
+                {/* Top — logo */}
+                <div className="relative z-10">
+                    <Image src="/logo.png" alt="Varylo" width={160} height={90} className="brightness-0 invert" priority />
+                </div>
+
+                {/* Center — plan info */}
+                <div className="relative z-10 space-y-6">
+                    <h1 className="text-3xl font-bold leading-tight">{panel.headline}</h1>
+
+                    {/* Plan card */}
+                    {planName && (
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur-sm p-6 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-lg font-semibold">Plan {planName}</span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-3 py-1 text-xs font-medium text-emerald-300">
+                                    <Sparkles className="h-3.5 w-3.5" />
+                                    {panel.trialBadge}
+                                </span>
+                            </div>
+                            {planPrice != null && (
+                                <p className="text-2xl font-bold">
+                                    ${(planPrice / 100).toLocaleString('es-CO')}{' '}
+                                    <span className="text-sm font-normal text-emerald-200/60">COP/mes</span>
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Features */}
+                    <div className="space-y-3">
+                        {panel.features.map((feature: string, i: number) => (
+                            <div key={i} className="flex items-start gap-3">
+                                <CheckCircle2 className="h-5 w-5 text-emerald-400 mt-0.5 shrink-0" />
+                                <span className="text-sm text-emerald-100">{feature}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Bottom — copyright */}
+                <p className="relative z-10 text-xs text-emerald-300/50">
+                    &copy; {new Date().getFullYear()} Varylo. Todos los derechos reservados.
                 </p>
             </div>
-            <RegisterForm dict={d} defaultPlan={selectedPlan} />
-            <p className="text-center text-sm text-zinc-500">
-                {d.hasAccount}{' '}
-                <Link href={`/${lang}/login`} className="font-medium text-emerald-400 hover:text-emerald-300 transition-colors">
-                    {d.login}
-                </Link>
-            </p>
+
+            {/* Right panel — wizard */}
+            <div className="flex flex-1 items-center justify-center bg-white px-6 py-12">
+                <div className="w-full max-w-lg">
+                    {/* Mobile logo */}
+                    <div className="lg:hidden flex justify-center mb-6">
+                        <Image src="/logo.png" alt="Varylo" width={140} height={79} priority />
+                    </div>
+
+                    <RegisterWizard
+                        dict={d}
+                        lang={lang}
+                        wompiPublicKey={wompiConfig?.publicKey}
+                        wompiIsSandbox={wompiConfig?.isSandbox}
+                        planPricingId={planPricingId}
+                        planName={planName}
+                        planPrice={planPrice}
+                        selectedPlan={selectedPlanSlug}
+                    />
+                </div>
+            </div>
         </div>
     );
 }
