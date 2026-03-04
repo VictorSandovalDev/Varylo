@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Building2, Users, MessageSquare } from "lucide-react"
 import { EditCompanyDialog } from './edit-company-dialog';
 import { CreateCompanyDialog } from './create-company-dialog';
+import { ensureTablesExist } from './actions';
 
 const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'destructive' }> = {
     ACTIVE: { label: 'Activa', variant: 'default' },
@@ -40,6 +41,9 @@ function formatCOP(amount: number): string {
 }
 
 export default async function CompaniesPage() {
+    // Ensure all subscription tables/columns exist before querying
+    await ensureTablesExist();
+
     let companies: any[] = [];
     try {
         companies = await prisma.company.findMany({
