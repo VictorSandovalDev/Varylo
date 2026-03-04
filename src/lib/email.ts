@@ -134,6 +134,53 @@ export async function sendWelcomeEmail(
   await sendMail(email, subject, html);
 }
 
+export async function sendContactNotificationEmail(
+  name: string,
+  email: string,
+  message: string,
+) {
+  const subject = `Nuevo mensaje de contacto — ${name}`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:40px 0">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+        <tr><td style="background-color:#10b981;padding:24px;text-align:center">
+          <span style="font-size:28px;font-weight:700;color:#ffffff;letter-spacing:-0.5px">Varylo</span>
+        </td></tr>
+        <tr><td style="padding:32px 32px 24px">
+          <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#18181b">Nuevo mensaje de contacto</h1>
+          <p style="margin:0 0 24px;font-size:13px;color:#a1a1aa">Recibido desde el formulario de la landing page</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f9fafb;border-radius:8px;margin-bottom:24px">
+            <tr><td style="padding:20px">
+              <p style="margin:0 0 12px;font-size:14px;color:#52525b"><strong style="color:#18181b">Nombre:</strong> ${name}</p>
+              <p style="margin:0 0 12px;font-size:14px;color:#52525b"><strong style="color:#18181b">Email:</strong> <a href="mailto:${email}" style="color:#10b981;text-decoration:none">${email}</a></p>
+              <p style="margin:0 0 8px;font-size:14px;color:#18181b"><strong>Mensaje:</strong></p>
+              <p style="margin:0;font-size:14px;line-height:1.6;color:#52525b;white-space:pre-wrap">${message}</p>
+            </td></tr>
+          </table>
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td align="center" style="padding:8px 0">
+              <a href="mailto:${email}?subject=Re: Mensaje de contacto — Varylo" style="display:inline-block;padding:12px 32px;background-color:#10b981;color:#ffffff;text-decoration:none;border-radius:8px;font-size:15px;font-weight:600">Responder a ${name}</a>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:20px 32px;border-top:1px solid #f4f4f5;text-align:center">
+          <p style="margin:0;font-size:12px;color:#a1a1aa">&copy; ${new Date().getFullYear()} Varylo</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  await sendMail('hello@varylo.app', subject, html);
+}
+
 async function sendMail(to: string, subject: string, html: string) {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
     throw new Error(`SMTP not configured: HOST=${!!process.env.SMTP_HOST}, USER=${!!process.env.SMTP_USER}, PASS=${!!process.env.SMTP_PASSWORD}`);

@@ -1,7 +1,7 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-// import { revalidatePath } from 'next/cache';
+import { sendContactNotificationEmail } from '@/lib/email';
 
 export async function submitContact(prevState: unknown, formData: FormData) {
     const name = formData.get('name') as string;
@@ -20,6 +20,9 @@ export async function submitContact(prevState: unknown, formData: FormData) {
                 message
             }
         });
+
+        await sendContactNotificationEmail(name, email, message);
+
         return { success: true, message: 'Message sent!' };
     } catch (error) {
         console.error(error);
