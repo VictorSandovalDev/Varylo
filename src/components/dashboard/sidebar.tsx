@@ -119,7 +119,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
             {/* Logo */}
             <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
                 <Link href={`/${lang}`} className="flex items-center font-semibold" onClick={onLinkClick}>
-                    <Image src="/logo.png" alt="Varylo" width={140} height={79} />
+                    <Image src="/logo.png" alt="Varylo" width={140} height={79} className="brightness-0 invert" />
                 </Link>
             </div>
 
@@ -129,7 +129,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
                     {sections.map((section, sIdx) => (
                         <div key={sIdx} className={sIdx > 0 ? "mt-4" : ""}>
                             {section.label && (
-                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground px-3 mb-1.5 block font-semibold">
+                                <span className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 px-3 mb-1.5 block font-semibold">
                                     {section.label}
                                 </span>
                             )}
@@ -169,7 +169,7 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                     onClick={onLinkClick}
                     className={clsx(
                         "flex w-full items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                        isActive ? "bg-primary/10 text-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-muted"
+                        isActive ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
                     )}
                 >
                     <item.icon className="h-4 w-4" />
@@ -187,7 +187,7 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
                                 onClick={onLinkClick}
                                 className={clsx(
                                     "flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm transition-all",
-                                    isChildActive ? "text-primary font-medium bg-primary/5" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-muted"
+                                    isChildActive ? "text-sidebar-primary font-medium bg-sidebar-accent/50" : "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/30"
                                 )}
                             >
                                 {child.icon && <child.icon className="h-3.5 w-3.5" />}
@@ -206,7 +206,7 @@ function SidebarItem({ item, lang, pathname, onLinkClick }: { item: NavItem, lan
             onClick={onLinkClick}
             className={clsx(
                 "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-                isActive ? "bg-primary/10 text-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-muted"
+                isActive ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
             )}
         >
             <item.icon className="h-4 w-4" />
