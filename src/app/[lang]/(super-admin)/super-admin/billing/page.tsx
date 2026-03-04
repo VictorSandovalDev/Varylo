@@ -1,29 +1,34 @@
-import { Badge } from "@/components/ui/badge"
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card"
-import { Check } from "lucide-react"
-import { getLandingPlans } from "./actions"
+import { getLandingPlansWithPricing } from "./actions"
 import { PlanManager } from "./plan-manager"
+import { PaymentGateways } from "./payment-gateways"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default async function BillingPage() {
-    const plans = await getLandingPlans();
+    const plans = await getLandingPlansWithPricing();
 
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-medium">Planes y Facturación</h3>
-                <p className="text-sm text-muted-foreground">
-                    Gestiona los planes que se muestran en la landing page. Los cambios se reflejan de inmediato.
+                <h2 className="text-2xl font-bold tracking-tight">Planes & Facturación</h2>
+                <p className="text-muted-foreground">
+                    Gestiona los planes de la landing y las pasarelas de pago.
                 </p>
             </div>
 
-            <PlanManager initialPlans={plans} />
+            <Tabs defaultValue="plans" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="plans">Planes</TabsTrigger>
+                    <TabsTrigger value="gateways">Pasarelas de Pago</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="plans">
+                    <PlanManager initialPlans={plans} />
+                </TabsContent>
+
+                <TabsContent value="gateways">
+                    <PaymentGateways />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

@@ -124,8 +124,7 @@ export async function sendMessage(conversationId: string, content: string) {
         return { success: true };
     } catch (error) {
         console.error("Error sending message:", error);
-        const msg = error instanceof Error ? error.message : "Failed to send message";
-        return { success: false, message: msg };
+        return { success: false, message: "Error al enviar el mensaje. Intenta de nuevo." };
     }
 }
 
@@ -184,8 +183,7 @@ export async function closeConversation(conversationId: string) {
         return { success: true };
     } catch (error) {
         console.error("Error closing conversation:", error);
-        const msg = error instanceof Error ? error.message : "Failed to close conversation";
-        return { success: false, message: msg };
+        return { success: false, message: "Error al cerrar la conversación." };
     }
 }
 
@@ -218,8 +216,7 @@ export async function reopenConversation(conversationId: string) {
         return { success: true };
     } catch (error) {
         console.error("Error reopening conversation:", error);
-        const msg = error instanceof Error ? error.message : "Failed to reopen conversation";
-        return { success: false, message: msg };
+        return { success: false, message: "Error al reabrir la conversación." };
     }
 }
 

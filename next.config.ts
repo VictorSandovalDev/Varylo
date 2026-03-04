@@ -1,10 +1,14 @@
 import type { NextConfig } from "next";
 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['localhost:3000'];
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@formatjs/intl-localematcher'],
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000']
+      allowedOrigins,
     }
   },
   async headers() {
@@ -19,7 +23,24 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.wompi.co",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https://api.openai.com https://production.wompi.co https://sandbox.wompi.co https://graph.facebook.com https://www.googleapis.com",
+              "frame-src 'self' https://checkout.wompi.co",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+            ].join('; '),
           },
         ],
       },

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
+import { rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,11 @@ function getCorsHeaders(req?: NextRequest): Record<string, string> {
     const allowedOrigins = process.env.WEBCHAT_ALLOWED_ORIGINS?.split(',').map(o => o.trim());
     const origin = req?.headers.get('origin') || '';
 
-    // If WEBCHAT_ALLOWED_ORIGINS is set, validate origin; otherwise allow all (dev mode)
+    // If WEBCHAT_ALLOWED_ORIGINS is set, validate origin; otherwise deny in production
+    const isDev = process.env.NODE_ENV === 'development';
     const allowedOrigin = allowedOrigins
         ? (allowedOrigins.includes(origin) ? origin : allowedOrigins[0])
-        : '*';
+        : (isDev ? '*' : origin || 'null');
 
     return {
         'Access-Control-Allow-Origin': allowedOrigin,
@@ -49,6 +51,10 @@ async function findChannelByKey(apiKey: string) {
  * GET  /api/webchat?sessionId=xxx&after=timestamp  — poll for messages
  */
 export async function POST(req: NextRequest) {
+    // Rate limit: 30 messages per minute per IP
+    const rateLimited = rateLimitResponse(req, { prefix: 'webchat-post', limit: 30, windowSeconds: 60 });
+    if (rateLimited) return rateLimited;
+
     try {
         const apiKey = req.headers.get('x-webchat-key');
         if (!apiKey) {

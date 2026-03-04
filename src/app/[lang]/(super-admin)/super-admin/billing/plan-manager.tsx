@@ -13,7 +13,16 @@ import {
 } from "@/components/ui/card";
 import { Check, DatabaseZap } from "lucide-react";
 import { EditPlanDialog } from "./edit-plan-dialog";
-import { seedLandingPlans, getLandingPlans } from "./actions";
+import { seedLandingPlans, getLandingPlansWithPricing } from "./actions";
+
+type PlanPricing = {
+    id: string;
+    priceInCents: number;
+    billingPeriodDays: number;
+    trialDays: number;
+    useAutoTrm: boolean;
+    active: boolean;
+} | null;
 
 type Plan = {
     id: string;
@@ -26,7 +35,18 @@ type Plan = {
     ctaText: string;
     ctaLink: string | null;
     sortOrder: number;
+    showTrialOnRegister: boolean;
+    planPricing: PlanPricing;
 };
+
+function formatCOP(cents: number): string {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+    }).format(cents / 100);
+}
 
 export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
     const [plans, setPlans] = useState<Plan[]>(initialPlans);
@@ -34,7 +54,7 @@ export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
     const [error, setError] = useState('');
 
     async function refresh() {
-        const updated = await getLandingPlans();
+        const updated = await getLandingPlansWithPricing();
         setPlans(updated);
     }
 
@@ -84,7 +104,10 @@ export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
                                 <CardTitle>{plan.name}</CardTitle>
                                 <CardDescription>{plan.description}</CardDescription>
                             </div>
-                            {plan.isFeatured && <Badge>Popular</Badge>}
+                            <div className="flex gap-1.5">
+                                {plan.isFeatured && <Badge>Popular</Badge>}
+                                {plan.showTrialOnRegister && <Badge variant="outline" className="text-emerald-700 border-emerald-300">Trial en registro</Badge>}
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>
@@ -92,6 +115,19 @@ export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
                             ${plan.price}
                             <span className="text-lg font-normal text-muted-foreground">/mes</span>
                         </div>
+                        {plan.planPricing && (
+                            <div className="mt-1 text-sm text-muted-foreground">
+                                Suscripción: {formatCOP(plan.planPricing.priceInCents)} COP / {plan.planPricing.billingPeriodDays} días
+                                {plan.planPricing.trialDays > 0 && ` (${plan.planPricing.trialDays} días de prueba)`}
+                                <span className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                    plan.planPricing.useAutoTrm
+                                        ? 'bg-blue-100 text-blue-700'
+                                        : 'bg-gray-100 text-gray-600'
+                                }`}>
+                                    {plan.planPricing.useAutoTrm ? 'TRM auto' : 'Precio manual'}
+                                </span>
+                            </div>
+                        )}
                         <ul className="mt-4 space-y-2">
                             {plan.features.map((f, i) => (
                                 <li key={i} className="flex items-center text-sm">

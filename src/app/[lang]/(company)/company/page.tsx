@@ -1,10 +1,16 @@
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, MessageSquare, ArrowUpRight, Clock, Activity } from 'lucide-react';
+import { Users, MessageSquare, ArrowUpRight, Clock, Activity, CreditCard, ArrowRight } from 'lucide-react';
 import { Role } from '@prisma/client';
+import Link from 'next/link';
 
-export default async function CompanyDashboard() {
+export default async function CompanyDashboard({
+    params,
+}: {
+    params: Promise<{ lang: string }>;
+}) {
+    const { lang } = await params;
     const session = await auth();
     if (!session?.user?.companyId) return null;
 
@@ -21,6 +27,16 @@ export default async function CompanyDashboard() {
         prisma.channel.count({ where: { companyId, status: 'CONNECTED' } })
     ]);
 
+    // Check if company has an active subscription
+    let hasSubscription = false;
+    try {
+        const sub = await prisma.subscription.findFirst({
+            where: { companyId, status: { in: ['ACTIVE', 'TRIAL'] } },
+            select: { id: true },
+        });
+        hasSubscription = !!sub;
+    } catch { /* table may not exist */ }
+
     // Placeholder values for metrics not yet tracked in DB
     const avgResponseTime = "0m"; // To be implemented with message timestamps
     const csatScore = "0.0"; // To be implemented with feedback system
@@ -28,6 +44,27 @@ export default async function CompanyDashboard() {
     return (
         <div className="space-y-6">
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h2>
+
+            {!hasSubscription && (
+                <Link href={`/${lang}/company/settings?tab=billing`}>
+                    <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/20 hover:shadow-md transition-shadow cursor-pointer">
+                        <CardContent className="flex items-center gap-4 pt-6">
+                            <div className="p-3 rounded-lg bg-amber-100 dark:bg-amber-900/40">
+                                <CreditCard className="h-5 w-5 text-amber-600" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="font-semibold text-amber-900 dark:text-amber-100">
+                                    Activa tu suscripción
+                                </p>
+                                <p className="text-sm text-amber-700 dark:text-amber-300">
+                                    Agrega un método de pago y selecciona un plan para desbloquear todas las funciones.
+                                </p>
+                            </div>
+                            <ArrowRight className="h-5 w-5 text-amber-600 shrink-0" />
+                        </CardContent>
+                    </Card>
+                </Link>
+            )}
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>

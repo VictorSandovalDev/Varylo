@@ -109,7 +109,8 @@ export async function testWhatsAppConnection() {
 
         if (!response.ok) {
             const data = await response.json();
-            return { success: false, message: `Meta API Error: ${data.error?.message || 'Unknown error'}` };
+            console.error('Meta API error:', data.error);
+            return { success: false, message: 'Error al comunicarse con Meta. Verifica tu configuración.' };
         }
 
         const data = await response.json();
@@ -249,7 +250,8 @@ export async function testInstagramConnection() {
 
         if (!response.ok) {
             const data = await response.json();
-            return { success: false, message: `Meta API Error: ${data.error?.message || 'Unknown error'}` };
+            console.error('Meta API error:', data.error);
+            return { success: false, message: 'Error al comunicarse con Meta. Verifica tu configuración.' };
         }
 
         const data = await response.json();

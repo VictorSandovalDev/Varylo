@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,19 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { updateLandingPlan } from './actions';
-import { Pencil, Plus, X } from 'lucide-react';
+import { updateLandingPlan, upsertPlanPricing } from './actions';
+import { Pencil, Plus, X, RefreshCw, Loader2 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { fetchUsdToCop, FALLBACK_RATE } from '@/lib/exchange-rate';
+
+type PlanPricing = {
+    id: string;
+    priceInCents: number;
+    billingPeriodDays: number;
+    trialDays: number;
+    useAutoTrm: boolean;
+    active: boolean;
+} | null;
 
 type PlanData = {
     id: string;
@@ -29,6 +40,8 @@ type PlanData = {
     ctaText: string;
     ctaLink: string | null;
     sortOrder: number;
+    showTrialOnRegister: boolean;
+    planPricing: PlanPricing;
 };
 
 export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated: () => void }) {
@@ -40,7 +53,50 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
     const [features, setFeatures] = useState<string[]>(plan.features);
     const [isFeatured, setIsFeatured] = useState(plan.isFeatured);
     const [ctaText, setCtaText] = useState(plan.ctaText);
+    const [showTrialOnRegister, setShowTrialOnRegister] = useState(plan.showTrialOnRegister);
     const [newFeature, setNewFeature] = useState('');
+
+    const [exchangeRate, setExchangeRate] = useState(FALLBACK_RATE);
+    const [rateLoading, setRateLoading] = useState(false);
+
+    // Pricing fields
+    const [priceCop, setPriceCop] = useState(plan.planPricing?.priceInCents ? plan.planPricing.priceInCents / 100 : 0);
+    const [billingPeriodDays, setBillingPeriodDays] = useState(plan.planPricing?.billingPeriodDays ?? 30);
+    const [trialDays, setTrialDays] = useState(plan.planPricing?.trialDays ?? 0);
+    const [pricingActive, setPricingActive] = useState(plan.planPricing?.active ?? true);
+    const [useAutoTrm, setUseAutoTrm] = useState(plan.planPricing?.useAutoTrm ?? false);
+
+    // Fetch real exchange rate when dialog opens
+    useEffect(() => {
+        if (open) {
+            loadRate();
+        }
+    }, [open]);
+
+    async function loadRate() {
+        setRateLoading(true);
+        const rate = await fetchUsdToCop();
+        setExchangeRate(rate);
+        // Auto-calculate COP if there's no existing pricing or auto TRM is on
+        if (!plan.planPricing || useAutoTrm) {
+            setPriceCop(Math.round(price * rate));
+        }
+        setRateLoading(false);
+    }
+
+    function handlePriceUsdChange(usd: number) {
+        setPrice(usd);
+        if (useAutoTrm) {
+            setPriceCop(Math.round(usd * exchangeRate));
+        }
+    }
+
+    function handleAutoTrmToggle(checked: boolean) {
+        setUseAutoTrm(checked);
+        if (checked) {
+            setPriceCop(Math.round(price * exchangeRate));
+        }
+    }
 
     function addFeature() {
         const trimmed = newFeature.trim();
@@ -66,7 +122,21 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
             ctaText,
             ctaLink: plan.ctaLink,
             sortOrder: plan.sortOrder,
+            showTrialOnRegister,
         });
+
+        // Save pricing if COP price is set
+        if (priceCop > 0) {
+            await upsertPlanPricing({
+                landingPlanId: plan.id,
+                priceInCents: Math.round(priceCop * 100),
+                billingPeriodDays,
+                trialDays,
+                active: pricingActive,
+                useAutoTrm,
+            });
+        }
+
         setLoading(false);
         if (result.success) {
             setOpen(false);
@@ -98,7 +168,7 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
                     </div>
                     <div className="space-y-2">
                         <Label>Precio (USD/mes)</Label>
-                        <Input type="number" min={0} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+                        <Input type="number" min={0} value={price} onChange={(e) => handlePriceUsdChange(Number(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                         <Label>Texto del botón</Label>
@@ -108,6 +178,65 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
                         <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
                         <Label>Destacado (badge &quot;Popular&quot;)</Label>
                     </div>
+                    <div className="flex items-center gap-3">
+                        <Switch checked={showTrialOnRegister} onCheckedChange={setShowTrialOnRegister} />
+                        <Label>Mostrar con trial en registro</Label>
+                    </div>
+                    <Separator />
+                    <p className="text-sm font-medium text-muted-foreground">Suscripción recurrente (COP)</p>
+
+                    {/* Exchange rate info */}
+                    <div className="rounded-lg border bg-muted/50 p-3 space-y-1">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-muted-foreground">Tasa de cambio (USD → COP)</span>
+                            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs gap-1" onClick={loadRate} disabled={rateLoading}>
+                                {rateLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                                Actualizar
+                            </Button>
+                        </div>
+                        <p className="text-lg font-semibold">
+                            1 USD = ${exchangeRate.toLocaleString('es-CO')} COP
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                            ${price} USD = <span className="font-medium text-foreground">${(price * exchangeRate).toLocaleString('es-CO')} COP</span>
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <Switch checked={useAutoTrm} onCheckedChange={handleAutoTrmToggle} />
+                        <Label>Usar TRM automática en registro</Label>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label>Precio COP {useAutoTrm ? '(automático)' : '(ajustable)'}</Label>
+                            <Input
+                                type="number"
+                                min={0}
+                                value={priceCop}
+                                onChange={(e) => setPriceCop(Number(e.target.value))}
+                                readOnly={useAutoTrm}
+                                className={useAutoTrm ? 'bg-muted cursor-not-allowed' : ''}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Período (días)</Label>
+                            <Input type="number" min={1} value={billingPeriodDays} onChange={(e) => setBillingPeriodDays(Number(e.target.value))} />
+                        </div>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="space-y-2">
+                            <Label>Días de prueba</Label>
+                            <Input type="number" min={0} value={trialDays} onChange={(e) => setTrialDays(Number(e.target.value))} />
+                        </div>
+                        <div className="flex items-center gap-3 pt-6">
+                            <Switch checked={pricingActive} onCheckedChange={setPricingActive} />
+                            <Label>Suscripción activa</Label>
+                        </div>
+                    </div>
+
+                    <Separator />
+
                     <div className="space-y-2">
                         <Label>Features</Label>
                         <div className="space-y-2">

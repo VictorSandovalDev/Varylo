@@ -203,7 +203,17 @@
             "submitButtonPending": "Iniciando sesión...",
             "forgotPassword": "¿Olvidaste tu contraseña?",
             "noAccount": "¿No tienes cuenta?",
-            "register": "Regístrate"
+            "register": "Regístrate",
+            "panel": {
+                "headline": "Tu centro de comando para atención al cliente",
+                "subheadline": "Centraliza todos tus canales, automatiza con IA y multiplica tus ventas.",
+                "features": [
+                    "Bandeja unificada: WhatsApp, Instagram y más",
+                    "Agentes IA que responden 24/7",
+                    "Analíticas en tiempo real",
+                    "Chatbots inteligentes sin código"
+                ]
+            }
         },
         "register": {
             "title": "Crea tu cuenta",
@@ -214,12 +224,56 @@
             "namePlaceholder": "Juan Pérez",
             "emailLabel": "Email",
             "passwordLabel": "Contraseña",
+            "confirmPasswordLabel": "Confirmar Contraseña",
             "planLabel": "Plan",
             "planPlaceholder": "Selecciona un plan",
             "submitButton": "Crear Cuenta",
             "submitButtonPending": "Creando cuenta...",
             "hasAccount": "¿Ya tienes cuenta?",
-            "login": "Inicia sesión"
+            "login": "Inicia sesión",
+            "steps": {
+                "account": "Cuenta",
+                "payment": "Pago",
+                "ready": "Listo"
+            },
+            "step1": {
+                "title": "Crea tu cuenta",
+                "subtitle": "Ingresa tus datos para comenzar"
+            },
+            "step2": {
+                "title": "Agrega tu tarjeta",
+                "subtitle": "No te cobraremos hasta que termine tu trial",
+                "cardHolder": "Nombre del titular",
+                "cardNumber": "Número de tarjeta",
+                "expMonth": "Mes",
+                "expYear": "Año",
+                "cvc": "CVC",
+                "trialInfo": "{days} días gratis",
+                "trialDescription": "Tu trial comienza hoy. No se realizará ningún cobro hasta que finalice.",
+                "submitButton": "Activar trial gratuito",
+                "submitButtonPending": "Procesando..."
+            },
+            "step3": {
+                "title": "¡Estamos listos!",
+                "subtitle": "Tu trial de {days} días ha comenzado",
+                "description": "Ya puedes empezar a configurar tus canales y explorar todas las funciones de Varylo.",
+                "goToDashboard": "Ir al dashboard"
+            },
+            "panel": {
+                "headline": "Comienza tu prueba gratuita",
+                "trialBadge": "{days} días gratis",
+                "features": [
+                    "Acceso completo a todas las funciones",
+                    "Sin cobros durante el trial",
+                    "Cancela cuando quieras",
+                    "Soporte prioritario incluido"
+                ]
+            },
+            "errors": {
+                "passwordMismatch": "Las contraseñas no coinciden",
+                "signInFailed": "Error al iniciar sesión. Intenta acceder desde",
+                "signInLink": "la página de login"
+            }
         },
         "forgotPassword": {
             "title": "¿Olvidaste tu contraseña?",

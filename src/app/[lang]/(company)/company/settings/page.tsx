@@ -8,22 +8,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Instagram, Building2, Bell, Plug, Brain, Tag, FileText, BookOpen } from "lucide-react";
-import { WhatsAppConnectionForm } from "./whatsapp-form";
-import { OpenAIKeyForm } from "./openai-form";
-import { CreditBalanceCard } from "./credit-balance-card";
-import { GoogleCalendarForm } from "./google-calendar-form";
-import { WebChatForm } from "./webchat-form";
+import { Building2, Plug, Brain, Tag, FileText, BookOpen, CreditCard } from "lucide-react";
 import { TagsSection } from "./tags-section";
 import { TemplatesSection } from "./templates-section";
 import { GuidesSection } from "./guides-section";
 import { AssignmentForm } from "./assignment-form";
+import { ChannelsSection } from "./channels-section";
+import { IntegrationsSection } from "./integrations-section";
+import { BillingSection } from "./billing-section";
+import { getActiveSubscription, getPaymentSources, getBillingHistory, getAvailablePlans } from "./billing-actions";
+import { getWompiConfig } from "@/lib/wompi-config";
 import { Role } from '@prisma/client';
 
 const TABS = [
     { key: 'general', label: 'General', icon: Building2 },
     { key: 'channels', label: 'Canales', icon: Plug },
     { key: 'ai', label: 'IA y Créditos', icon: Brain },
+    { key: 'billing', label: 'Facturación', icon: CreditCard },
     { key: 'tags', label: 'Etiquetas', icon: Tag },
     { key: 'templates', label: 'Plantillas', icon: FileText },
     { key: 'guides', label: 'Guías', icon: BookOpen },
@@ -180,56 +181,46 @@ export default async function SettingsPage(props: {
                 )}
 
                 {activeTab === 'channels' && (
-                    <>
-                        <WhatsAppConnectionForm
-                            initialPhoneNumberId={whatsappConfig?.phoneNumberId}
-                            initialVerifyToken={whatsappConfig?.verifyToken}
-                            initialWabaId={whatsappConfig?.wabaId}
-                            hasAccessToken={!!whatsappConfig?.accessToken}
-                            channelId={whatsappChannel?.id || null}
-                            automationPriority={whatsappChannel?.automationPriority || 'CHATBOT_FIRST'}
-                        />
-                        <WebChatForm
-                            isActive={webchatActive}
-                            apiKey={webchatConfig?.apiKey || null}
-                            channelId={webchatChannel?.id || null}
-                            automationPriority={webchatChannel?.automationPriority || 'CHATBOT_FIRST'}
-                        />
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Instagram className="h-5 w-5 text-pink-600" />
-                                        <CardTitle>Instagram DM</CardTitle>
-                                    </div>
-                                    <Badge variant="secondary">Próximamente</Badge>
-                                </div>
-                                <CardDescription>Conecta tu cuenta de Instagram para recibir DMs.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="opacity-50 pointer-events-none">
-                                <p className="text-center py-4 text-sm text-muted-foreground">
-                                    Esta integración estará disponible próximamente.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </>
+                    <ChannelsSection
+                        whatsappConfig={{
+                            phoneNumberId: whatsappConfig?.phoneNumberId,
+                            verifyToken: whatsappConfig?.verifyToken,
+                            wabaId: whatsappConfig?.wabaId,
+                            hasAccessToken: !!whatsappConfig?.accessToken,
+                            channelId: whatsappChannel?.id || null,
+                            automationPriority: whatsappChannel?.automationPriority || 'CHATBOT_FIRST',
+                        }}
+                        webchatConfig={{
+                            isActive: webchatActive,
+                            apiKey: webchatConfig?.apiKey || null,
+                            channelId: webchatChannel?.id || null,
+                            automationPriority: webchatChannel?.automationPriority || 'CHATBOT_FIRST',
+                        }}
+                    />
                 )}
 
                 {activeTab === 'ai' && (
-                    <>
-                        <OpenAIKeyForm hasApiKey={hasOpenAIKey} updatedAt={openaiKeyUpdatedAt} />
-                        <CreditBalanceCard
-                            balance={creditBalance}
-                            hasOwnKey={hasOpenAIKey}
-                            companyId={companyId}
-                            companyEmail={userEmail}
-                        />
-                        <GoogleCalendarForm
-                            isConnected={hasGoogleCalendar}
-                            email={googleCalendarEmail}
-                            connectedAt={googleCalendarConnectedAt}
-                        />
-                    </>
+                    <IntegrationsSection
+                        openai={{
+                            hasApiKey: hasOpenAIKey,
+                            updatedAt: openaiKeyUpdatedAt,
+                        }}
+                        credits={{
+                            balance: creditBalance,
+                            hasOwnKey: hasOpenAIKey,
+                            companyId,
+                            companyEmail: userEmail,
+                        }}
+                        googleCalendar={{
+                            isConnected: hasGoogleCalendar,
+                            email: googleCalendarEmail,
+                            connectedAt: googleCalendarConnectedAt,
+                        }}
+                    />
+                )}
+
+                {activeTab === 'billing' && (
+                    <BillingTabContent companyId={companyId} companyEmail={userEmail} />
                 )}
 
                 {activeTab === 'tags' && (
@@ -245,5 +236,56 @@ export default async function SettingsPage(props: {
                 )}
             </div>
         </div>
+    );
+}
+
+async function BillingTabContent({ companyId, companyEmail }: { companyId: string; companyEmail: string }) {
+    const [subscription, paymentSources, billingHistory, availablePlans, wompiConfig] = await Promise.all([
+        getActiveSubscription(),
+        getPaymentSources(),
+        getBillingHistory(),
+        getAvailablePlans(),
+        getWompiConfig(),
+    ]);
+
+    const serializedSub = subscription ? {
+        ...subscription,
+        currentPeriodStart: subscription.currentPeriodStart.toISOString(),
+        currentPeriodEnd: subscription.currentPeriodEnd.toISOString(),
+    } : null;
+
+    const serializedSources = paymentSources.map((s) => ({
+        ...s,
+        expiresAt: s.expiresAt?.toISOString() || null,
+        createdAt: s.createdAt.toISOString(),
+    }));
+
+    const serializedHistory = billingHistory.map((a) => ({
+        ...a,
+        createdAt: a.createdAt.toISOString(),
+    }));
+
+    const serializedPlans = availablePlans.map((p) => ({
+        ...p,
+        createdAt: p.createdAt.toISOString(),
+        updatedAt: p.updatedAt.toISOString(),
+        landingPlan: {
+            ...p.landingPlan,
+            createdAt: p.landingPlan.createdAt.toISOString(),
+            updatedAt: p.landingPlan.updatedAt.toISOString(),
+        },
+    }));
+
+    return (
+        <BillingSection
+            subscription={serializedSub}
+            availablePlans={serializedPlans}
+            hasPaymentSource={paymentSources.length > 0}
+            sources={serializedSources}
+            companyEmail={companyEmail}
+            wompiPublicKey={wompiConfig?.publicKey}
+            wompiIsSandbox={wompiConfig?.isSandbox}
+            attempts={serializedHistory}
+        />
     );
 }

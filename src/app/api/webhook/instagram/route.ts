@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
+import { rateLimitResponse } from '@/lib/rate-limit';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -19,7 +20,10 @@ function verifyWebhookSignature(rawBody: string, signature: string | null): bool
     const expectedSignature = createHmac('sha256', appSecret)
         .update(rawBody)
         .digest('hex');
-    return signature === `sha256=${expectedSignature}`;
+    const expected = Buffer.from(`sha256=${expectedSignature}`, 'utf8');
+    const actual = Buffer.from(signature, 'utf8');
+    if (expected.length !== actual.length) return false;
+    return timingSafeEqual(expected, actual);
 }
 
 export async function GET(req: NextRequest) {
@@ -61,6 +65,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+    const rateLimited = rateLimitResponse(req, { prefix: 'wh-instagram', limit: 200, windowSeconds: 60 });
+    if (rateLimited) return rateLimited;
+
     try {
         const rawBody = await req.text();
 
