@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createHash } from 'crypto';
+import { createHash, timingSafeEqual } from 'crypto';
 import { addCredits } from '@/lib/credits';
+import { rateLimitResponse } from '@/lib/rate-limit';
 import { CreditTransactionType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { getWompiConfig } from '@/lib/wompi-config';
@@ -13,6 +14,9 @@ async function getEventsSecret(): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
+    const rateLimited = rateLimitResponse(req, { prefix: 'wh-wompi', limit: 60, windowSeconds: 60 });
+    if (rateLimited) return rateLimited;
+
     try {
         const body = await req.json();
 
@@ -41,7 +45,10 @@ export async function POST(req: NextRequest) {
         const signatureString = `${transaction.id}${transaction.status}${transaction.amount_in_cents}${timestamp}${eventsSecret}`;
         const expectedSignature = createHash('sha256').update(signatureString).digest('hex');
 
-        if (signature?.checksum !== expectedSignature) {
+        const checksumValid = signature?.checksum && expectedSignature
+            && Buffer.byteLength(signature.checksum) === Buffer.byteLength(expectedSignature)
+            && timingSafeEqual(Buffer.from(signature.checksum, 'utf8'), Buffer.from(expectedSignature, 'utf8'));
+        if (!checksumValid) {
             console.error('[Wompi] Invalid signature');
             return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }

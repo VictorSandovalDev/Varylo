@@ -5,6 +5,8 @@ import bcrypt from 'bcryptjs';
 import { Plan, Role } from '@prisma/client';
 import { z } from 'zod';
 import { sendWelcomeEmail } from '@/lib/email';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { headers } from 'next/headers';
 
 const registerSchema = z.object({
     companyName: z.string().min(1).max(200).trim(),
@@ -22,6 +24,14 @@ export async function register(
     _prevState: { success?: boolean; error?: string } | undefined,
     formData: FormData,
 ): Promise<{ success?: boolean; error?: string }> {
+    // Rate limit: 5 registrations per 10 minutes per IP
+    const headersList = await headers();
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown';
+    const rl = checkRateLimit(ip, { prefix: 'register', limit: 5, windowSeconds: 600 });
+    if (!rl.success) {
+        return { error: 'Demasiados intentos de registro. Intenta de nuevo más tarde.' };
+    }
+
     const parsed = registerSchema.safeParse({
         companyName: formData.get('companyName'),
         name: formData.get('name'),

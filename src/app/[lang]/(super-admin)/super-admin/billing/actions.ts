@@ -19,6 +19,7 @@ async function requireSuperAdmin() {
 }
 
 export async function getLandingPlans() {
+    await requireSuperAdmin();
     try {
         return await prisma.landingPlan.findMany({
             where: { active: true },
@@ -359,6 +360,7 @@ export async function testWompiConnectionAction() {
 // ============ Plan Pricing Actions ============
 
 export async function getLandingPlansWithPricing() {
+    await requireSuperAdmin();
     try {
         return await prisma.landingPlan.findMany({
             where: { active: true },

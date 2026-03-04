@@ -258,12 +258,13 @@ export async function createManualSubscription(data: z.infer<typeof createManual
         return { success: true, data: sub };
     } catch (error: any) {
         console.error('Error creating manual subscription:', error);
-        return { success: false, error: `Error: ${error?.message || 'desconocido'}` };
+        return { success: false, error: 'Error al crear la suscripción. Revisa los datos e intenta de nuevo.' };
     }
 }
 
 /** Ensure Subscription-related tables exist via raw SQL */
 export async function ensureTablesExist() {
+    await requireSuperAdmin();
     try {
         await prisma.$executeRawUnsafe(`
             DO $$ BEGIN

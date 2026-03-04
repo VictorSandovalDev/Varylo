@@ -71,7 +71,7 @@ export async function addPaymentSourceAction(data: z.infer<typeof addPaymentSour
         return { success: true };
     } catch (error: any) {
         console.error('Error adding payment source:', error);
-        return { success: false, error: error.message || 'Error al agregar tarjeta' };
+        return { success: false, error: 'Error al agregar tarjeta. Intenta de nuevo.' };
     }
 }
 
@@ -157,7 +157,7 @@ export async function subscribeToPlan(planPricingId: string) {
         return { success: true };
     } catch (error: any) {
         console.error('Error subscribing:', error);
-        return { success: false, error: error.message || 'Error al suscribirse' };
+        return { success: false, error: 'Error al suscribirse. Intenta de nuevo.' };
     }
 }
 
@@ -219,6 +219,7 @@ export async function getBillingHistory() {
 }
 
 export async function getAvailablePlans() {
+    await requireCompanyAdmin();
     try {
         return await prisma.planPricing.findMany({
             where: { active: true },
