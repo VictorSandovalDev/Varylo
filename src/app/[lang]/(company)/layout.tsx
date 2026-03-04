@@ -51,7 +51,7 @@ export default async function CompanyLayout({
     return (
         <div className="grid w-full min-h-screen lg:grid-cols-[240px_1fr]">
             <Sidebar role="company" lang={lang} tags={tags} className="hidden lg:block" />
-            <div className="flex flex-col">
+            <div className="flex flex-col min-h-screen">
                 <DashboardHeader
                     title="Panel de Empresa"
                     lang={lang}

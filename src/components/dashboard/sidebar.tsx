@@ -115,7 +115,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
     }
 
     return (
-        <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col h-full max-h-screen", className)}>
+        <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col h-screen sticky top-0", className)}>
             {/* Logo */}
             <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
                 <Link href={`/${lang}`} className="flex items-center font-semibold" onClick={onLinkClick}>
@@ -124,7 +124,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
             </div>
 
             {/* Navigation */}
-            <div className="flex-1 overflow-auto py-3">
+            <div className="flex-1 overflow-y-auto py-3">
                 <nav className="grid items-start px-3 text-sm font-medium">
                     {sections.map((section, sIdx) => (
                         <div key={sIdx} className={sIdx > 0 ? "mt-4" : ""}>
@@ -143,7 +143,7 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
 
             {/* Bottom pinned items */}
             {bottomItems.length > 0 && (
-                <div className="border-t border-sidebar-border px-3 py-3">
+                <div className="border-t border-sidebar-border px-3 py-3 shrink-0">
                     <nav className="grid items-start text-sm font-medium">
                         {bottomItems.map((item, index) => (
                             <SidebarItem key={index} item={item} lang={lang} pathname={pathname} onLinkClick={onLinkClick} />
@@ -151,6 +151,13 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
                     </nav>
                 </div>
             )}
+
+            {/* Footer */}
+            <div className="border-t border-sidebar-border px-4 py-3 shrink-0">
+                <p className="text-[10px] text-sidebar-foreground/40 text-center leading-relaxed">
+                    Desarrollado con IA y con ❤️
+                </p>
+            </div>
         </div>
     );
 }
