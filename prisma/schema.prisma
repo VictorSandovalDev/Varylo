@@ -441,3 +441,11 @@ model BillingAttempt {
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 }
+
+model SiteConfig {
+  id              String   @id @default(cuid())
+  faviconUrl      String?
+  footerSections  Json?
+  copyrightText   String?
+  updatedAt       DateTime @updatedAt
+}

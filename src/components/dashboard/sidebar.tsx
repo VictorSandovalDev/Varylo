@@ -17,6 +17,7 @@ import {
     UsersRound,
     Building2,
     UserCircle,
+    Globe,
 } from 'lucide-react';
 import { SidebarUnreadBadge } from './unread-badge';
 
@@ -229,6 +230,7 @@ const superAdminSections: SectionGroup[] = [
         label: 'ADMINISTRACIÓN', items: [
             { title: 'Empresas', href: '/super-admin/companies', icon: Building2 },
             { title: 'Planes & Facturación', href: '/super-admin/billing', icon: CreditCard },
+            { title: 'Sitio Web', href: '/super-admin/site-settings', icon: Globe },
         ]
     },
     {

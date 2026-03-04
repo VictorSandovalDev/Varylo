@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { getSiteConfig } from "@/lib/site-config";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,14 +14,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Varylo — Atención al cliente con IA | WhatsApp, Instagram y más",
-  description: "Centraliza WhatsApp, Instagram y más canales en una sola bandeja. Agentes IA que responden 24/7, chatbots inteligentes y analíticas avanzadas. Empieza gratis.",
-  icons: {
-    icon: "/favicon.png",
-    apple: "/favicon.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { faviconUrl } = await getSiteConfig();
+  return {
+    title: "Varylo — Atención al cliente con IA | WhatsApp, Instagram y más",
+    description: "Centraliza WhatsApp, Instagram y más canales en una sola bandeja. Agentes IA que responden 24/7, chatbots inteligentes y analíticas avanzadas. Empieza gratis.",
+    icons: {
+      icon: faviconUrl,
+      apple: faviconUrl,
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

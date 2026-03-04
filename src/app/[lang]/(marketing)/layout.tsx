@@ -1,5 +1,6 @@
 import { MarketingHeader } from '@/components/marketing-header';
 import { getDictionary, Locale } from '@/lib/dictionary';
+import { getSiteConfig } from '@/lib/site-config';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -14,6 +15,7 @@ export default async function MarketingLayout({
     const dict = await getDictionary(lang as Locale);
     const nav = dict.nav;
     const footer = dict.footer;
+    const siteConfig = await getSiteConfig();
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -32,31 +34,29 @@ export default async function MarketingLayout({
                                     : 'The platform that unifies your customer support with AI.'}
                             </p>
                         </div>
-                        <div>
-                            <h4 className="font-semibold text-sm text-gray-300 mb-4">{footer.product}</h4>
-                            <ul className="space-y-2.5 text-sm text-gray-400">
-                                <li><Link href="#features" className="hover:text-emerald-400 transition-colors">{nav.features}</Link></li>
-                                <li><Link href="#pricing" className="hover:text-emerald-400 transition-colors">{nav.pricing}</Link></li>
-                                <li><Link href="#faq" className="hover:text-emerald-400 transition-colors">FAQ</Link></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-sm text-gray-300 mb-4">{footer.company}</h4>
-                            <ul className="space-y-2.5 text-sm text-gray-400">
-                                <li><Link href="#contact" className="hover:text-emerald-400 transition-colors">{footer.about}</Link></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-sm text-gray-300 mb-4">{footer.legal}</h4>
-                            <ul className="space-y-2.5 text-sm text-gray-400">
-                                <li><Link href={`/${lang}/terms`} className="hover:text-emerald-400 transition-colors">{footer.privacy}</Link></li>
-                                <li><Link href={`/${lang}/terms`} className="hover:text-emerald-400 transition-colors">{footer.terms}</Link></li>
-                            </ul>
-                        </div>
+                        {siteConfig.footerSections.map((section, idx) => (
+                            <div key={idx}>
+                                <h4 className="font-semibold text-sm text-gray-300 mb-4">{section.title}</h4>
+                                <ul className="space-y-2.5 text-sm text-gray-400">
+                                    {section.links.map((link, lIdx) => {
+                                        const href = link.href.startsWith('/')
+                                            ? `/${lang}${link.href}`
+                                            : link.href;
+                                        return (
+                                            <li key={lIdx}>
+                                                <Link href={href} className="hover:text-emerald-400 transition-colors">
+                                                    {link.label}
+                                                </Link>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        ))}
                     </div>
                     <div className="border-t border-gray-800 mt-12 pt-8">
                         <p className="text-center text-sm text-gray-500">
-                            &copy; {new Date().getFullYear()} {footer.rights}
+                            &copy; {new Date().getFullYear()} {siteConfig.copyrightText}
                         </p>
                     </div>
                 </div>

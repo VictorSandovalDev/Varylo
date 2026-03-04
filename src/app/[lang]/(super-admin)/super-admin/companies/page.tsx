@@ -22,23 +22,36 @@ const SUB_STATUS_LABELS: Record<string, { label: string; variant: 'default' | 's
 };
 
 export default async function CompaniesPage() {
-    const companies = await prisma.company.findMany({
-        include: {
-            users: true,
-            subscriptions: {
-                where: { status: { in: ['ACTIVE', 'PAST_DUE', 'TRIAL'] } },
-                take: 1,
-                include: {
-                    planPricing: {
-                        include: { landingPlan: { select: { name: true } } },
+    let companies: any[] = [];
+    try {
+        companies = await prisma.company.findMany({
+            include: {
+                users: true,
+                subscriptions: {
+                    where: { status: { in: ['ACTIVE', 'PAST_DUE', 'TRIAL'] } },
+                    take: 1,
+                    include: {
+                        planPricing: {
+                            include: { landingPlan: { select: { name: true } } },
+                        },
                     },
                 },
             },
-        },
-        orderBy: {
-            createdAt: 'desc',
+            orderBy: {
+                createdAt: 'desc',
+            }
+        });
+    } catch {
+        // Subscription/PlanPricing tables may not exist yet — try without subscriptions
+        try {
+            companies = (await prisma.company.findMany({
+                include: { users: true },
+                orderBy: { createdAt: 'desc' },
+            })).map(c => ({ ...c, subscriptions: [] }));
+        } catch {
+            companies = [];
         }
-    });
+    }
 
     return (
         <Card>
