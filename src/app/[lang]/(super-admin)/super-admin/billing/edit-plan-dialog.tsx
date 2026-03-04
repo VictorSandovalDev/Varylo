@@ -41,6 +41,8 @@ type PlanData = {
     planPricing: PlanPricing;
 };
 
+const DEFAULT_USD_TO_COP = 4200;
+
 export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated: () => void }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -51,12 +53,23 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
     const [isFeatured, setIsFeatured] = useState(plan.isFeatured);
     const [ctaText, setCtaText] = useState(plan.ctaText);
     const [newFeature, setNewFeature] = useState('');
+    const [exchangeRate, setExchangeRate] = useState(DEFAULT_USD_TO_COP);
 
     // Pricing fields
     const [priceCop, setPriceCop] = useState(plan.planPricing?.priceInCents ? plan.planPricing.priceInCents / 100 : 0);
     const [billingPeriodDays, setBillingPeriodDays] = useState(plan.planPricing?.billingPeriodDays ?? 30);
     const [trialDays, setTrialDays] = useState(plan.planPricing?.trialDays ?? 0);
     const [pricingActive, setPricingActive] = useState(plan.planPricing?.active ?? true);
+
+    function handlePriceUsdChange(usd: number) {
+        setPrice(usd);
+        setPriceCop(Math.round(usd * exchangeRate));
+    }
+
+    function handleExchangeRateChange(rate: number) {
+        setExchangeRate(rate);
+        setPriceCop(Math.round(price * rate));
+    }
 
     function addFeature() {
         const trimmed = newFeature.trim();
@@ -126,7 +139,7 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
                     </div>
                     <div className="space-y-2">
                         <Label>Precio (USD/mes)</Label>
-                        <Input type="number" min={0} value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+                        <Input type="number" min={0} value={price} onChange={(e) => handlePriceUsdChange(Number(e.target.value))} />
                     </div>
                     <div className="space-y-2">
                         <Label>Texto del botón</Label>
@@ -139,9 +152,17 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
                     <Separator />
                     <p className="text-sm font-medium text-muted-foreground">Suscripción recurrente (COP)</p>
 
+                    <div className="space-y-2">
+                        <Label>Tasa de cambio (USD → COP)</Label>
+                        <Input type="number" min={1} value={exchangeRate} onChange={(e) => handleExchangeRateChange(Number(e.target.value))} />
+                        <p className="text-xs text-muted-foreground">
+                            ${price} USD × {exchangeRate.toLocaleString('es-CO')} = ${(price * exchangeRate).toLocaleString('es-CO')} COP
+                        </p>
+                    </div>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
-                            <Label>Precio COP</Label>
+                            <Label>Precio COP (ajustable)</Label>
                             <Input type="number" min={0} value={priceCop} onChange={(e) => setPriceCop(Number(e.target.value))} />
                         </div>
                         <div className="space-y-2">
