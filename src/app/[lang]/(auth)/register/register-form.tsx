@@ -27,7 +27,7 @@ function SubmitButton({ text, pendingText }: { text: string, pendingText: string
     );
 }
 
-export default function RegisterForm({ dict }: { dict: any }) {
+export default function RegisterForm({ dict, defaultPlan = 'STARTER' }: { dict: any; defaultPlan?: string }) {
     const [errorMessage, dispatch] = useActionState(register, undefined);
 
     return (
@@ -77,7 +77,7 @@ export default function RegisterForm({ dict }: { dict: any }) {
             </div>
             <div className="space-y-2">
                 <Label htmlFor="plan" className="text-zinc-300 text-sm">{dict.planLabel}</Label>
-                <Select name="plan" defaultValue="STARTER">
+                <Select name="plan" defaultValue={defaultPlan}>
                     <SelectTrigger className="bg-white/[0.05] border-white/[0.1] text-white focus:ring-emerald-500/50 [&>span]:text-zinc-300">
                         <SelectValue placeholder={dict.planPlaceholder} />
                     </SelectTrigger>
