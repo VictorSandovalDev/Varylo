@@ -21,11 +21,8 @@ export default function AuthLayout({
 
             {/* Content */}
             <div className="relative z-10 flex flex-col items-center w-full px-4">
-                <div className="mb-10 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    <Image src="/favicon.png" alt="Varylo" width={40} height={40} className="rounded-xl shadow-lg shadow-emerald-500/25" />
-                    <span className="text-3xl font-bold tracking-tight text-white">
-                        VARYLO
-                    </span>
+                <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <Image src="/logo.png" alt="Varylo" width={220} height={124} className="brightness-0 invert" priority />
                 </div>
                 <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 w-full flex justify-center">
                     {children}

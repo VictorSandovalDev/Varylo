@@ -38,9 +38,8 @@ export function MarketingHeader({ lang, nav }: MarketingHeaderProps) {
     return (
         <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm' : 'bg-white/80 backdrop-blur-sm'}`}>
             <div className="container mx-auto flex h-16 max-w-screen-2xl items-center px-4">
-                <Link href={`/${lang}`} className="mr-8 flex items-center gap-2.5 group">
-                    <Image src="/favicon.png" alt="Varylo" width={32} height={32} className="rounded-lg shadow-sm" />
-                    <span className="font-bold text-xl text-gray-900 tracking-tight">VARYLO</span>
+                <Link href={`/${lang}`} className="mr-8 flex items-center group">
+                    <Image src="/logo.png" alt="Varylo" width={150} height={84} />
                 </Link>
 
                 <nav className="hidden md:flex items-center gap-8 text-sm">

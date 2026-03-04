@@ -117,9 +117,8 @@ export function Sidebar({ role, lang, tags, className, onLinkClick }: SidebarPro
         <div className={clsx("border-r bg-sidebar w-[240px] flex flex-col h-full max-h-screen", className)}>
             {/* Logo */}
             <div className="flex h-14 items-center border-b border-sidebar-border px-6 lg:h-[60px] shrink-0">
-                <Link href={`/${lang}`} className="flex items-center gap-2.5 font-semibold" onClick={onLinkClick}>
-                    <Image src="/favicon.png" alt="Varylo" width={28} height={28} className="rounded-lg" />
-                    <span className="text-sidebar-foreground">VARYLO</span>
+                <Link href={`/${lang}`} className="flex items-center font-semibold" onClick={onLinkClick}>
+                    <Image src="/logo.png" alt="Varylo" width={140} height={79} />
                 </Link>
             </div>
 

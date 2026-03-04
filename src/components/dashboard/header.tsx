@@ -58,9 +58,8 @@ export function DashboardHeader({ title, lang, role, tags = [], userStatus = 'OF
             </Sheet>
 
             <div className="w-full flex-1 lg:hidden">
-                <div className="flex items-center gap-2 ml-2">
-                    <Image src="/favicon.png" alt="Varylo" width={24} height={24} className="rounded-md" />
-                    <span className="font-bold text-sm">VARYLO</span>
+                <div className="flex items-center ml-2">
+                    <Image src="/logo.png" alt="Varylo" width={120} height={67} />
                 </div>
             </div>
 
