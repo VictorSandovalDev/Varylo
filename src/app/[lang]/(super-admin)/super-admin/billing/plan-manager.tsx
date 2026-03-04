@@ -34,6 +34,7 @@ type Plan = {
     ctaText: string;
     ctaLink: string | null;
     sortOrder: number;
+    showTrialOnRegister: boolean;
     planPricing: PlanPricing;
 };
 
@@ -102,7 +103,10 @@ export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
                                 <CardTitle>{plan.name}</CardTitle>
                                 <CardDescription>{plan.description}</CardDescription>
                             </div>
-                            {plan.isFeatured && <Badge>Popular</Badge>}
+                            <div className="flex gap-1.5">
+                                {plan.isFeatured && <Badge>Popular</Badge>}
+                                {plan.showTrialOnRegister && <Badge variant="outline" className="text-emerald-700 border-emerald-300">Trial en registro</Badge>}
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent>

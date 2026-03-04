@@ -248,20 +248,20 @@
                 "expMonth": "Mes",
                 "expYear": "Año",
                 "cvc": "CVC",
-                "trialInfo": "3 días gratis",
+                "trialInfo": "{days} días gratis",
                 "trialDescription": "Tu trial comienza hoy. No se realizará ningún cobro hasta que finalice.",
                 "submitButton": "Activar trial gratuito",
                 "submitButtonPending": "Procesando..."
             },
             "step3": {
                 "title": "¡Estamos listos!",
-                "subtitle": "Tu trial de 3 días ha comenzado",
+                "subtitle": "Tu trial de {days} días ha comenzado",
                 "description": "Ya puedes empezar a configurar tus canales y explorar todas las funciones de Varylo.",
                 "goToDashboard": "Ir al dashboard"
             },
             "panel": {
                 "headline": "Comienza tu prueba gratuita",
-                "trialBadge": "3 días gratis",
+                "trialBadge": "{days} días gratis",
                 "features": [
                     "Acceso completo a todas las funciones",
                     "Sin cobros durante el trial",

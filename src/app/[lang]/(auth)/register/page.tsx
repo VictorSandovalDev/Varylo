@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { getDictionary, Locale } from '@/lib/dictionary';
-import { getWompiConfig } from '@/lib/wompi-config';
 import { prisma } from '@/lib/prisma';
 import { CheckCircle2, Sparkles } from 'lucide-react';
 import { RegisterWizard } from './register-wizard';
@@ -20,16 +19,13 @@ export default async function RegisterPage({
     const validPlans = ['STARTER', 'PRO', 'SCALE'];
     const selectedPlanSlug = plan && validPlans.includes(plan.toUpperCase()) ? plan.toUpperCase() : 'STARTER';
 
-    // Fetch Wompi config
-    const wompiConfig = await getWompiConfig();
-
     // Fetch ALL active PlanPricing records
-    let availablePlans: { id: string; slug: string; name: string; priceInCents: number }[] = [];
+    let availablePlans: { id: string; slug: string; name: string; priceInCents: number; trialDays: number }[] = [];
 
     try {
         const pricings = await prisma.planPricing.findMany({
             where: { active: true },
-            include: { landingPlan: { select: { name: true, slug: true, sortOrder: true } } },
+            include: { landingPlan: { select: { name: true, slug: true, sortOrder: true, showTrialOnRegister: true } } },
             orderBy: { landingPlan: { sortOrder: 'asc' } },
         });
         availablePlans = pricings.map((p) => ({
@@ -37,12 +33,15 @@ export default async function RegisterPage({
             slug: p.landingPlan.slug,
             name: p.landingPlan.name,
             priceInCents: p.priceInCents,
+            trialDays: p.landingPlan.showTrialOnRegister ? p.trialDays : 0,
         }));
     } catch {
         // PlanPricing may not exist yet
     }
 
-    const defaultPlan = availablePlans.find((p) => p.slug === selectedPlanSlug) || availablePlans[0];
+    // Max trial days across plans for left panel badge
+    const maxTrialDays = Math.max(0, ...availablePlans.map((p) => p.trialDays));
+
     const panel = d.panel;
 
     return (
@@ -70,10 +69,12 @@ export default async function RegisterPage({
                     <h1 className="text-3xl font-bold leading-tight">{panel.headline}</h1>
 
                     {/* Trial badge */}
-                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-4 py-1.5 text-sm font-medium text-emerald-300">
-                        <Sparkles className="h-4 w-4" />
-                        {panel.trialBadge}
-                    </div>
+                    {maxTrialDays > 0 && (
+                        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/20 px-4 py-1.5 text-sm font-medium text-emerald-300">
+                            <Sparkles className="h-4 w-4" />
+                            {panel.trialBadge.replace('{days}', String(maxTrialDays))}
+                        </div>
+                    )}
 
                     {/* Features */}
                     <div className="space-y-3">
@@ -103,10 +104,8 @@ export default async function RegisterPage({
                     <RegisterWizard
                         dict={d}
                         lang={lang}
-                        wompiPublicKey={wompiConfig?.publicKey}
-                        wompiIsSandbox={wompiConfig?.isSandbox}
                         availablePlans={availablePlans}
-                        defaultPlanId={defaultPlan?.id}
+                        defaultPlanSlug={selectedPlanSlug}
                     />
                 </div>
             </div>

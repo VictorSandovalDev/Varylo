@@ -39,6 +39,7 @@ const updatePlanSchema = z.object({
     ctaText: z.string().min(1),
     ctaLink: z.string().nullable(),
     sortOrder: z.number().int(),
+    showTrialOnRegister: z.boolean().optional(),
 });
 
 export async function updateLandingPlan(data: z.infer<typeof updatePlanSchema>) {
@@ -58,6 +59,7 @@ export async function updateLandingPlan(data: z.infer<typeof updatePlanSchema>) 
                 ctaText: result.data.ctaText,
                 ctaLink: result.data.ctaLink,
                 sortOrder: result.data.sortOrder,
+                ...(result.data.showTrialOnRegister !== undefined && { showTrialOnRegister: result.data.showTrialOnRegister }),
             },
         });
         revalidatePath('/super-admin/billing');

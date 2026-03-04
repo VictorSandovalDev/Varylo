@@ -38,6 +38,7 @@ type PlanData = {
     ctaText: string;
     ctaLink: string | null;
     sortOrder: number;
+    showTrialOnRegister: boolean;
     planPricing: PlanPricing;
 };
 
@@ -71,6 +72,7 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
     const [features, setFeatures] = useState<string[]>(plan.features);
     const [isFeatured, setIsFeatured] = useState(plan.isFeatured);
     const [ctaText, setCtaText] = useState(plan.ctaText);
+    const [showTrialOnRegister, setShowTrialOnRegister] = useState(plan.showTrialOnRegister);
     const [newFeature, setNewFeature] = useState('');
 
     const [exchangeRate, setExchangeRate] = useState(FALLBACK_RATE);
@@ -129,6 +131,7 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
             ctaText,
             ctaLink: plan.ctaLink,
             sortOrder: plan.sortOrder,
+            showTrialOnRegister,
         });
 
         // Save pricing if COP price is set
@@ -182,6 +185,10 @@ export function EditPlanDialog({ plan, onUpdated }: { plan: PlanData; onUpdated:
                     <div className="flex items-center gap-3">
                         <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
                         <Label>Destacado (badge &quot;Popular&quot;)</Label>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Switch checked={showTrialOnRegister} onCheckedChange={setShowTrialOnRegister} />
+                        <Label>Mostrar con trial en registro</Label>
                     </div>
                     <Separator />
                     <p className="text-sm font-medium text-muted-foreground">Suscripción recurrente (COP)</p>
