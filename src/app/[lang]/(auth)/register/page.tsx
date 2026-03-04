@@ -32,7 +32,7 @@ export default async function RegisterPage({
         const pricing = await prisma.planPricing.findFirst({
             where: {
                 active: true,
-                landingPlan: { slug: selectedPlanSlug.toLowerCase() },
+                landingPlan: { slug: selectedPlanSlug },
             },
             include: { landingPlan: { select: { name: true } } },
         });
