@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
-import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 
 const MAX_SIZE = 100 * 1024; // 100KB
 const ALLOWED_EXTENSIONS = ['.png', '.ico', '.svg'];
+const ALLOWED_MIME_TYPES = ['image/png', 'image/x-icon', 'image/svg+xml', 'image/ico', 'image/vnd.microsoft.icon'];
 
 export async function POST(req: NextRequest) {
     const session = await auth();
@@ -34,20 +34,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'El archivo debe ser menor a 100KB' }, { status: 400 });
         }
 
+        // Validate extension
         const ext = path.extname(file.name).toLowerCase();
         if (!ALLOWED_EXTENSIONS.includes(ext)) {
             return NextResponse.json({ error: 'Solo se permiten archivos PNG, ICO o SVG' }, { status: 400 });
         }
 
+        // Validate MIME type
+        if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+            return NextResponse.json({ error: 'Tipo de archivo no permitido' }, { status: 400 });
+        }
+
         const buffer = Buffer.from(await file.arrayBuffer());
-        const filename = `favicon${ext}`;
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads');
 
-        await mkdir(uploadDir, { recursive: true });
-        await writeFile(path.join(uploadDir, filename), buffer);
+        // Convert to base64 data URI (works in serverless, no filesystem needed)
+        const mimeType = file.type || (ext === '.svg' ? 'image/svg+xml' : ext === '.ico' ? 'image/x-icon' : 'image/png');
+        const dataUri = `data:${mimeType};base64,${buffer.toString('base64')}`;
 
-        const url = `/uploads/${filename}`;
-        return NextResponse.json({ url });
+        return NextResponse.json({ url: dataUri });
     } catch (error) {
         console.error('Error uploading favicon:', error);
         return NextResponse.json({ error: 'Error al subir el archivo' }, { status: 500 });

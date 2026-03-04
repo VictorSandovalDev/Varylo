@@ -4,6 +4,23 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
   : ['localhost:3000'];
 
+const isDev = process.env.NODE_ENV === 'development';
+
+const cspDirectives = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.wompi.co",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://api.openai.com https://production.wompi.co https://sandbox.wompi.co https://graph.facebook.com https://www.googleapis.com",
+  "frame-src 'self' https://checkout.wompi.co",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
+];
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@formatjs/intl-localematcher'],
   experimental: {
@@ -27,20 +44,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.wompi.co",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data:",
-              "connect-src 'self' https://api.openai.com https://production.wompi.co https://sandbox.wompi.co https://graph.facebook.com https://www.googleapis.com",
-              "frame-src 'self' https://checkout.wompi.co",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "frame-ancestors 'none'",
-              "upgrade-insecure-requests",
-            ].join('; '),
+            value: cspDirectives.join('; '),
           },
         ],
       },
