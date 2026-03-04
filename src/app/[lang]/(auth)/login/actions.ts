@@ -11,6 +11,9 @@ export async function authenticate(
         await signIn('credentials', { ...Object.fromEntries(formData), redirectTo: '/dashboard' });
     } catch (error) {
         if (error instanceof AuthError) {
+            if (error.cause?.err?.message === 'COMPANY_SUSPENDED') {
+                return 'Tu cuenta ha sido suspendida. Contacta a soporte en hello@varylo.app';
+            }
             switch (error.type) {
                 case 'CredentialsSignin':
                     return 'Invalid credentials.';

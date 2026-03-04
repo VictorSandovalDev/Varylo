@@ -29,11 +29,20 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
-                    const user = await prisma.user.findUnique({ where: { email } });
+                    const user = await prisma.user.findUnique({
+                        where: { email },
+                        include: { company: { select: { status: true } } },
+                    });
                     if (!user) return null;
 
                     const isValid = await verifyPassword(password, user.passwordHash);
-                    if (isValid) return user;
+                    if (!isValid) return null;
+
+                    if (user.company?.status === 'SUSPENDED') {
+                        throw new Error('COMPANY_SUSPENDED');
+                    }
+
+                    return user;
                 }
                 return null;
             },
