@@ -3,11 +3,13 @@ import Link from 'next/link';
 import { Check, MessageSquare, Bot, Workflow, Users, BarChart3, Sparkles, ArrowRight, Star, Zap, AlertTriangle, EyeOff, Moon } from 'lucide-react';
 import { ContactForm } from './contact-form';
 import { getDictionary, Locale } from '@/lib/dictionary';
+import { prisma } from '@/lib/prisma';
 
 export default async function LandingPage({ params }: { params: Promise<{ lang: Locale }> }) {
     const { lang } = await params;
     const dict = await getDictionary(lang);
     const d = dict.landing;
+    const dbPlans = await prisma.landingPlan.findMany({ where: { active: true }, orderBy: { sortOrder: 'asc' } });
 
     return (
         <div className="flex flex-col">
@@ -202,70 +204,109 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                         <p className="text-gray-500 mt-4 text-lg">{d.pricing.subtitle}</p>
                     </div>
                     <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
-                        {/* Starter */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-8 hover:shadow-lg transition-shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">{d.pricing.starter.title}</h3>
-                            <div className="flex items-baseline gap-1 mt-4 mb-2">
-                                <span className="text-5xl font-black text-gray-900">$29</span>
-                                <span className="text-gray-400">/mes</span>
-                            </div>
-                            <p className="text-gray-500 text-sm mb-8">{d.pricing.starter.description}</p>
-                            <Link href={`/${lang}/register?plan=STARTER`} className="block">
-                                <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
-                                    {d.pricing.cta}
-                                </Button>
-                            </Link>
-                            <ul className="space-y-3 mt-8">
-                                {d.pricing.starter.features.map((f: string, i: number) => (
-                                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
-                                        <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        {/* Pro — featured */}
-                        <div className="rounded-2xl border-2 border-emerald-500 bg-white p-8 relative lg:scale-105 shadow-xl shadow-emerald-500/10">
-                            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Popular</div>
-                            <h3 className="text-lg font-semibold text-gray-900">{d.pricing.pro.title}</h3>
-                            <div className="flex items-baseline gap-1 mt-4 mb-2">
-                                <span className="text-5xl font-black text-emerald-600">$79</span>
-                                <span className="text-gray-400">/mes</span>
-                            </div>
-                            <p className="text-gray-500 text-sm mb-8">{d.pricing.pro.description}</p>
-                            <Link href={`/${lang}/register?plan=PRO`} className="block">
-                                <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 font-semibold">
-                                    {d.pricing.cta}
-                                </Button>
-                            </Link>
-                            <ul className="space-y-3 mt-8">
-                                {d.pricing.pro.features.map((f: string, i: number) => (
-                                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
-                                        <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        {/* Scale */}
-                        <div className="rounded-2xl border border-gray-200 bg-white p-8 hover:shadow-lg transition-shadow">
-                            <h3 className="text-lg font-semibold text-gray-900">{d.pricing.scale.title}</h3>
-                            <div className="flex items-baseline gap-1 mt-4 mb-2">
-                                <span className="text-5xl font-black text-gray-900">$199</span>
-                                <span className="text-gray-400">/mes</span>
-                            </div>
-                            <p className="text-gray-500 text-sm mb-8">{d.pricing.scale.description}</p>
-                            <Link href="#contact" className="block">
-                                <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
-                                    {d.pricing.ctaCustom}
-                                </Button>
-                            </Link>
-                            <ul className="space-y-3 mt-8">
-                                {d.pricing.scale.features.map((f: string, i: number) => (
-                                    <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
-                                        <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                        {dbPlans.length > 0 ? dbPlans.map((plan) => {
+                            const isFeatured = plan.isFeatured;
+                            const href = plan.ctaLink || `/${lang}/register?plan=${plan.slug}`;
+                            return (
+                                <div key={plan.id} className={isFeatured
+                                    ? 'rounded-2xl border-2 border-emerald-500 bg-white p-8 relative lg:scale-105 shadow-xl shadow-emerald-500/10'
+                                    : 'rounded-2xl border border-gray-200 bg-white p-8 hover:shadow-lg transition-shadow'
+                                }>
+                                    {isFeatured && (
+                                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Popular</div>
+                                    )}
+                                    <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+                                    <div className="flex items-baseline gap-1 mt-4 mb-2">
+                                        <span className={`text-5xl font-black ${isFeatured ? 'text-emerald-600' : 'text-gray-900'}`}>${plan.price}</span>
+                                        <span className="text-gray-400">/mes</span>
+                                    </div>
+                                    <p className="text-gray-500 text-sm mb-8">{plan.description}</p>
+                                    <Link href={href} className="block">
+                                        {isFeatured ? (
+                                            <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 font-semibold">
+                                                {plan.ctaText}
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
+                                                {plan.ctaText}
+                                            </Button>
+                                        )}
+                                    </Link>
+                                    <ul className="space-y-3 mt-8">
+                                        {plan.features.map((f, i) => (
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                                                <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            );
+                        }) : (
+                            /* Fallback: use dictionary data if no DB plans */
+                            <>
+                                <div className="rounded-2xl border border-gray-200 bg-white p-8 hover:shadow-lg transition-shadow">
+                                    <h3 className="text-lg font-semibold text-gray-900">{d.pricing.starter.title}</h3>
+                                    <div className="flex items-baseline gap-1 mt-4 mb-2">
+                                        <span className="text-5xl font-black text-gray-900">$29</span>
+                                        <span className="text-gray-400">/mes</span>
+                                    </div>
+                                    <p className="text-gray-500 text-sm mb-8">{d.pricing.starter.description}</p>
+                                    <Link href={`/${lang}/register?plan=STARTER`} className="block">
+                                        <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
+                                            {d.pricing.cta}
+                                        </Button>
+                                    </Link>
+                                    <ul className="space-y-3 mt-8">
+                                        {d.pricing.starter.features.map((f: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                                                <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="rounded-2xl border-2 border-emerald-500 bg-white p-8 relative lg:scale-105 shadow-xl shadow-emerald-500/10">
+                                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-5 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Popular</div>
+                                    <h3 className="text-lg font-semibold text-gray-900">{d.pricing.pro.title}</h3>
+                                    <div className="flex items-baseline gap-1 mt-4 mb-2">
+                                        <span className="text-5xl font-black text-emerald-600">$79</span>
+                                        <span className="text-gray-400">/mes</span>
+                                    </div>
+                                    <p className="text-gray-500 text-sm mb-8">{d.pricing.pro.description}</p>
+                                    <Link href={`/${lang}/register?plan=PRO`} className="block">
+                                        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 font-semibold">
+                                            {d.pricing.cta}
+                                        </Button>
+                                    </Link>
+                                    <ul className="space-y-3 mt-8">
+                                        {d.pricing.pro.features.map((f: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                                                <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                                <div className="rounded-2xl border border-gray-200 bg-white p-8 hover:shadow-lg transition-shadow">
+                                    <h3 className="text-lg font-semibold text-gray-900">{d.pricing.scale.title}</h3>
+                                    <div className="flex items-baseline gap-1 mt-4 mb-2">
+                                        <span className="text-5xl font-black text-gray-900">$199</span>
+                                        <span className="text-gray-400">/mes</span>
+                                    </div>
+                                    <p className="text-gray-500 text-sm mb-8">{d.pricing.scale.description}</p>
+                                    <Link href="#contact" className="block">
+                                        <Button variant="outline" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 font-medium">
+                                            {d.pricing.ctaCustom}
+                                        </Button>
+                                    </Link>
+                                    <ul className="space-y-3 mt-8">
+                                        {d.pricing.scale.features.map((f: string, i: number) => (
+                                            <li key={i} className="flex items-start gap-2.5 text-sm text-gray-600">
+                                                <Check className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" /> {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </section>

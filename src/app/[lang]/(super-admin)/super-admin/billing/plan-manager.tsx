@@ -1,0 +1,100 @@
+'use client';
+
+import { useState } from 'react';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Check, DatabaseZap } from "lucide-react";
+import { EditPlanDialog } from "./edit-plan-dialog";
+import { seedLandingPlans, getLandingPlans } from "./actions";
+
+type Plan = {
+    id: string;
+    slug: string;
+    name: string;
+    description: string;
+    price: number;
+    features: string[];
+    isFeatured: boolean;
+    ctaText: string;
+    ctaLink: string | null;
+    sortOrder: number;
+};
+
+export function PlanManager({ initialPlans }: { initialPlans: Plan[] }) {
+    const [plans, setPlans] = useState<Plan[]>(initialPlans);
+    const [seeding, setSeeding] = useState(false);
+
+    async function refresh() {
+        const updated = await getLandingPlans();
+        setPlans(updated);
+    }
+
+    async function handleSeed() {
+        setSeeding(true);
+        const result = await seedLandingPlans();
+        if (result.success) {
+            await refresh();
+        }
+        setSeeding(false);
+    }
+
+    if (plans.length === 0) {
+        return (
+            <Card className="p-8 text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <DatabaseZap className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">No hay planes configurados</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                    Crea los planes por defecto (Starter, Pro, Scale) para empezar a gestionar los precios de la landing.
+                </p>
+                <Button onClick={handleSeed} disabled={seeding}>
+                    {seeding ? 'Creando...' : 'Crear planes por defecto'}
+                </Button>
+            </Card>
+        );
+    }
+
+    return (
+        <div className="grid gap-6 lg:grid-cols-3">
+            {plans.map((plan) => (
+                <Card key={plan.id} className={plan.isFeatured ? 'border-primary' : ''}>
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle>{plan.name}</CardTitle>
+                                <CardDescription>{plan.description}</CardDescription>
+                            </div>
+                            {plan.isFeatured && <Badge>Popular</Badge>}
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold">
+                            ${plan.price}
+                            <span className="text-lg font-normal text-muted-foreground">/mes</span>
+                        </div>
+                        <ul className="mt-4 space-y-2">
+                            {plan.features.map((f, i) => (
+                                <li key={i} className="flex items-center text-sm">
+                                    <Check className="mr-2 h-4 w-4 text-green-500 shrink-0" />
+                                    {f}
+                                </li>
+                            ))}
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        <EditPlanDialog plan={plan} onUpdated={refresh} />
+                    </CardFooter>
+                </Card>
+            ))}
+        </div>
+    );
+}

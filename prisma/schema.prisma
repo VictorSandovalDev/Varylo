@@ -333,3 +333,20 @@ model PasswordResetToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model LandingPlan {
+  id          String   @id @default(cuid())
+  slug        String   @unique // STARTER, PRO, SCALE
+  name        String
+  description String
+  price       Int      // monthly price in USD
+  currency    String   @default("USD")
+  features    String[] // list of feature strings
+  isFeatured  Boolean  @default(false)
+  ctaText     String   @default("Empezar ahora")
+  ctaLink     String?  // null = default register link
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
