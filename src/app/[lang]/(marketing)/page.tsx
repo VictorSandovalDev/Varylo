@@ -208,7 +208,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                         <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-gray-900">{d.pricing.title}</h2>
                         <p className="text-gray-500 mt-4 text-lg">{d.pricing.subtitle}</p>
                     </div>
-                    <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start">
+                    <div className={`grid gap-6 max-w-5xl mx-auto items-start justify-center ${dbPlans.length === 1 ? 'md:grid-cols-1 max-w-md' : dbPlans.length === 2 ? 'md:grid-cols-2 max-w-3xl' : 'md:grid-cols-3'}`}>
                         {dbPlans.length > 0 ? dbPlans.map((plan) => {
                             const isFeatured = plan.isFeatured;
                             const href = plan.ctaLink || `/${lang}/register?plan=${plan.slug}`;
