@@ -45,7 +45,6 @@ export async function getSiteConfigAction() {
             success: true,
             data: config
                 ? {
-                    faviconUrl: config.faviconUrl,
                     footerSections: config.footerSections as FooterSection[] | null,
                     copyrightText: config.copyrightText,
                 }
@@ -53,28 +52,6 @@ export async function getSiteConfigAction() {
         };
     } catch {
         return { success: true, data: null };
-    }
-}
-
-export async function updateFaviconAction(faviconUrl: string) {
-    await requireSuperAdmin();
-    try {
-        const existing = await prisma.siteConfig.findFirst();
-        if (existing) {
-            await prisma.siteConfig.update({
-                where: { id: existing.id },
-                data: { faviconUrl },
-            });
-        } else {
-            await prisma.siteConfig.create({
-                data: { faviconUrl },
-            });
-        }
-        revalidatePath('/', 'layout');
-        return { success: true };
-    } catch (error) {
-        console.error('Error updating favicon:', error);
-        return { success: false, error: 'Error al actualizar el favicon' };
     }
 }
 
