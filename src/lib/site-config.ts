@@ -12,12 +12,9 @@ export type FooterSection = {
 };
 
 export type SiteConfigData = {
-    faviconUrl: string;
     footerSections: FooterSection[];
     copyrightText: string;
 };
-
-const DEFAULT_FAVICON = '/favicon.png';
 
 const DEFAULT_FOOTER_SECTIONS: FooterSection[] = [
     {
@@ -51,7 +48,6 @@ export async function getSiteConfig(): Promise<SiteConfigData> {
         const config = await prisma.siteConfig.findFirst();
         if (config) {
             return {
-                faviconUrl: config.faviconUrl || DEFAULT_FAVICON,
                 footerSections: (config.footerSections as FooterSection[]) || DEFAULT_FOOTER_SECTIONS,
                 copyrightText: config.copyrightText || DEFAULT_COPYRIGHT,
             };
@@ -61,7 +57,6 @@ export async function getSiteConfig(): Promise<SiteConfigData> {
     }
 
     return {
-        faviconUrl: DEFAULT_FAVICON,
         footerSections: DEFAULT_FOOTER_SECTIONS,
         copyrightText: DEFAULT_COPYRIGHT,
     };
