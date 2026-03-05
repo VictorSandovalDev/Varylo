@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export type FooterLink = {
     label: string;
@@ -45,6 +46,7 @@ const DEFAULT_FOOTER_SECTIONS: FooterSection[] = [
 const DEFAULT_COPYRIGHT = 'Varylo. Todos los derechos reservados.';
 
 export async function getSiteConfig(): Promise<SiteConfigData> {
+    noStore();
     try {
         const config = await prisma.siteConfig.findFirst();
         if (config) {
