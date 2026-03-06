@@ -20,9 +20,10 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from '@/components/ui/button';
-import { Save, ArrowLeft, AlertCircle, CheckCircle2, Plus, MessageCircle, User, Bot, XCircle } from 'lucide-react';
+import { Save, ArrowLeft, AlertCircle, CheckCircle2, Plus, MessageCircle, User, Bot, XCircle, LayoutGrid } from 'lucide-react';
 import { updateChatbotFlow } from './actions';
 import Link from 'next/link';
+import Dagre from '@dagrejs/dagre';
 import type { ChatbotFlow, ChatbotFlowNode, ChatbotFlowOption } from '@/types/chatbot';
 import { ChatbotNode } from './chatbot-node';
 import { NodeEditPanel } from './node-edit-panel';
@@ -160,7 +161,7 @@ function FlowCanvas({
     initialFlow: ChatbotFlow;
     backHref: string;
 }) {
-    const { screenToFlowPosition } = useReactFlow();
+    const { screenToFlowPosition, fitView } = useReactFlow();
     const canvasRef = useRef<HTMLDivElement>(null);
     const [isPending, startTransition] = useTransition();
     const [saveResult, setSaveResult] = useState<string | null>(null);
@@ -293,6 +294,28 @@ function FlowCanvas({
         setTimeout(() => setSelectedNodeId(id), 50);
     }, [screenToFlowPosition]);
 
+    const autoLayout = useCallback(() => {
+        const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+        g.setGraph({ rankdir: 'TB', nodesep: 80, ranksep: 120 });
+
+        nodes.forEach(node => {
+            g.setNode(node.id, { width: 280, height: 200 });
+        });
+        edges.forEach(edge => {
+            g.setEdge(edge.source, edge.target);
+        });
+
+        Dagre.layout(g);
+
+        const newPositions: Record<string, { x: number; y: number }> = {};
+        nodes.forEach(node => {
+            const pos = g.node(node.id);
+            newPositions[node.id] = { x: pos.x - 140, y: pos.y - 100 };
+        });
+        setNodePositions(newPositions);
+        setTimeout(() => fitView({ padding: 0.3, duration: 300 }), 50);
+    }, [nodes, edges, fitView]);
+
     const handleSave = () => {
         setSaveResult(null);
         const currentFlow = reactFlowToChatbotFlow(nodes, initialFlow.startNodeId);
@@ -361,28 +384,34 @@ function FlowCanvas({
                             className="!bg-muted/50 !border-border"
                         />
                         <Panel position="bottom-center">
-                            <div className="relative">
-                                {showAddMenu && (
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border rounded-xl shadow-xl p-2 w-[220px] space-y-1">
-                                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 py-1">Tipo de paso</p>
-                                        {NODE_TEMPLATES.map((tpl, i) => {
-                                            const Icon = tpl.icon;
-                                            return (
-                                                <button
-                                                    key={tpl.type}
-                                                    onClick={() => addNode(i)}
-                                                    className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors text-left"
-                                                >
-                                                    <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                                                    <span>{tpl.label}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                                <Button onClick={() => setShowAddMenu(prev => !prev)} className="shadow-lg">
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Agregar paso
+                            <div className="flex items-center gap-2">
+                                <div className="relative">
+                                    {showAddMenu && (
+                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-background border rounded-xl shadow-xl p-2 w-[220px] space-y-1">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium px-2 py-1">Tipo de paso</p>
+                                            {NODE_TEMPLATES.map((tpl, i) => {
+                                                const Icon = tpl.icon;
+                                                return (
+                                                    <button
+                                                        key={tpl.type}
+                                                        onClick={() => addNode(i)}
+                                                        className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm hover:bg-muted transition-colors text-left"
+                                                    >
+                                                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                                                        <span>{tpl.label}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <Button onClick={() => setShowAddMenu(prev => !prev)} className="shadow-lg">
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Agregar paso
+                                    </Button>
+                                </div>
+                                <Button onClick={autoLayout} variant="outline" className="shadow-lg bg-background">
+                                    <LayoutGrid className="mr-2 h-4 w-4" />
+                                    Auto-ordenar
                                 </Button>
                             </div>
                         </Panel>
