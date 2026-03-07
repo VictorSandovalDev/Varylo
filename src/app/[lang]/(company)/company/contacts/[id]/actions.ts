@@ -32,7 +32,7 @@ export async function getContact(id: string) {
     const capturedData = await prisma.capturedData.findMany({
         where: { contactId: id, companyId: session.user.companyId },
         orderBy: { createdAt: 'asc' },
-    });
+    }).catch(() => []);
 
     return { ...contact, capturedData };
 }
