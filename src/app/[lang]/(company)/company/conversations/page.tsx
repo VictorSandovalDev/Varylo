@@ -168,6 +168,9 @@ export default async function ConversationsPage({
                             orderBy: { createdAt: 'desc' },
                             take: 1,
                         },
+                        capturedData: {
+                            orderBy: { createdAt: 'asc' },
+                        },
                     }
                 });
                 if (selectedConversation) {

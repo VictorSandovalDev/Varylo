@@ -21,6 +21,7 @@ import {
     Save,
     Pencil,
     X,
+    FileInput,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { updateContact } from './actions';
@@ -41,6 +42,13 @@ interface Contact {
         status: string;
         lastMessageAt: string;
         channel: { type: string };
+    }[];
+    capturedData?: {
+        id: string;
+        fieldName: string;
+        fieldValue: string;
+        source: string;
+        createdAt: string;
     }[];
 }
 
@@ -312,6 +320,28 @@ export function ContactDetailClient({ contact, lang }: { contact: Contact; lang:
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Captured Data */}
+                    {contact.capturedData && contact.capturedData.length > 0 && (
+                        <Card>
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-base flex items-center gap-2">
+                                    <FileInput className="h-4 w-4" />
+                                    Datos capturados
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {contact.capturedData.map((item) => (
+                                        <div key={item.id} className="p-3 bg-muted/50 rounded-lg border">
+                                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-0.5">{item.fieldName}</p>
+                                            <p className="text-sm font-medium text-gray-800">{item.fieldValue}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Conversations */}
                     {contact.conversations?.length > 0 && (

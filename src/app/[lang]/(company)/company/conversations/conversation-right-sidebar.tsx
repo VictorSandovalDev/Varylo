@@ -6,7 +6,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ContactAvatar } from "@/components/contact-avatar";
 import { Button } from "@/components/ui/button";
-import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2, Bot, RotateCcw } from "lucide-react";
+import { MessageSquare, Pin, Trash2, StickyNote, Phone, Building, RefreshCw, Loader2, Sparkles, TriangleAlert, CheckCircle2, Bot, RotateCcw, FileInput } from "lucide-react";
 import { AgentSelector } from "./agent-selector";
 import { TagSelector } from "./tag-selector";
 import { cn } from "@/lib/utils";
@@ -338,6 +338,27 @@ export function ConversationRightSidebar({ conversation, companyTags, companyAge
                                 </div>
                             </AccordionContent>
                         </AccordionItem>
+
+                        {conversation.capturedData && conversation.capturedData.length > 0 && (
+                            <AccordionItem value="captured" className="border-b px-0">
+                                <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted text-sm font-semibold text-gray-800">
+                                    <span className="flex items-center gap-1.5">
+                                        <FileInput className="h-3.5 w-3.5" />
+                                        Datos capturados
+                                    </span>
+                                </AccordionTrigger>
+                                <AccordionContent className="px-4 pb-4 pt-1">
+                                    <div className="space-y-2">
+                                        {conversation.capturedData.map((item: any) => (
+                                            <div key={item.id} className="flex flex-col gap-0.5 p-2 bg-muted/50 rounded-md border text-sm">
+                                                <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{item.fieldName}</span>
+                                                <span className="text-gray-800 font-medium">{item.fieldValue}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        )}
 
                         <AccordionItem value="info" className="border-b px-0">
                             <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-muted text-sm font-semibold text-gray-800">

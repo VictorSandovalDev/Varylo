@@ -8,7 +8,7 @@ export async function getContact(id: string) {
     const session = await auth();
     if (!session?.user?.companyId) return null;
 
-    return prisma.contact.findFirst({
+    const contact = await prisma.contact.findFirst({
         where: {
             id,
             companyId: session.user.companyId,
@@ -26,6 +26,15 @@ export async function getContact(id: string) {
             },
         },
     });
+
+    if (!contact) return null;
+
+    const capturedData = await prisma.capturedData.findMany({
+        where: { contactId: id, companyId: session.user.companyId },
+        orderBy: { createdAt: 'asc' },
+    });
+
+    return { ...contact, capturedData };
 }
 
 export async function updateContact(

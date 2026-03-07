@@ -138,21 +138,33 @@ async function processNode(
             }
         }
 
-        // Save captured data
+        // Save captured data and update contact if applicable
         const conversation = await prisma.conversation.findUnique({
             where: { id: conversationId },
             select: { contactId: true },
         });
+        const trimmedValue = userMessage.trim();
         await prisma.capturedData.create({
             data: {
                 companyId,
                 conversationId,
                 contactId: conversation?.contactId || null,
                 fieldName: capture.fieldName,
-                fieldValue: userMessage.trim(),
+                fieldValue: trimmedValue,
                 source: 'chatbot',
             },
         });
+
+        // Auto-update contact with known fields
+        if (conversation?.contactId) {
+            const contactUpdate = mapFieldToContact(capture.fieldName, trimmedValue);
+            if (contactUpdate) {
+                await prisma.contact.update({
+                    where: { id: conversation.contactId },
+                    data: contactUpdate,
+                });
+            }
+        }
 
         // Navigate to next node
         const nextNode = flow.nodes[capture.nextNodeId];
@@ -296,6 +308,30 @@ function formatNodeMessage(message: string, options?: { label: string }[], dataC
 
 function formatOptions(options: { label: string }[]): string {
     return options.map((opt, i) => `${i + 1}. ${opt.label}`).join('\n');
+}
+
+function mapFieldToContact(fieldName: string, value: string): Record<string, string> | null {
+    const key = fieldName.toLowerCase().replace(/\s+/g, '_');
+    const mapping: Record<string, string> = {
+        nombre: 'name',
+        name: 'name',
+        nombre_completo: 'name',
+        email: 'email',
+        correo: 'email',
+        correo_electronico: 'email',
+        celular: 'phone',
+        telefono: 'phone',
+        phone: 'phone',
+        empresa: 'companyName',
+        company: 'companyName',
+        ciudad: 'city',
+        city: 'city',
+        pais: 'country',
+        country: 'country',
+    };
+    const contactField = mapping[key];
+    if (!contactField) return null;
+    return { [contactField]: value };
 }
 
 function validateCapture(value: string, type: string): boolean {
