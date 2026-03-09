@@ -6,7 +6,8 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
 import { markWhatsAppMessageAsRead } from '@/lib/channel-sender';
 import { rateLimitResponse } from '@/lib/rate-limit';
-import { extractMediaFromMessage } from '@/lib/whatsapp-media';
+import { extractMediaFromMessage, getWhatsAppMediaUrl, downloadWhatsAppMedia } from '@/lib/whatsapp-media';
+import { uploadToStorage, buildMediaPath } from '@/lib/storage';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -143,17 +144,38 @@ export async function POST(req: NextRequest) {
                     markWhatsAppMessageAsRead(config.phoneNumberId, config.accessToken, messageId);
                 }
 
-                // Store media reference (download happens on demand via /api/media)
+                // Download media from Meta and upload to Supabase Storage
                 let mediaUrl: string | undefined;
                 let mediaType: string | undefined;
                 let mimeType: string | undefined;
                 let fileName: string | undefined;
 
-                if (mediaInfo) {
-                    mediaUrl = `wa:${mediaInfo.mediaId}`;
+                if (mediaInfo && config?.accessToken) {
                     mediaType = mediaInfo.mediaType;
                     mimeType = mediaInfo.mimeType;
                     fileName = mediaInfo.fileName;
+
+                    const metaMedia = await getWhatsAppMediaUrl(mediaInfo.mediaId, config.accessToken);
+                    if (metaMedia) {
+                        const mime = metaMedia.mimeType || mediaInfo.mimeType || 'application/octet-stream';
+                        const ext = mime.split('/')[1]?.split(';')[0] || 'bin';
+                        const name = mediaInfo.fileName || `${mediaInfo.mediaType}.${ext}`;
+                        const path = buildMediaPath(companyId, name);
+
+                        // Download binary from Meta CDN
+                        const mediaRes = await fetch(metaMedia.url, {
+                            headers: { Authorization: `Bearer ${config.accessToken}` },
+                        });
+
+                        if (mediaRes.ok) {
+                            const buffer = Buffer.from(await mediaRes.arrayBuffer());
+                            const storageUrl = await uploadToStorage(buffer, path, mime);
+                            if (storageUrl) {
+                                mediaUrl = storageUrl;
+                                mimeType = mime;
+                            }
+                        }
+                    }
                 }
 
                 // Use caption as content for media messages, or a placeholder

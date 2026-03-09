@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
 import { sendInstagramMessageWithToken } from '@/lib/instagram';
+import { uploadDataUrlToStorage, buildMediaPath } from '@/lib/storage';
 
 interface SendMessageOptions {
     conversationId: string;
@@ -220,6 +221,16 @@ export async function sendChannelMessage({
         }
     }
 
+    // Upload data URL to Supabase Storage before saving
+    let storedMediaUrl = mediaUrl;
+    if (mediaUrl?.startsWith('data:') && mimeType) {
+        const ext = mimeType.split('/')[1]?.split(';')[0] || 'bin';
+        const name = fileName || `outbound.${ext}`;
+        const path = buildMediaPath(companyId, name);
+        const uploaded = await uploadDataUrlToStorage(mediaUrl, path, mimeType);
+        if (uploaded) storedMediaUrl = uploaded;
+    }
+
     // Save the message in DB
     await prisma.message.create({
         data: {
@@ -229,7 +240,7 @@ export async function sendChannelMessage({
             from: fromName || 'AI',
             to: contact.phone,
             content,
-            mediaUrl,
+            mediaUrl: storedMediaUrl,
             mediaType,
             mimeType,
             fileName,
