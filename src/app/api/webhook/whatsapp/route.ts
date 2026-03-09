@@ -6,6 +6,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
 import { markWhatsAppMessageAsRead } from '@/lib/channel-sender';
 import { rateLimitResponse } from '@/lib/rate-limit';
+import { extractMediaFromMessage } from '@/lib/whatsapp-media';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -107,11 +108,17 @@ export async function POST(req: NextRequest) {
         if (value?.messages) {
             const message = value.messages[0];
             const from = message.from; // Phone number
-            const text = message.text?.body;
             const messageId = message.id;
             const phoneNumberId = value.metadata?.phone_number_id;
 
-            if (!text?.trim() || !phoneNumberId) return NextResponse.json({ status: 'ignored' });
+            if (!phoneNumberId) return NextResponse.json({ status: 'ignored' });
+
+            // Extract text and/or media from the message
+            const text = message.text?.body || '';
+            const mediaInfo = extractMediaFromMessage(message);
+
+            // Must have either text or media
+            if (!text.trim() && !mediaInfo) return NextResponse.json({ status: 'ignored' });
 
             // Validate message length
             if (text.length > MAX_MESSAGE_LENGTH) return NextResponse.json({ status: 'ignored' });
@@ -136,6 +143,24 @@ export async function POST(req: NextRequest) {
                     markWhatsAppMessageAsRead(config.phoneNumberId, config.accessToken, messageId);
                 }
 
+                // Store media reference (download happens on demand via /api/media)
+                let mediaUrl: string | undefined;
+                let mediaType: string | undefined;
+                let mimeType: string | undefined;
+                let fileName: string | undefined;
+
+                if (mediaInfo) {
+                    mediaUrl = `wa:${mediaInfo.mediaId}`;
+                    mediaType = mediaInfo.mediaType;
+                    mimeType = mediaInfo.mimeType;
+                    fileName = mediaInfo.fileName;
+                }
+
+                // Use caption as content for media messages, or a placeholder
+                const content = text.trim()
+                    || mediaInfo?.caption
+                    || (mediaType ? `[${mediaType}]` : '');
+
                 // Find or create Contact
                 let contact = await prisma.contact.findFirst({
                     where: { companyId, phone: from }
@@ -158,7 +183,6 @@ export async function POST(req: NextRequest) {
                 }
 
                 // Find or create Conversation
-                // Should find open conversation
                 let conversation = await prisma.conversation.findFirst({
                     where: {
                         companyId,
@@ -168,7 +192,6 @@ export async function POST(req: NextRequest) {
                 });
 
                 if (!conversation) {
-                    // Check if there's an active AI agent or chatbot for this channel
                     const activeAiAgent = await prisma.aiAgent.findFirst({
                         where: {
                             companyId,
@@ -188,7 +211,6 @@ export async function POST(req: NextRequest) {
                             },
                         });
                     } else {
-                        // Assign to agent with fewest open conversations, or COMPANY_ADMIN
                         const selectedAgentId = await findLeastBusyAgent(companyId);
 
                         conversation = await prisma.conversation.create({
@@ -205,7 +227,7 @@ export async function POST(req: NextRequest) {
                     }
                 }
 
-                // Save Message
+                // Save Message with media fields
                 await prisma.message.create({
                     data: {
                         companyId,
@@ -213,8 +235,12 @@ export async function POST(req: NextRequest) {
                         direction: MessageDirection.INBOUND,
                         from: from,
                         to: phoneNumberId,
-                        content: text,
+                        content,
                         providerMessageId: messageId,
+                        mediaUrl,
+                        mediaType,
+                        mimeType,
+                        fileName,
                     }
                 });
 
@@ -224,8 +250,10 @@ export async function POST(req: NextRequest) {
                     data: { lastMessageAt: new Date(), lastInboundAt: new Date() }
                 });
 
-                // Automation pipeline with channel priority
-                runAutomationPipeline(conversation.id, text, channel.automationPriority);
+                // Automation pipeline — pass text content (media messages may not have text)
+                if (content && content !== `[${mediaType}]`) {
+                    runAutomationPipeline(conversation.id, content, channel.automationPriority);
+                }
             }
         }
 
