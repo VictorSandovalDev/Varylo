@@ -83,6 +83,8 @@ interface ProductSummary {
     currency: string;
     available: boolean;
     image?: string;
+    type?: string;
+    variationCount?: number;
 }
 
 interface ProductDetail {
@@ -100,6 +102,10 @@ interface ProductDetail {
         available: boolean;
         inventory_quantity: number;
         sku?: string;
+    }[];
+    attributes?: {
+        name: string;
+        options: string[];
     }[];
     vendor?: string;
     product_type?: string;
@@ -248,13 +254,19 @@ async function wooSearchProducts(config: EcommerceConfig, query: string): Promis
 
     return (data || []).map((p: Record<string, unknown>) => {
         const images = p.images as Record<string, unknown>[] || [];
+        const variations = (p.variations as number[]) || [];
+        const productType = p.type as string || 'simple';
+        // Variable products may have price as range or empty — use price or regular_price
+        const price = (p.price as string) || (p.regular_price as string) || '0';
         return {
             id: String(p.id),
             title: p.name as string,
-            price: (p.price as string) || '0',
+            price,
             currency: 'COP',
-            available: p.stock_status === 'instock',
+            available: p.stock_status === 'instock' || (productType === 'variable' && variations.length > 0),
             image: images[0]?.src as string | undefined,
+            type: productType,
+            variationCount: variations.length,
         };
     });
 }
@@ -263,6 +275,7 @@ async function wooGetProductDetails(config: EcommerceConfig, productId: string):
     const p = await wooFetch(config, `products/${productId}`);
     const images = (p.images || []) as Record<string, unknown>[];
     const variations = (p.variations || []) as number[];
+    const productAttributes = (p.attributes || []) as Record<string, unknown>[];
 
     let variants: ProductDetail['variants'] = [];
 
@@ -270,11 +283,11 @@ async function wooGetProductDetails(config: EcommerceConfig, productId: string):
         const variationsData = await wooFetch(config, `products/${productId}/variations?per_page=100`);
         variants = (variationsData || []).map((v: Record<string, unknown>) => {
             const attributes = (v.attributes as Record<string, unknown>[]) || [];
-            const variantTitle = attributes.map((a) => a.option).join(' / ');
+            const variantTitle = attributes.map((a) => `${a.name}: ${a.option}`).join(' / ');
             return {
                 id: String(v.id),
                 title: variantTitle || 'Default',
-                price: (v.price as string) || '0',
+                price: (v.price as string) || (v.regular_price as string) || '0',
                 available: v.stock_status === 'instock',
                 inventory_quantity: (v.stock_quantity as number) || 0,
                 sku: v.sku as string | undefined,
@@ -285,7 +298,7 @@ async function wooGetProductDetails(config: EcommerceConfig, productId: string):
             {
                 id: String(p.id),
                 title: 'Default',
-                price: (p.price as string) || '0',
+                price: (p.price as string) || (p.regular_price as string) || '0',
                 available: p.stock_status === 'instock',
                 inventory_quantity: (p.stock_quantity as number) || 0,
                 sku: p.sku as string | undefined,
@@ -293,15 +306,22 @@ async function wooGetProductDetails(config: EcommerceConfig, productId: string):
         ];
     }
 
+    // Parse product-level attributes (e.g., Color, Talla) with their options
+    const attributes = productAttributes.map((a) => ({
+        name: a.name as string,
+        options: (a.options as string[]) || [],
+    }));
+
     return {
         id: String(p.id),
         title: p.name as string,
         description: stripHtml(p.description || p.short_description || ''),
-        price: (p.price as string) || '0',
+        price: (p.price as string) || (p.regular_price as string) || '0',
         currency: 'COP',
-        available: p.stock_status === 'instock',
+        available: p.stock_status === 'instock' || (variations.length > 0 && variants.some(v => v.available)),
         images: images.map((img) => img.src as string),
         variants,
+        attributes: attributes.length > 0 ? attributes : undefined,
         vendor: undefined,
         product_type: (p.categories as Record<string, unknown>[])?.[0]?.name as string | undefined,
         tags: ((p.tags as Record<string, unknown>[]) || []).map((t) => t.name as string),
@@ -318,7 +338,7 @@ async function wooCheckInventory(config: EcommerceConfig, productId: string): Pr
         const variationsData = await wooFetch(config, `products/${productId}/variations?per_page=100`);
         variants = (variationsData || []).map((v: Record<string, unknown>) => {
             const attributes = (v.attributes as Record<string, unknown>[]) || [];
-            const variantTitle = attributes.map((a) => a.option).join(' / ');
+            const variantTitle = attributes.map((a) => `${a.name}: ${a.option}`).join(' / ');
             return {
                 id: String(v.id),
                 title: variantTitle || 'Default',
@@ -380,8 +400,9 @@ export async function executeEcommerceTool(
                         title: p.title,
                         price: `$${p.price} ${p.currency}`,
                         available: p.available ? 'Disponible' : 'Agotado',
+                        ...(p.type === 'variable' ? { type: 'Variable', variations: p.variationCount } : {}),
                     })),
-                    message: `${products.length} producto(s) encontrado(s).`,
+                    message: `${products.length} producto(s) encontrado(s).${products.some(p => p.type === 'variable') ? ' Usa get_product_details para ver las variantes (tallas, colores, etc.) de los productos variables.' : ''}`,
                 });
             }
 
@@ -403,6 +424,9 @@ export async function executeEcommerceTool(
                             stock: v.inventory_quantity,
                             available: v.available ? 'Disponible' : 'Agotado',
                         })),
+                        ...(product.attributes && product.attributes.length > 0
+                            ? { attributes: product.attributes.map(a => ({ name: a.name, options: a.options })) }
+                            : {}),
                         type: product.product_type || 'N/A',
                         tags: product.tags || [],
                     },
