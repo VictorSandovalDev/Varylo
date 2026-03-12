@@ -345,12 +345,12 @@ function buildSystemPrompt(systemPrompt: string, contextInfo: string | null, cal
 
     if (ecommerceEnabled) {
         prompt += '\n\nTienes acceso a la tienda online de la empresa. Puedes buscar productos, consultar detalles, verificar inventario, consultar métodos de pago y crear pedidos. Cuando un cliente pregunte por productos:';
-        prompt += '\n1. Usa search_products para buscar productos por nombre o categoría.';
-        prompt += '\n2. Usa get_product_details para obtener información detallada de un producto específico (variantes, precios, tallas, colores).';
+        prompt += '\n1. Usa search_products para buscar productos por nombre o categoría. Esto te da el ID NUMÉRICO de cada producto (ej: "1234").';
+        prompt += '\n2. Usa get_product_details con el ID numérico para obtener variantes con sus IDs numéricos, precios, tallas, colores.';
         prompt += '\n3. Usa check_inventory para verificar disponibilidad y stock.';
         prompt += '\n4. Usa get_payment_methods para consultar los medios de pago disponibles cuando el cliente pregunte cómo pagar.';
-        prompt += '\n5. Cuando el cliente quiera comprar, usa create_order para crear el pedido. Necesitas: nombre del cliente, los productos (product_id y quantity), y si es un producto variable necesitas el variation_id (obtenerlo de get_product_details). El email y teléfono son opcionales pero recomendados.';
-        prompt += '\nDespués de crear el pedido, envía el link de pago al cliente para que complete la compra.';
+        prompt += '\n5. Cuando el cliente quiera comprar, usa create_order. IMPORTANTE: product_id y variation_id deben ser IDs NUMÉRICOS (ej: "1234", "5678"), NUNCA nombres de productos o variantes. Primero busca con search_products y get_product_details para obtener los IDs correctos.';
+        prompt += '\nDespués de crear el pedido, envía el link de pago al cliente para que complete su compra.';
         prompt += '\nPresenta la información de forma clara y amigable. Incluye precios y disponibilidad. Si un producto no está disponible, sugiere alternativas buscando productos similares.';
     }
 

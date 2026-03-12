@@ -35,7 +35,7 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                 properties: {
                     product_id: {
                         type: 'string',
-                        description: 'ID del producto obtenido de search_products',
+                        description: 'ID numérico del producto obtenido de search_products (ej: "1234", NO nombres)',
                     },
                 },
                 required: ['product_id'],
@@ -53,7 +53,7 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                 properties: {
                     product_id: {
                         type: 'string',
-                        description: 'ID del producto',
+                        description: 'ID numérico del producto (ej: "1234")',
                     },
                     variant_name: {
                         type: 'string',
@@ -127,11 +127,11 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                             properties: {
                                 product_id: {
                                     type: 'string',
-                                    description: 'ID del producto',
+                                    description: 'ID numérico del producto (ej: "1234"). DEBE ser el número obtenido de search_products, NO un nombre.',
                                 },
                                 variation_id: {
                                     type: 'string',
-                                    description: 'ID de la variante (obligatorio para productos variables, obtenerlo de get_product_details)',
+                                    description: 'ID numérico de la variante (ej: "5678"). OBLIGATORIO para productos variables. Obtenerlo del campo "id" en las variantes de get_product_details.',
                                 },
                                 quantity: {
                                     type: 'number',
@@ -767,6 +767,20 @@ export async function executeEcommerceTool(
 
                 if (orderItems.length === 0) {
                     return JSON.stringify({ error: 'Se necesita al menos un producto para crear el pedido.' });
+                }
+
+                // Validate that IDs are numeric (WooCommerce requires integer IDs)
+                for (const item of orderItems) {
+                    if (!item.product_id || isNaN(Number(item.product_id))) {
+                        return JSON.stringify({
+                            error: `El product_id "${item.product_id}" no es válido. Debes usar el ID numérico del producto obtenido de search_products (ej: "1234"), NO el nombre del producto. Primero usa search_products para obtener el ID numérico.`,
+                        });
+                    }
+                    if (item.variation_id && isNaN(Number(item.variation_id))) {
+                        return JSON.stringify({
+                            error: `El variation_id "${item.variation_id}" no es válido. Debes usar el ID numérico de la variante obtenido de get_product_details (ej: "5678"), NO el nombre de la variante. Primero usa get_product_details para obtener el ID numérico de la variante.`,
+                        });
+                    }
                 }
 
                 const customer: OrderCustomer = {

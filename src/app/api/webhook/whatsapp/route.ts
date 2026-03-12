@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
@@ -8,6 +9,8 @@ import { markWhatsAppMessageAsRead } from '@/lib/channel-sender';
 import { rateLimitResponse } from '@/lib/rate-limit';
 import { extractMediaFromMessage, getWhatsAppMediaUrl, downloadWhatsAppMedia } from '@/lib/whatsapp-media';
 import { uploadToStorage, buildMediaPath } from '@/lib/storage';
+
+export const maxDuration = 60;
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -272,9 +275,9 @@ export async function POST(req: NextRequest) {
                     data: { lastMessageAt: new Date(), lastInboundAt: new Date() }
                 });
 
-                // Automation pipeline — pass text content (media messages may not have text)
+                // Automation pipeline — run after response so Vercel doesn't kill it
                 if (content && content !== `[${mediaType}]`) {
-                    runAutomationPipeline(conversation.id, content, channel.automationPriority);
+                    after(runAutomationPipeline(conversation.id, content, channel.automationPriority));
                 }
             }
         }

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ChannelType, MessageDirection } from '@prisma/client';
 import { runAutomationPipeline } from '@/jobs/pipeline';
 import { createHmac, timingSafeEqual } from 'crypto';
 import { findLeastBusyAgent } from '@/lib/assign-agent';
 import { rateLimitResponse } from '@/lib/rate-limit';
+
+export const maxDuration = 60;
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -219,8 +222,8 @@ export async function POST(req: NextRequest) {
                     data: { lastMessageAt: new Date(), lastInboundAt: new Date() }
                 });
 
-                // Automation pipeline with channel priority
-                runAutomationPipeline(conversation.id, text, channel.automationPriority);
+                // Automation pipeline — run after response so Vercel doesn't kill it
+                after(runAutomationPipeline(conversation.id, text, channel.automationPriority));
             }
         }
 

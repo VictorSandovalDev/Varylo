@@ -6,6 +6,7 @@ import { findLeastBusyAgent } from '@/lib/assign-agent';
 import { rateLimitResponse } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 const MAX_MESSAGE_LENGTH = 4096;
 const MAX_NAME_LENGTH = 100;
