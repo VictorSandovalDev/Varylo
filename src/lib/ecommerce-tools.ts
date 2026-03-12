@@ -83,7 +83,7 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
         function: {
             name: 'create_order',
             description:
-                'Crea un pedido/orden en la tienda online y devuelve el link de pago para que el cliente complete la compra. Debes tener al menos el nombre del cliente y un producto. Si el producto es variable, necesitas el ID de la variante.',
+                'Crea un pedido/orden en la tienda online y devuelve el link de pago para que el cliente complete la compra. Necesitas nombre, email, teléfono, dirección de envío y los productos. Si el producto es variable, necesitas el ID de la variante.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -93,11 +93,31 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                     },
                     customer_email: {
                         type: 'string',
-                        description: 'Email del cliente (opcional, para enviarle confirmación)',
+                        description: 'Email del cliente',
                     },
                     customer_phone: {
                         type: 'string',
-                        description: 'Teléfono del cliente (opcional)',
+                        description: 'Teléfono del cliente',
+                    },
+                    customer_id_number: {
+                        type: 'string',
+                        description: 'Cédula o documento de identidad del cliente (opcional)',
+                    },
+                    shipping_address: {
+                        type: 'string',
+                        description: 'Dirección de envío (calle, número, barrio, conjunto, apto, etc.)',
+                    },
+                    shipping_city: {
+                        type: 'string',
+                        description: 'Ciudad de envío',
+                    },
+                    shipping_state: {
+                        type: 'string',
+                        description: 'Departamento o estado de envío',
+                    },
+                    order_notes: {
+                        type: 'string',
+                        description: 'Notas adicionales del cliente sobre el pedido (ej: dedicatoria, instrucciones especiales)',
                     },
                     items: {
                         type: 'array',
@@ -122,7 +142,7 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                         },
                     },
                 },
-                required: ['customer_name', 'items'],
+                required: ['customer_name', 'customer_phone', 'shipping_address', 'shipping_city', 'items'],
             },
         },
     },
@@ -466,6 +486,17 @@ interface OrderItem {
     quantity?: number;
 }
 
+interface OrderCustomer {
+    name: string;
+    email?: string;
+    phone?: string;
+    id_number?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    notes?: string;
+}
+
 interface OrderResult {
     order_id: string;
     order_number: string;
@@ -477,12 +508,10 @@ interface OrderResult {
 
 async function wooCreateOrder(
     config: EcommerceConfig,
-    customerName: string,
-    customerEmail: string | undefined,
-    customerPhone: string | undefined,
+    customer: OrderCustomer,
     items: OrderItem[],
 ): Promise<OrderResult> {
-    const nameParts = customerName.trim().split(' ');
+    const nameParts = customer.name.trim().split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
 
@@ -492,18 +521,26 @@ async function wooCreateOrder(
         quantity: Number(item.quantity) || 1,
     }));
 
-    console.log('[EcommerceTool] Creating WooCommerce order:', JSON.stringify({ customerName, lineItems }));
+    console.log('[EcommerceTool] Creating WooCommerce order:', JSON.stringify({ customer: customer.name, lineItems }));
+
+    const billingShipping = {
+        first_name: firstName,
+        last_name: lastName,
+        email: customer.email || `${firstName.toLowerCase().replace(/\s+/g, '')}@pedido.temp`,
+        phone: customer.phone || '',
+        address_1: customer.address || '',
+        city: customer.city || '',
+        state: customer.state || '',
+        country: 'CO',
+    };
 
     const orderData: Record<string, unknown> = {
         status: 'pending',
-        billing: {
-            first_name: firstName,
-            last_name: lastName,
-            email: customerEmail || `${firstName.toLowerCase().replace(/\s+/g, '')}@pedido.temp`,
-            ...(customerPhone ? { phone: customerPhone } : {}),
-        },
+        billing: billingShipping,
+        shipping: billingShipping,
         line_items: lineItems,
         set_paid: false,
+        ...(customer.notes ? { customer_note: customer.notes } : {}),
     };
 
     const order = await wooFetch(config, 'orders', { method: 'POST', body: orderData });
@@ -524,14 +561,16 @@ async function wooCreateOrder(
 
 async function shopifyCreateOrder(
     config: EcommerceConfig,
-    customerName: string,
-    customerEmail: string | undefined,
-    _customerPhone: string | undefined,
+    customer: OrderCustomer,
     items: OrderItem[],
 ): Promise<OrderResult> {
+    const nameParts = customer.name.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
     const lineItems = items.map((item) => ({
-        variant_id: parseInt(item.variation_id || item.product_id, 10),
-        quantity: item.quantity || 1,
+        variant_id: Number(item.variation_id || item.product_id),
+        quantity: Number(item.quantity) || 1,
     }));
 
     // For Shopify we need variant IDs. If only product_id given, get the first variant
@@ -551,8 +590,18 @@ async function shopifyCreateOrder(
         body: {
             draft_order: {
                 line_items: lineItems,
-                ...(customerEmail ? { email: customerEmail } : {}),
-                ...(customerName ? { customer: { first_name: customerName } } : {}),
+                ...(customer.email ? { email: customer.email } : {}),
+                customer: { first_name: firstName, last_name: lastName },
+                shipping_address: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    address1: customer.address || '',
+                    city: customer.city || '',
+                    province: customer.state || '',
+                    country: 'CO',
+                    phone: customer.phone || '',
+                },
+                ...(customer.notes ? { note: customer.notes } : {}),
                 use_customer_default_address: false,
             },
         },
@@ -704,9 +753,20 @@ export async function executeEcommerceTool(
                     return JSON.stringify({ error: 'Se necesita al menos un producto para crear el pedido.' });
                 }
 
+                const customer: OrderCustomer = {
+                    name: str('customer_name'),
+                    email: str('customer_email') || undefined,
+                    phone: str('customer_phone') || undefined,
+                    id_number: str('customer_id_number') || undefined,
+                    address: str('shipping_address') || undefined,
+                    city: str('shipping_city') || undefined,
+                    state: str('shipping_state') || undefined,
+                    notes: str('order_notes') || undefined,
+                };
+
                 const result = isShopify
-                    ? await shopifyCreateOrder(config, str('customer_name'), str('customer_email') || undefined, str('customer_phone') || undefined, orderItems)
-                    : await wooCreateOrder(config, str('customer_name'), str('customer_email') || undefined, str('customer_phone') || undefined, orderItems);
+                    ? await shopifyCreateOrder(config, customer, orderItems)
+                    : await wooCreateOrder(config, customer, orderItems);
 
                 return JSON.stringify({
                     order: {
