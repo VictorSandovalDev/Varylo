@@ -12,7 +12,7 @@ interface AiAgentResult {
     transferredToHuman?: boolean;
 }
 
-const MAX_TOOL_ITERATIONS = 5;
+const MAX_TOOL_ITERATIONS = 8;
 
 export async function handleAiAgentResponse(conversationId: string, inboundMessage: string): Promise<AiAgentResult> {
     try {
@@ -187,6 +187,8 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
         let totalCompletionTokens = 0;
         let totalTokens = 0;
         let replyContent: string | null = null;
+        // Track which ecommerce tools have been called in this turn
+        const calledTools = new Set<string>();
 
         for (let i = 0; i < MAX_TOOL_ITERATIONS; i++) {
             const response = await openai.chat.completions.create({
@@ -236,11 +238,19 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
                             result = JSON.stringify({ success: false, message: 'Error al guardar el dato.' });
                         }
                     } else if (['search_products', 'get_product_details', 'check_inventory', 'get_payment_methods', 'create_order'].includes(toolCall.function.name)) {
-                        result = await executeEcommerceTool(
-                            toolCall.function.name,
-                            args,
-                            conversation.companyId,
-                        );
+                        // Block create_order if search_products wasn't called first
+                        if (toolCall.function.name === 'create_order' && !calledTools.has('search_products')) {
+                            result = JSON.stringify({
+                                error: 'No puedes crear un pedido sin antes buscar los productos. DEBES llamar search_products primero para obtener los IDs reales de los productos, y luego get_product_details para obtener los IDs de las variantes. Los IDs son números que devuelve la API, NO los inventes.',
+                            });
+                        } else {
+                            result = await executeEcommerceTool(
+                                toolCall.function.name,
+                                args,
+                                conversation.companyId,
+                            );
+                        }
+                        calledTools.add(toolCall.function.name);
                     } else {
                         result = await executeCalendarTool(
                             toolCall.function.name,
