@@ -743,11 +743,27 @@ export async function executeEcommerceTool(
             case 'create_order': {
                 // args.items comes already parsed from OpenAI function calling
                 const rawItems = args.items;
-                const orderItems: OrderItem[] = Array.isArray(rawItems)
-                    ? rawItems as unknown as OrderItem[]
-                    : typeof rawItems === 'string'
-                        ? JSON.parse(rawItems) as OrderItem[]
-                        : [];
+                let orderItems: OrderItem[] = [];
+
+                if (Array.isArray(rawItems)) {
+                    orderItems = rawItems.map((item: Record<string, unknown>) => ({
+                        product_id: String(item.product_id || ''),
+                        variation_id: item.variation_id ? String(item.variation_id) : undefined,
+                        quantity: Number(item.quantity) || 1,
+                    }));
+                } else if (typeof rawItems === 'string') {
+                    try {
+                        const parsed = JSON.parse(rawItems);
+                        orderItems = (Array.isArray(parsed) ? parsed : [parsed]).map((item: Record<string, unknown>) => ({
+                            product_id: String(item.product_id || ''),
+                            variation_id: item.variation_id ? String(item.variation_id) : undefined,
+                            quantity: Number(item.quantity) || 1,
+                        }));
+                    } catch { /* empty */ }
+                }
+
+                console.log('[EcommerceTool] create_order args:', JSON.stringify(args));
+                console.log('[EcommerceTool] create_order parsed items:', JSON.stringify(orderItems));
 
                 if (orderItems.length === 0) {
                     return JSON.stringify({ error: 'Se necesita al menos un producto para crear el pedido.' });
@@ -763,6 +779,8 @@ export async function executeEcommerceTool(
                     state: str('shipping_state') || undefined,
                     notes: str('order_notes') || undefined,
                 };
+
+                console.log('[EcommerceTool] create_order customer:', JSON.stringify(customer));
 
                 const result = isShopify
                     ? await shopifyCreateOrder(config, customer, orderItems)
