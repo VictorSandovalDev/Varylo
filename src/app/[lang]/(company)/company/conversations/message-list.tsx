@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, Play, Pause, AlertCircle } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -27,6 +27,113 @@ function resolveMediaSrc(msg: Message): string | null {
         return `/api/media?messageId=${msg.id}`;
     }
     return msg.mediaUrl;
+}
+
+function AudioPlayer({ src, mimeType, isOutbound }: { src: string; mimeType?: string | null; isOutbound: boolean }) {
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const [error, setError] = useState(false);
+    const [playing, setPlaying] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    function formatTime(s: number) {
+        if (!s || !isFinite(s)) return '0:00';
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return `${m}:${sec.toString().padStart(2, '0')}`;
+    }
+
+    function togglePlay() {
+        const a = audioRef.current;
+        if (!a) return;
+        if (a.paused) {
+            a.play().catch(() => setError(true));
+        } else {
+            a.pause();
+        }
+    }
+
+    function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
+        const a = audioRef.current;
+        if (!a || !duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        a.currentTime = pct * duration;
+    }
+
+    if (error) {
+        return (
+            <a
+                href={src}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                    "flex items-center gap-2 p-2 rounded-lg border text-xs",
+                    isOutbound
+                        ? "border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+                        : "border-border hover:bg-muted"
+                )}
+            >
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>Audio no compatible — toca para descargar</span>
+                <Download className="h-4 w-4 shrink-0" />
+            </a>
+        );
+    }
+
+    return (
+        <div className="flex items-center gap-2 min-w-[220px]">
+            <audio
+                ref={audioRef}
+                preload="metadata"
+                onLoadedMetadata={() => setDuration(audioRef.current?.duration || 0)}
+                onTimeUpdate={() => setProgress(audioRef.current?.currentTime || 0)}
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => { setPlaying(false); setProgress(0); }}
+                onError={() => setError(true)}
+            >
+                <source src={src} type={mimeType || 'audio/ogg'} />
+                <source src={src} type="audio/ogg" />
+                <source src={src} type="audio/mpeg" />
+            </audio>
+            <button
+                onClick={togglePlay}
+                className={cn(
+                    "h-8 w-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                    isOutbound
+                        ? "bg-primary-foreground/20 hover:bg-primary-foreground/30 text-primary-foreground"
+                        : "bg-primary/10 hover:bg-primary/20 text-primary"
+                )}
+            >
+                {playing
+                    ? <Pause className="h-3.5 w-3.5" />
+                    : <Play className="h-3.5 w-3.5 ml-0.5" />
+                }
+            </button>
+            <div className="flex-1 flex flex-col gap-0.5">
+                <div
+                    className="h-1.5 rounded-full bg-muted/50 cursor-pointer relative overflow-hidden"
+                    onClick={handleSeek}
+                >
+                    <div
+                        className={cn(
+                            "h-full rounded-full transition-all",
+                            isOutbound ? "bg-primary-foreground/60" : "bg-primary/60"
+                        )}
+                        style={{ width: duration ? `${(progress / duration) * 100}%` : '0%' }}
+                    />
+                </div>
+                <span className={cn(
+                    "text-[10px]",
+                    isOutbound ? "text-primary-foreground/60" : "text-muted-foreground"
+                )}>
+                    {playing ? formatTime(progress) : formatTime(duration)}
+                </span>
+            </div>
+        </div>
+    );
 }
 
 function MediaContent({ msg }: { msg: Message }) {
@@ -61,14 +168,7 @@ function MediaContent({ msg }: { msg: Message }) {
             );
 
         case 'audio':
-            return (
-                <audio
-                    src={src}
-                    controls
-                    className="max-w-full min-w-[200px]"
-                    preload="metadata"
-                />
-            );
+            return <AudioPlayer src={src} mimeType={msg.mimeType} isOutbound={isOutbound} />;
 
         case 'document':
             return (
