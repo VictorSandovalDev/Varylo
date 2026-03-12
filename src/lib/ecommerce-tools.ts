@@ -142,7 +142,7 @@ export const ECOMMERCE_TOOLS: ChatCompletionTool[] = [
                         },
                     },
                 },
-                required: ['customer_name', 'customer_phone', 'shipping_address', 'shipping_city', 'items'],
+                required: ['customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'shipping_city', 'items'],
             },
         },
     },
@@ -526,7 +526,7 @@ async function wooCreateOrder(
     const billingShipping = {
         first_name: firstName,
         last_name: lastName,
-        email: customer.email || `${firstName.toLowerCase().replace(/\s+/g, '')}@pedido.temp`,
+        email: customer.email || '',
         phone: customer.phone || '',
         address_1: customer.address || '',
         city: customer.city || '',
@@ -760,6 +760,12 @@ export async function executeEcommerceTool(
                             quantity: Number(item.quantity) || 1,
                         }));
                     } catch { /* empty */ }
+                }
+
+                if (!str('customer_email') || !str('customer_email').includes('@')) {
+                    return JSON.stringify({
+                        error: 'El email del cliente es obligatorio para crear el pedido. Pídele su correo electrónico antes de continuar.',
+                    });
                 }
 
                 console.log('[EcommerceTool] create_order args:', JSON.stringify(args));
