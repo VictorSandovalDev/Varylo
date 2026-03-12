@@ -27,7 +27,7 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
                 contact: true,
                 messages: {
                     orderBy: { createdAt: 'asc' },
-                    take: 50,
+                    take: 20,
                 },
             },
         });
@@ -89,14 +89,52 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
             return { handled: true, transferredToHuman: true };
         }
 
-        // Check if calendar is enabled for this agent and company has it connected
-        let calendarEnabled = false;
-        if (aiAgent.calendarEnabled) {
-            const company = await prisma.company.findUnique({
-                where: { id: conversation.companyId },
-                select: { googleCalendarRefreshToken: true },
-            });
-            calendarEnabled = !!company?.googleCalendarRefreshToken;
+        // Fire-and-forget typing indicator (don't block on it)
+        if (conversation.channel?.type === 'WHATSAPP') {
+            const config = conversation.channel.configJson as { phoneNumberId?: string; accessToken?: string } | null;
+            const lastInbound = [...conversation.messages].reverse().find(m => m.direction === 'INBOUND');
+            if (config?.phoneNumberId && config?.accessToken && lastInbound?.providerMessageId) {
+                sendWhatsAppTypingIndicator(
+                    config.phoneNumberId,
+                    config.accessToken,
+                    conversation.contact?.phone || '',
+                    lastInbound.providerMessageId,
+                ).catch(() => {});
+            }
+        }
+
+        // Run independent checks in parallel
+        const [calendarResult, ecommerceResult, openaiResult, creditResult] = await Promise.all([
+            // Calendar check
+            aiAgent.calendarEnabled
+                ? prisma.company.findUnique({
+                    where: { id: conversation.companyId },
+                    select: { googleCalendarRefreshToken: true },
+                }).then(c => !!c?.googleCalendarRefreshToken)
+                : Promise.resolve(false),
+            // Ecommerce check
+            aiAgent.ecommerceEnabled
+                ? prisma.ecommerceIntegration.findUnique({
+                    where: { companyId: conversation.companyId },
+                    select: { active: true },
+                }).then(i => !!i?.active)
+                : Promise.resolve(false),
+            // OpenAI client
+            getOpenAIForCompany(conversation.companyId),
+            // Credit balance
+            checkCreditBalance(conversation.companyId),
+        ]);
+
+        const calendarEnabled = calendarResult;
+        const ecommerceEnabled = ecommerceResult;
+        const { client: openai, usesOwnKey } = openaiResult;
+
+        // Credit check: if not using own key, must have credits
+        if (!usesOwnKey) {
+            if (!creditResult.hasCredits) {
+                console.log(`[AI Agent] Company ${conversation.companyId} has no credits, skipping AI`);
+                return { handled: false };
+            }
         }
 
         // Check if ecommerce is enabled for this agent and company has integration
@@ -122,31 +160,6 @@ export async function handleAiAgentResponse(conversationId: string, inboundMessa
                 role: msg.direction === 'INBOUND' ? 'user' : 'assistant',
                 content: msg.content,
             });
-        }
-
-        // Send typing indicator so the user sees "typing..." in WhatsApp
-        if (conversation.channel?.type === 'WHATSAPP') {
-            const config = conversation.channel.configJson as { phoneNumberId?: string; accessToken?: string } | null;
-            const lastInbound = [...conversation.messages].reverse().find(m => m.direction === 'INBOUND');
-            if (config?.phoneNumberId && config?.accessToken && lastInbound?.providerMessageId) {
-                await sendWhatsAppTypingIndicator(
-                    config.phoneNumberId,
-                    config.accessToken,
-                    conversation.contact?.phone || '',
-                    lastInbound.providerMessageId,
-                );
-            }
-        }
-
-        const { client: openai, usesOwnKey } = await getOpenAIForCompany(conversation.companyId);
-
-        // Credit check: if not using own key, must have credits
-        if (!usesOwnKey) {
-            const { hasCredits } = await checkCreditBalance(conversation.companyId);
-            if (!hasCredits) {
-                console.log(`[AI Agent] Company ${conversation.companyId} has no credits, skipping AI`);
-                return { handled: false };
-            }
         }
 
         // Build tools array
